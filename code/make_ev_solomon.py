@@ -30,9 +30,10 @@ import numpy as np
 # ---------------------------------------------------------------- settings
 KM_PER_UNIT = 0.2         # 100 x 100 grid -> 20 x 20 km city
 DETOUR = 1.3              # road distance = DETOUR * straight line
-T = 300.0                 # planning period, minutes (17:00-22:00 evening peak)
-SPEED = 25.0              # km/h, all vehicles
-R_MAX_RELEASE = 120.0     # request times scaled into [0, 120] min
+# Time is Solomon's own: 1 time unit = 1 minute, planning period T = the depot's DUE DATE,
+# request time = READY TIME (both unchanged), travel time = straight-line grid distance
+# (Solomon's rule). The speed that makes 60 * road_km / SPEED equal the grid distance:
+SPEED = 60 * KM_PER_UNIT * DETOUR   # = 15.6 km/h (evening city traffic)
 E_MIN, E_MAX = 10.0, 40.0 # energy demand range, kWh (from Solomon DEMAND 1..50)
 RANGE_MIN, RANGE_MAX = 5.0, 40.0
 STRANDED_SHARE = 0.15     # EVs whose range is below the distance to their nearest station
@@ -92,13 +93,14 @@ def build(raw, name):
     xy = cust[:, 1:3]
     fcs = np.round(kmeans(xy, n_fcs, rng), 2)                       # grid units
     E = np.round(E_MIN + (E_MAX - E_MIN) * (np.clip(cust[:, 3], 1, 50) - 1) / 49.0, 2)
-    r = np.round(cust[:, 4] / depot[5] * R_MAX_RELEASE, 2)          # differs within a class
+    r = cust[:, 4].copy()                     # Solomon READY TIME, minutes (differs within a class)
     d_near = DETOUR * KM_PER_UNIT * np.linalg.norm(xy[:, None] - fcs[None], axis=2).min(1)
     R = rng.uniform(RANGE_MIN, RANGE_MAX, N)
     stranded = rng.choice(N, size=int(round(STRANDED_SHARE * N)), replace=False)
     R[stranded] = rng.uniform(0.2, 0.8, len(stranded)) * d_near[stranded]
     R = np.round(R, 2)
     return {"name": "EV-" + name.upper(), "solomon": name.upper(), "class": cls, "N": N,
+            "T": float(depot[5]),             # Solomon depot DUE DATE = end of the planning period
             "n_vans": n_vans, "depot": depot[1:3], "xy": xy, "E": E, "r": r, "R": R, "fcs": fcs}
 
 
@@ -106,7 +108,7 @@ def write_ev_solomon(inst, path):
     """Solomon-style text file."""
     L = [inst["name"], "",
          "PLANNING", "HORIZON_T(min)  SPEED(km/h)  KM_PER_UNIT  DETOUR",
-         f"  {T:<15g}{SPEED:<13g}{KM_PER_UNIT:<13g}{DETOUR:g}", "",
+         f"  {inst['T']:<15g}{SPEED:<13g}{KM_PER_UNIT:<13g}{DETOUR:g}", "",
          "COSTS", "C_EV(Rs/km)  C_M(Rs/km)  C_F(Rs/van)  PI_F(Rs/kWh)  PI_M(Rs/kWh)  C_W(Rs/min)  KAPPA",
          f"  {COSTS['C_EV']:<11g}{COSTS['C_M']:<12g}{COSTS['C_F']:<13g}{COSTS['PI_F']:<14g}"
          f"{COSTS['PI_M']:<14g}{COSTS['C_W']:<13g}{KAPPA:g}", "",
@@ -224,6 +226,21 @@ def greedy_feasible(D):
     return True, Z
 
 
+def impossible_evs(D):
+    """EVs that cannot be fully charged by T even in the best case (a free gun at a
+    reachable station, or a van that drives straight from the depot to them and back).
+    If any exist, the instance is provably infeasible for main_formulation."""
+    P, T_ = D["params"], D["params"]["T"]
+    reach = D["d_ev_fcs"] <= D["R"][:, None]
+    bad = []
+    for i in range(D["n"]):
+        fcs = [D["r"][i] + D["t_ev_fcs"][i, f] + D["tauF"][i] for f in np.where(reach[i])[0]]
+        van = max(D["r"][i], D["t_nodes"][0, i + 1]) + D["tauM"][i] + D["t_nodes"][i + 1, 0]
+        if min(fcs + [van]) > T_ + 1e-9:
+            bad.append(i)
+    return bad
+
+
 # ---------------------------------------------------------------- main
 def main(out, sources):
     rows = []
@@ -240,23 +257,30 @@ def main(out, sources):
         path = os.path.join(folder, f"{inst['name']}.txt")
         write_ev_solomon(inst, path)
         row = {"instance": inst["name"], "source": inst["solomon"], "class": inst["class"],
-               "EVs": inst["N"], "stations": FLEET[inst["N"]][0], "vans": inst["n_vans"]}
+               "EVs": inst["N"], "T_min": inst["T"], "stations": FLEET[inst["N"]][0],
+               "vans": inst["n_vans"]}
         for k, n in enumerate(CHECK[inst["N"]]):
             D = read_ev_solomon(path, n)                 # check what a solver will read
             ok, Z = greedy_feasible(D)
+            hopeless = impossible_evs(D)
             row[f"check{k + 1}_n"] = n
             row[f"check{k + 1}_van_only"] = int((D["d_ev_fcs"] > D["R"][:, None]).all(1).sum())
-            row[f"check{k + 1}_feasible"] = ok
+            row[f"check{k + 1}_feasible"] = ("yes" if ok else
+                                             "no (proven)" if hopeless else "unknown")
+            row[f"check{k + 1}_impossible_EVs"] = " ".join(str(i + 1) for i in hopeless)
             row[f"check{k + 1}_greedy_Z"] = round(float(Z), 2) if ok else ""
         rows.append(row)
-        print(row["instance"], [(row[f"check{k}_n"], row[f"check{k}_feasible"]) for k in (1, 2, 3)],
-              flush=True)
+        print(row["instance"], f"T={inst['T']:g}",
+              [(row[f"check{k}_n"], row[f"check{k}_feasible"]) for k in (1, 2, 3)], flush=True)
     with open(os.path.join(out, "summary.csv"), "w", newline="") as fh:
         wr = csv.DictWriter(fh, fieldnames=list(rows[0]))
         wr.writeheader()
         wr.writerows(rows)
-    bad = [r["instance"] for r in rows if not all(r[f"check{k}_feasible"] for k in (1, 2, 3))]
-    print(f"{len(rows)} instances written; infeasible checks: {bad or 'none'}")
+    for label in ("no (proven)", "unknown"):
+        hit = [f"{r['instance']} (n={r[f'check{k}_n']})" for r in rows for k in (1, 2, 3)
+               if r[f"check{k}_feasible"] == label]
+        print(f"checks '{label}': {len(hit)}  {hit[:12]}")
+    print(f"{len(rows)} instances written")
 
 
 if __name__ == "__main__":

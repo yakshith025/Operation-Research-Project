@@ -18,7 +18,7 @@ EV-R101
 
 PLANNING
 HORIZON_T(min)  SPEED(km/h)  KM_PER_UNIT  DETOUR
-  300            25           0.2          1.3
+  230            15.6         0.2          1.3
 
 COSTS
 C_EV(Rs/km)  C_M(Rs/km)  C_F(Rs/van)  PI_F(Rs/kWh)  PI_M(Rs/kWh)  C_W(Rs/min)  KAPPA
@@ -41,8 +41,8 @@ EV NO.  XCOORD.  YCOORD.  ENERGY(kWh)  REQUEST(min)  RANGE(km)
 
 | Block / column | Model symbol | Meaning |
 |---|---|---|
-| HORIZON_T | T | planning period (min); every EV fully charged and every van back by T |
-| SPEED, KM_PER_UNIT, DETOUR | v, — | road distance (km) = DETOUR × KM_PER_UNIT × straight-line grid distance; time (min) = 60·distance/SPEED |
+| HORIZON_T | T | planning period (min) = Solomon's depot DUE DATE (differs by family); every EV fully charged and every van back by T |
+| SPEED, KM_PER_UNIT, DETOUR | v, — | road distance (km) = DETOUR × KM_PER_UNIT × straight-line grid distance; time (min) = 60·distance/SPEED, which equals the straight-line grid distance (Solomon's rule: 1 grid unit = 1 minute; SPEED = 15.6 km/h) |
 | C_EV, C_M, C_F, PI_F, PI_M, C_W | c^EV, c^M, c^F_m, π^F, π^M, c^W | costs (C_W per minute) |
 | KAPPA | κ | priority w_i = 1 + κ(1 − R_i / R_max), R_max = largest range in the instance (or prefix) |
 | NUMBER, BATTERY, MAX_EVS, POWER, USE, EFFICIENCY | \|M\|, B_m, Q_m, P^M, β, η | van fleet |
@@ -62,8 +62,9 @@ model inputs (τ, w, F_i data, distance and time matrices) ready for a solver.
 | depot (customer 0) | depot | unchanged |
 | XCOORD, YCOORD | EV location | unchanged (grid units). Solomon grid 100×100 → 20×20 km city; Homberger 140×140 → 28×28 km (same EV density) |
 | DEMAND (1–50) | ENERGY | linear map to 10–40 kWh: E = 10 + 30·(DEMAND − 1)/49 |
-| READY TIME | REQUEST | scaled from [0, depot due date] to [0, 120] min |
-| DUE DATE, SERVICE TIME | — | not used (no deadlines in the model; charging time comes from E/P) |
+| READY TIME | REQUEST | **unchanged** (minutes) |
+| depot DUE DATE | HORIZON_T | **unchanged** (minutes): type-1 families have short days, type-2 long days, exactly as in Solomon |
+| customer DUE DATE, SERVICE TIME | — | not used (no deadlines in the model; charging time comes from E/P) |
 | VEHICLE NUMBER, CAPACITY | — | replaced by the van block |
 | — | stations | **synthesised**: k-means centres of the EV locations, 2 guns × 22 kW |
 | — | RANGE | **synthesised**: U[5, 40] km; **15 % of EVs are "stranded"** (range = 20–80 % of the distance to their nearest station), so only a van can serve them |
@@ -77,14 +78,41 @@ gives identical files.
 28×28 km city with one central depot makes van trips longer; with 10 vans the simple feasibility check failed on 12 of the 60
 files, with 12 vans on none.
 
-## Feasibility
+## Timing is exactly Solomon's (nothing extended)
 
-Every file is feasible for `main_formulation` (including the hard deadline C_i ≤ T) at three sizes: n = 25, 50, 100 for
-100-EV files and n = 50, 100, 200 for 200-EV files. This is shown by a simple greedy plan (van-only EVs first, then by request
-time, each to the gun or van that finishes it earliest) that obeys every constraint. Its cost is in `summary.csv`
-(`checkK_greedy_Z`); a MILP optimum must be equal or lower. `checkK_van_only` = EVs that can reach no station.
+Time unit = 1 minute. The planning period T is the source file's depot due date and every request time is the
+source file's ready time, unchanged. Travel time follows Solomon's rule (1 grid unit of distance = 1 minute).
 
-| EVs | Classes | Van-only EVs | Greedy Z for the full file (Rs) |
+| Family | T in 100-EV files (Solomon) | T in 200-EV files (Homberger) |
+|---|---|---|
+| C1 | 1236 | 1351 |
+| C2 | 3390 | 3598 |
+| R1 | 230 | 634 |
+| R2 | 1000 | 2535 |
+| RC1 | 240 | 634 |
+| RC2 | 960 | 2535 |
+
+Vans and stations are the same for every family (5 vans / 12 stations per 100 EVs; 12 vans / 24 stations for 200).
+
+## Feasibility (reported, not fixed)
+
+Each file is checked at three sizes (n = 25, 50, 100 for 100-EV files; 50, 100, 200 for 200-EV files):
+
+- **yes**: a simple plan that obeys every constraint of `main_formulation` was found (so the instance is feasible);
+- **no (proven)**: at least one EV cannot be fully charged by T even in the best case (a free gun at a reachable
+  station, or a van driving straight from the depot to it and back). The EV numbers are in `checkK_impossible_EVs`;
+- **unknown**: the simple plan failed but no EV is provably impossible; only an exact solver can decide.
+
+| Family | 25 EVs | 50 EVs | 100 EVs |
 |---|---|---|---|
-| 100 | C1 / C2 / R1 / R2 / RC1 / RC2 | 15 | 83,546 – 107,429 |
-| 200 | C1 / C2 / R1 / R2 / RC1 / RC2 | 30 | 194,383 – 233,494 |
+| C1, C2, R2, RC2 | all yes | all yes | all yes |
+| R1 (T = 230) | 12 yes | 10 yes, 2 no | 0 yes, 7 no, 5 unknown |
+| RC1 (T = 240) | 7 yes, 1 no | 5 yes, 1 no, 2 unknown | 0 yes, 4 no, 4 unknown |
+
+200-EV files: C1, C2, R2, RC2 all yes at 50 / 100 / 200; R1 (T = 634): 10 yes at 50, 2 yes + 8 no at 100 and 200;
+RC1 (T = 634): 9 yes + 1 no at every size.
+
+The short type-1 days of R1 and RC1 (230 / 240 min) are too short for some late or far-away EVs to be charged
+(charging alone takes 20–109 min), so those instances are infeasible under the hard rule C_i ≤ T. This is kept on
+purpose, exactly as in Solomon. `checkK_greedy_Z` gives the cost of the simple plan where one was found; a MILP
+optimum must be equal or lower.
