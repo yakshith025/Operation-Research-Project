@@ -1,18 +1,27 @@
 """Solve main_formulation (continuous-time MILP, eqs (1)-(20)) with Gurobi on the
-instances made by make_dataset.py, validate every solution and write result tables.
+EV-Solomon dataset (../dataset_ev_solomon/instances), validate every solution and write
+result tables.
 
-Usage examples
-  python solve_milp.py ../dataset/instances                         # all 39 instances
-  python solve_milp.py ../dataset/instances --resume                # continue an interrupted run
-  python solve_milp.py ../dataset/instances --only C101_n10
-  python solve_milp.py ../dataset/instances --sizes 10 25 --time-limit 300
-  python solve_milp.py ../dataset/instances --sizes 10 --gpu
+An instance = one EV-Solomon file + a size n (its first n EVs, as in Solomon).
+Default sizes: 25, 50, 100 for the 100-EV files (Solomon) and 50, 100, 200 for the
+200-EV files (Gehring & Homberger).
+
+Usage examples (run from code/)
+  python solve_milp.py                                        # every file at its default sizes
+  python solve_milp.py --file-size 100 --sizes 25             # all 56 Solomon files, first 25 EVs
+  python solve_milp.py --only EV-R101 EV-C101 --sizes 10 25 50
+  python solve_milp.py --families C1 R1 --sizes 25 --time-limit 600
+  python solve_milp.py --resume                               # continue an interrupted run
+
+Instances that the data already proves infeasible (an EV that cannot be charged by T even
+in the best case; listed in dataset_ev_solomon/summary.csv) are reported as
+"infeasible (proven: EVs ...)" without solving; --solve-infeasible runs Gurobi on them too.
 
 Every instance is solved with the complete main_formulation, eqs (1)-(20). Every solution is
 checked against all constraints. Instances run from small to large; summary.csv / costs.csv
 are rewritten after every instance.
 
-Outputs (in --out, default ../results):
+Outputs (in --out, default ../results_ev_solomon):
   summary.csv, costs.csv                        one row per instance
   <instance>/evs.csv, vans.csv, guns.csv        detailed tables per instance
   <instance>/gurobi.log, solution.json
@@ -39,6 +48,7 @@ from gurobipy import GRB
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from check_plan import validate  # noqa: E402
+import make_ev_solomon as mes    # noqa: E402  (reads the EV-Solomon files)
 
 
 # --------------------------------------------------------------------- model
@@ -357,11 +367,51 @@ def write_xlsx(path, sheets):
 
 
 # ---------------------------------------------------------------------- main
-def solve_one(path, args, env):
-    J = json.load(open(path))
+def load_instance(path, n):
+    """Read an EV-Solomon file (first n EVs) with make_ev_solomon.read_ev_solomon and put the
+    data in the dict layout used by build_model / validate / tables. Also runs the greedy
+    plan (warm start and baseline) and the 'provably impossible EV' check."""
+    D = mes.read_ev_solomon(path, n)
+    P = D["params"]
+    guns = sorted(set(int(x) for x in D["guns"]))
+    assert len(guns) == 1, "all stations must have the same number of guns"
+    ok, Zg, plan = mes.greedy_feasible(D)
+    base = os.path.splitext(os.path.basename(path))[0]
+    J = {"name": f"{base}_n{n}", "file": base, "family": mes.solomon_class(base[3:]),
+         "n_ev": n, "n_fcs": D["n_fcs"], "n_vans": int(P["n_vans"]),
+         "params": {"T_min": P["T"], "guns_per_fcs": guns[0], "eta": P["eta"],
+                    "beta_kWh_per_km": P["beta"], "B_kWh": P["B"], "Q": int(P["Q"]),
+                    "costs_Rs": {"c_EV": P["c_EV"], "c_M": P["c_M"], "c_F": P["c_F"],
+                                 "pi_F": P["pi_F"], "pi_M": P["pi_M"], "c_W": P["c_W"]}},
+         "ev": {"E_kWh": D["E"].tolist(), "r_min": D["r"].tolist(), "R_km": D["R"].tolist(),
+                "w": D["w"].tolist(), "tauF_min": D["tauF"].tolist(),
+                "tauM_min": D["tauM"].tolist()},
+         "d_ev_fcs_km": D["d_ev_fcs"].tolist(), "t_ev_fcs_min": D["t_ev_fcs"].tolist(),
+         "d_nodes_km": D["d_nodes"].tolist(), "t_nodes_min": D["t_nodes"].tolist(),
+         "impossible_evs": [i + 1 for i in mes.impossible_evs(D)],
+         "greedy_baseline": ({**plan, "Z_Rs": round(float(Zg), 2)} if ok else None)}
+    return J
+
+
+def base_row(J):
+    return {"instance": J["name"], "family": J["family"], "EVs": J["n_ev"],
+            "T_min": J["params"]["T_min"], "stations": J["n_fcs"],
+            "guns": J["n_fcs"] * J["params"]["guns_per_fcs"], "vans": J["n_vans"],
+            "graph_nodes": 1 + J["n_ev"] + J["n_fcs"]}          # depot + EVs + stations
+
+
+def solve_one(path, n, args, env):
+    J = load_instance(path, n)
     name = J["name"]
     outdir = os.path.join(args.out, name)
     os.makedirs(outdir, exist_ok=True)
+    greedy = J["greedy_baseline"]["Z_Rs"] if J["greedy_baseline"] else ""
+    if J["impossible_evs"] and not args.solve_infeasible:
+        # some EV cannot be charged by T even in the best case -> the MILP has no solution
+        row = {**base_row(J), "status": "infeasible (proven: EVs "
+               + " ".join(map(str, J["impossible_evs"])) + ")", "greedy_Z_Rs": greedy}
+        print(f"{name}: {row['status']} - not solved", flush=True)
+        return row, None, J
     print(f"{name}: building model ...", flush=True)
     t_build = time.time()
     m, data = build_model(J, env)
@@ -387,15 +437,11 @@ def solve_one(path, args, env):
         gpu_info = {"gpu_root_LP_bound": round(bound, 2), "gpu_LP_time_s": round(secs, 2),
                     "gpu_used": "yes" if used else "no (not a GPU build, PDHG ran on CPU)"}
 
-    if not args.no_warm_start:
+    if not args.no_warm_start and J["greedy_baseline"]:
         warm_start(J, data)
     m.optimize()
 
-    greedy = J["greedy_baseline"]["Z_Rs"]
-    row = {"instance": name, "EVs": J["n_ev"], "stations": J["n_fcs"],
-           "guns": J["n_fcs"] * J["params"]["guns_per_fcs"], "vans": J["n_vans"],
-           "graph_nodes": 1 + J["n_ev"] + J["n_fcs"],   # depot + EVs + stations
-           "binaries": m.NumBinVars, "continuous": m.NumVars - m.NumBinVars,
+    row = {**base_row(J), "binaries": m.NumBinVars, "continuous": m.NumVars - m.NumBinVars,
            "constraints": m.NumConstrs, "build_s": round(t_build, 2)}
     status = {GRB.OPTIMAL: "optimal", GRB.TIME_LIMIT: "time limit",
               GRB.INFEASIBLE: "infeasible"}.get(m.Status, f"status {m.Status}")
@@ -462,10 +508,11 @@ def finish(J, raw_plan, row, outdir, args):
     row = {**{k: v for k, v in row.items() if k not in ("Z_Rs", "gap_%", "valid",
                                                           "improvement_vs_greedy_%")},
            "Z_Rs": round(Zchk, 2),
-           "gap_%": round(100 * (Zchk - bound) / Zchk, 3),
-           "improvement_vs_greedy_%": round(100 * (greedy - Zchk) / greedy, 2),
+           "gap_%": max(0.0, round(100 * (Zchk - bound) / Zchk, 3)),   # no "-0.000"
+           "improvement_vs_greedy_%": (round(100 * (greedy - Zchk) / greedy, 2)
+                                       if greedy != "" else ""),
            "valid": "yes" if not err else "NO: " + "; ".join(err[:3])}
-    order = ["instance", "EVs", "stations", "guns", "vans", "graph_nodes",
+    order = ["instance", "family", "EVs", "T_min", "stations", "guns", "vans", "graph_nodes",
              "binaries", "continuous",
              "constraints", "build_s", "status", "Z_Rs", "best_bound_Rs", "gap_%",
              "gurobi_obj_Rs", "runtime_s", "nodes_explored", "greedy_Z_Rs",
@@ -491,8 +538,9 @@ def finish(J, raw_plan, row, outdir, args):
     write_csv(os.path.join(outdir, "guns.csv"), gun_rows)
     with open(os.path.join(outdir, "solution.json"), "w") as fh:
         json.dump({"summary": row, "costs": cost, **plan}, fh, indent=1)
+    gtxt = f"{greedy:,.2f}" if greedy != "" else "none found"
     print(f"{name}: {status}, Z = {Zchk:,.2f} Rs, gap {row['gap_%']:.2f} %, "
-          f"{row['runtime_s']:.1f} s, greedy {greedy:,.2f}, valid: {row['valid']}")
+          f"{row['runtime_s']:.1f} s, greedy {gtxt}, valid: {row['valid']}")
     if args.details:
         print_table(f"[{name}] EV assignment", ev_rows)
         print_table(f"[{name}] Van routes", van_rows)
@@ -500,29 +548,32 @@ def finish(J, raw_plan, row, outdir, args):
     return row, (cost, ev_rows, van_rows, gun_rows), J
 
 
-def reuse_one(path, args):
+def reuse_one(path, n, args):
     """Rebuild the result tables from a previous run's solution.json (no solving)."""
-    J = json.load(open(path))
+    J = load_instance(path, n)
     outdir = os.path.join(args.out, J["name"])
     sol = json.load(open(os.path.join(outdir, "solution.json")))
-    row = dict(sol["summary"])
-    if "gurobi_obj_Rs" not in row:              # files from the first version of this script
-        row["gurobi_obj_Rs"] = row.get("Z_Rs")
-    # results from older versions of this script: rename / add the node columns
-    for old in ("nodes", "bnb_nodes"):
-        if old in row and "nodes_explored" not in row:
-            row["nodes_explored"] = row.pop(old)
-    row.setdefault("graph_nodes", 1 + J["n_ev"] + J["n_fcs"])
+    row = {**base_row(J), **sol["summary"]}
     raw = {k: sol[k] for k in ("resource", "S", "C", "van_routes", "route_van")}
     return finish(J, raw, row, outdir, args)
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("instances", help="folder with <instance>/instance.json")
-    ap.add_argument("--out", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "results"))
-    ap.add_argument("--only", nargs="*", help="instance names, e.g. C101_n10")
-    ap.add_argument("--sizes", nargs="*", type=int, help="only these n (e.g. 10 25)")
+    here = os.path.dirname(os.path.abspath(__file__))
+    ap.add_argument("instances", nargs="?",
+                    default=os.path.join(here, "..", "dataset_ev_solomon", "instances"),
+                    help="EV-Solomon instances folder (default ../dataset_ev_solomon/instances)")
+    ap.add_argument("--out", default=os.path.join(here, "..", "results_ev_solomon"))
+    ap.add_argument("--only", nargs="*", help="file names, e.g. EV-R101 EV-C1_2_1")
+    ap.add_argument("--families", nargs="*", help="only these families, e.g. C1 R2 RC1")
+    ap.add_argument("--file-size", nargs="*", type=int, choices=[100, 200],
+                    help="only files with this many EVs (100 = Solomon, 200 = Homberger)")
+    ap.add_argument("--sizes", nargs="*", type=int,
+                    help="number of EVs to solve (first n of each file); default 25 50 100 for "
+                         "100-EV files and 50 100 200 for 200-EV files")
+    ap.add_argument("--solve-infeasible", action="store_true",
+                    help="also run Gurobi on instances whose data already proves infeasibility")
     ap.add_argument("--time-limit", type=float, default=300.0, help="seconds per instance")
     ap.add_argument("--mip-gap", type=float, default=1e-4)
     ap.add_argument("--threads", type=int, default=0, help="0 = all cores")
@@ -538,23 +589,30 @@ def main():
     ap.add_argument("--node-file-dir", default="", help="folder for Gurobi node files (saves RAM)")
     args = ap.parse_args()
 
-    def size_of(q):
-        return int(os.path.basename(os.path.dirname(q)).split("_n")[1])
-    paths = sorted(glob.glob(os.path.join(args.instances, "*", "instance.json")),
-                   key=lambda q: (size_of(q), os.path.basename(os.path.dirname(q))))
-    if args.only:
-        paths = [q for q in paths if os.path.basename(os.path.dirname(q)) in args.only]
-    if args.sizes:
-        paths = [q for q in paths if size_of(q) in args.sizes]
+    # tasks = (file, n): every EV-Solomon file, solved for its first n EVs
+    files = sorted(glob.glob(os.path.join(args.instances, "*", "EV-*.txt")))
+    tasks = []
+    for f in files:
+        base = os.path.splitext(os.path.basename(f))[0]
+        n_file = int(os.path.basename(os.path.dirname(f)))
+        if args.only and base not in args.only:
+            continue
+        if args.families and mes.solomon_class(base[3:]) not in [x.upper() for x in args.families]:
+            continue
+        if args.file_size and n_file not in args.file_size:
+            continue
+        sizes = args.sizes or list(mes.CHECK[n_file])
+        tasks += [(f, n) for n in sizes if n <= n_file]
+    tasks.sort(key=lambda t: (t[1], os.path.basename(t[0])))       # small instances first
     os.makedirs(args.out, exist_ok=True)
-    print(f"{len(paths)} instance(s) to process", flush=True)
+    print(f"{len(tasks)} instance(s) to process", flush=True)
 
     env = gp.Env(empty=True)
     env.setParam("OutputFlag", 0)
     env.start()
     summary, costs, sheets = [], [], []
-    for path in paths:
-        name = os.path.basename(os.path.dirname(path))
+    for path, n in tasks:
+        name = f"{os.path.splitext(os.path.basename(path))[0]}_n{n}"
         done = os.path.exists(os.path.join(args.out, name, "solution.json"))
         if args.reuse and not done:
             print(f"{name}: no solution.json yet, skipped", flush=True)
@@ -562,12 +620,12 @@ def main():
         t0 = time.time()
         try:
             if args.reuse or (args.resume and done):
-                row, detail, J = reuse_one(path, args)
+                row, detail, J = reuse_one(path, n, args)
             else:
-                row, detail, J = solve_one(path, args, env)
+                row, detail, J = solve_one(path, n, args, env)
         except (gp.GurobiError, MemoryError) as e:    # keep going with the next instance
             gc.collect()
-            row, detail = {"instance": name, "EVs": size_of(path), "status": f"error: {e}"}, None
+            row, detail = {"instance": name, "EVs": n, "status": f"error: {e}"}, None
             print(f"{name}: ERROR {e}", flush=True)
         print(f"   ({time.time() - t0:.0f} s wall clock)", flush=True)
         summary.append(row)

@@ -181,7 +181,8 @@ def read_ev_solomon(path, n=None):
 # ---------------------------------------------------------------- feasibility check
 def greedy_feasible(D):
     """Simple rule obeying every constraint of main_formulation (incl. C_i <= T).
-    Returns (feasible, Z of the plan)."""
+    Returns (feasible, Z of the plan, plan). plan = {resource, S, C, van_routes} with
+    resource "FCS<f>-gun<g>" / "van<m>" (1-based) and routes as node lists 0 -> ... -> 0."""
     P = D["params"]
     n, F, M, T_ = D["n"], D["n_fcs"], int(P["n_vans"]), P["T"]
     r, E, w, R = D["r"], D["E"], D["w"], D["R"]
@@ -190,6 +191,9 @@ def greedy_feasible(D):
     gun_free = [np.zeros(g) for g in D["guns"]]
     van = [{"pos": 0, "free": 0.0, "batt": P["B"], "cnt": 0, "km": 0.0} for _ in range(M)]
     C = np.zeros(n)
+    S = np.zeros(n)
+    res = [""] * n
+    routes = [[] for _ in range(M)]
     Z = 0.0
     for i in sorted(range(n), key=lambda q: (reach[q].any(), r[q], -w[q])):
         best = None
@@ -197,7 +201,7 @@ def greedy_feasible(D):
             for g in range(D["guns"][f]):
                 s = max(r[i] + tEF[i, f], gun_free[f][g])
                 if s + tF[i] <= T_ + 1e-9 and (best is None or s + tF[i] < best[0]):
-                    best = (s + tF[i], ("gun", f, g))
+                    best = (s + tF[i], ("gun", f, g), s)
         for m, v in enumerate(van):
             node = i + 1
             s = max(r[i], v["free"] + tN[v["pos"], node])
@@ -205,25 +209,30 @@ def greedy_feasible(D):
             if (v["cnt"] < P["Q"] and need <= v["batt"] + 1e-9
                     and s + tM[i] + tN[node, 0] <= T_ + 1e-9
                     and (best is None or s + tM[i] < best[0])):
-                best = (s + tM[i], ("van", m))
+                best = (s + tM[i], ("van", m), s)
         if best is None:
-            return False, None
-        C[i], ch = best
+            return False, None, None
+        C[i], ch, S[i] = best
         if ch[0] == "gun":
             gun_free[ch[1]][ch[2]] = C[i]
+            res[i] = f"FCS{ch[1] + 1}-gun{ch[2] + 1}"
             Z += P["c_EV"] * dEF[i, ch[1]] + P["pi_F"] * E[i]
         else:
             v, node = van[ch[1]], i + 1
             v["batt"] -= E[i] / P["eta"] + P["beta"] * dN[v["pos"], node]
             v["km"] += dN[v["pos"], node]
             v["pos"], v["free"], v["cnt"] = node, C[i], v["cnt"] + 1
+            routes[ch[1]].append(node)
+            res[i] = f"van{ch[1] + 1}"
             Z += P["pi_M"] * E[i] / P["eta"]
     for v in van:
         if v["cnt"]:
             v["km"] += dN[v["pos"], 0]
             Z += P["c_M"] * v["km"] + P["c_F"]
     Z += P["c_W"] * float(np.sum(w * (C - r)))
-    return True, Z
+    plan = {"resource": res, "S": S.tolist(), "C": C.tolist(),
+            "van_routes": [[0, *rt, 0] for rt in routes if rt]}
+    return True, Z, plan
 
 
 def impossible_evs(D):
@@ -261,7 +270,7 @@ def main(out, sources):
                "vans": inst["n_vans"]}
         for k, n in enumerate(CHECK[inst["N"]]):
             D = read_ev_solomon(path, n)                 # check what a solver will read
-            ok, Z = greedy_feasible(D)
+            ok, Z, _ = greedy_feasible(D)
             hopeless = impossible_evs(D)
             row[f"check{k + 1}_n"] = n
             row[f"check{k + 1}_van_only"] = int((D["d_ev_fcs"] > D["R"][:, None]).all(1).sum())
