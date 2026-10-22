@@ -1,0 +1,12 @@
+# Private Gurobi licence (secret key) - never commit
+server_license/
+*.lic
+
+# Over GitHub's 100 MB file limit; same data is in dataset/
+ev_charging_dataset_200_to_1000.zip
+
+# Python / OS clutter
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db

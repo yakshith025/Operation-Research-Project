@@ -1,0 +1,89 @@
+{
+ "summary": {
+  "instance": "RC101_n10",
+  "EVs": 10,
+  "stations": 2,
+  "guns": 4,
+  "vans": 1,
+  "graph_nodes": 13,
+  "model": "full",
+  "binaries": 181,
+  "continuous": 10,
+  "constraints": 404,
+  "build_s": 0.02,
+  "status": "optimal",
+  "Z_Rs": 8790.97,
+  "best_bound_Rs": 8790.97,
+  "gap_%": 0.0,
+  "gurobi_obj_Rs": 8790.97,
+  "runtime_s": 9.53,
+  "nodes_explored": 63385,
+  "greedy_Z_Rs": 9061.0,
+  "improvement_vs_greedy_%": 2.98,
+  "valid": "yes"
+ },
+ "costs": {
+  "instance": "RC101_n10",
+  "Z1_EV_drive": 79.49,
+  "Z2_van_drive": 285.33,
+  "Z3_dispatch": 1500.0,
+  "Z4_energy": 2146.07,
+  "Z5_inconvenience": 4780.08,
+  "operating_Z1_to_Z4": 4010.89,
+  "total_Z": 8790.97,
+  "EVs_at_FCS": 8,
+  "EVs_by_van": 2,
+  "vans_used": 1,
+  "mean_time_to_charged_min": 81.8,
+  "max_time_to_charged_min": 129.4,
+  "van_km": 19.02
+ },
+ "resource": [
+  "FCS2-gun2",
+  "van1",
+  "FCS2-gun1",
+  "FCS1-gun1",
+  "FCS2-gun1",
+  "FCS2-gun1",
+  "van1",
+  "FCS2-gun2",
+  "FCS1-gun1",
+  "FCS1-gun2"
+ ],
+ "S": [
+  90.6866,
+  25.0,
+  141.625,
+  106.0581,
+  23.6288,
+  82.6269,
+  84.87819999999999,
+  48.386,
+  47.06,
+  61.06
+ ],
+ "C": [
+  149.6847,
+  80.5102,
+  183.9256,
+  198.45139999999998,
+  82.6269,
+  141.625,
+  128.1435,
+  90.6866,
+  106.0581,
+  136.7557
+ ],
+ "van_routes": [
+  [
+   0,
+   2,
+   7,
+   0
+  ]
+ ],
+ "route_van": [
+  1
+ ],
+ "Z_Rs": 8790.970513533333
+}
