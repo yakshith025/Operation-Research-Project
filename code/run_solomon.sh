@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # MILP (main_formulation, eqs (1)-(20)) on the 56 EV-Solomon files (100-EV files from Solomon),
 # each solved for its first n EVs, n = 5, 10, 15, ..., 100  ->  56 x 20 = 1120 instances.
-# Results: ../results_Solomon/<family>/  (one sub-folder per family: summary.csv, costs.csv,
+# Results: ../results_Solomon/<family>/  (one sub-folder per family: results.csv,
 # report.md, results.xlsx and one folder per instance) and a log per family.
 #
 # Usage (run from code/):  bash run_solomon.sh [TIME_LIMIT_S] [THREADS_PER_JOB] [PARALLEL_JOBS]
@@ -32,4 +32,21 @@ else
   done
   wait
 fi
+
+# one table for the whole run: every family's results.csv stacked into $OUT/results.csv
+python - "$OUT" <<'EOF'
+import csv, glob, os, sys
+out = sys.argv[1]
+rows = []
+for f in sorted(glob.glob(os.path.join(out, "*", "results.csv"))):
+    rows += list(csv.DictReader(open(f)))
+keys = []
+for r in rows:
+    keys += [k for k in r if k not in keys]
+with open(os.path.join(out, "results.csv"), "w", newline="") as fh:
+    wr = csv.DictWriter(fh, fieldnames=keys, restval="")
+    wr.writeheader()
+    wr.writerows(rows)
+print(f"{len(rows)} instances in {os.path.join(out, 'results.csv')}")
+EOF
 echo "finished: results in $OUT"

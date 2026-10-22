@@ -32,7 +32,7 @@ On a server, run it in the background so it survives logout, for example:
 nohup python solve_milp.py --time-limit 600 --threads 16 > run.log 2>&1 &
 ```
 
-Instances are solved from small to large. `summary.csv` and `costs.csv` are rewritten after every instance, so
+Instances are solved from small to large. `results.csv` is rewritten after every instance, so
 partial results are kept; `report.md` and `results.xlsx` are written at the end (or re-create them any time with
 `--reuse`). If one instance fails (e.g. out of memory), it is recorded as `error` in the summary and the run continues.
 
@@ -68,8 +68,7 @@ or `infeasible`). The greedy plan is used as a warm start when it exists (`greed
 
 | File | Content |
 |---|---|
-| `summary.csv` | one row per instance: family, EVs, T, stations, guns, vans, graph nodes, model size, status, Z, best bound, gap, runtime, nodes explored, greedy Z, improvement over greedy, validity |
-| `costs.csv` | Z1 … Z5, operating cost (Z1–Z4), EVs at FCS / by van, vans used, mean and max time until charged, van km |
+| `results.csv` | **all instance-level results in one file**, one row per instance: family, EVs, T, stations, guns, vans, graph nodes, model size, status, Z, best bound, gap, runtime, nodes explored, greedy Z, improvement over greedy, validity, then Z1 … Z5, operating cost (Z1–Z4), EVs at FCS / by van, vans used, mean and max time until charged, van km. Infeasible instances have a row with their status and blank cost columns |
 | `<instance>/evs.csv` | per EV: resource (gun or van), start, end, time until charged, km driven, inconvenience cost |
 | `<instance>/vans.csv` | per van: route, stops, km, kWh delivered and drawn, battery left, return time, slack to T |
 | `<instance>/guns.csv` | per gun: EVs in order, busy minutes, utilisation |

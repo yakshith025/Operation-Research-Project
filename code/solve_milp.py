@@ -18,11 +18,13 @@ in the best case; listed in dataset_ev_solomon/summary.csv) are reported as
 "infeasible (proven: EVs ...)" without solving; --solve-infeasible runs Gurobi on them too.
 
 Every instance is solved with the complete main_formulation, eqs (1)-(20). Every solution is
-checked against all constraints. Instances run from small to large; summary.csv / costs.csv
-are rewritten after every instance.
+checked against all constraints. Instances run from small to large; results.csv is
+rewritten after every instance.
 
 Outputs (in --out, default ../results_ev_solomon):
-  summary.csv, costs.csv                        one row per instance
+  results.csv                                   one row per instance: solver status, Z, gap,
+                                                runtime, model size, cost breakdown Z1-Z5,
+                                                EVs at FCS / by van, vans used, waiting times
   <instance>/evs.csv, vans.csv, guns.csv        detailed tables per instance
   <instance>/gurobi.log, solution.json
   results.xlsx                                  all tables in one workbook
@@ -300,6 +302,25 @@ def tables(J, plan, Zparts):
     return ev_rows, van_rows, gun_rows
 
 
+SUMMARY_COLUMNS = ["instance", "family", "EVs", "T_min", "stations", "guns", "vans", "graph_nodes",
+                   "binaries", "continuous", "constraints", "build_s", "status", "Z_Rs",
+                   "best_bound_Rs", "gap_%", "gurobi_obj_Rs", "runtime_s", "nodes_explored",
+                   "greedy_Z_Rs", "improvement_vs_greedy_%", "valid"]
+COST_COLUMNS = ["Z1_EV_drive", "Z2_van_drive", "Z3_dispatch", "Z4_energy", "Z5_inconvenience",
+                "operating_Z1_to_Z4", "total_Z", "EVs_at_FCS", "EVs_by_van", "vans_used",
+                "mean_time_to_charged_min", "max_time_to_charged_min", "van_km"]
+GPU_COLUMNS = ["gpu_root_LP_bound", "gpu_LP_time_s", "gpu_used"]
+RESULT_COLUMNS = SUMMARY_COLUMNS + COST_COLUMNS + GPU_COLUMNS
+
+
+def tidy(rows):
+    """Give every results row the same columns in RESULT_COLUMNS order (blank where a row has
+    no value, e.g. no cost columns for an infeasible instance); columns no row has are left out."""
+    seen = all_keys(rows)
+    keys = [k for k in RESULT_COLUMNS if k in seen] + [k for k in seen if k not in RESULT_COLUMNS]
+    return [{k: r_.get(k, "") for k in keys} for r_ in rows]
+
+
 def all_keys(rows):
     """Union of the keys of all rows, in first-seen order (error rows have fewer keys)."""
     keys = []
@@ -512,13 +533,9 @@ def finish(J, raw_plan, row, outdir, args):
            "improvement_vs_greedy_%": (round(100 * (greedy - Zchk) / greedy, 2)
                                        if greedy != "" else ""),
            "valid": "yes" if not err else "NO: " + "; ".join(err[:3])}
-    order = ["instance", "family", "EVs", "T_min", "stations", "guns", "vans", "graph_nodes",
-             "binaries", "continuous",
-             "constraints", "build_s", "status", "Z_Rs", "best_bound_Rs", "gap_%",
-             "gurobi_obj_Rs", "runtime_s", "nodes_explored", "greedy_Z_Rs",
-             "improvement_vs_greedy_%", "valid"]
+    order = list(SUMMARY_COLUMNS)
     if args.gpu or row.get("gpu_used"):
-        order += ["gpu_root_LP_bound", "gpu_LP_time_s", "gpu_used"]
+        order += GPU_COLUMNS
     row = {k: row.get(k, "") for k in order}
     status = row["status"]
     cost = {"instance": name, "Z1_EV_drive": round(parts["Z1"], 2),
@@ -610,7 +627,7 @@ def main():
     env = gp.Env(empty=True)
     env.setParam("OutputFlag", 0)
     env.start()
-    summary, costs, sheets = [], [], []
+    results, sheets = [], []
     for path, n in tasks:
         name = f"{os.path.splitext(os.path.basename(path))[0]}_n{n}"
         done = os.path.exists(os.path.join(args.out, name, "solution.json"))
@@ -628,33 +645,31 @@ def main():
             row, detail = {"instance": name, "EVs": n, "status": f"error: {e}"}, None
             print(f"{name}: ERROR {e}", flush=True)
         print(f"   ({time.time() - t0:.0f} s wall clock)", flush=True)
-        summary.append(row)
         if detail:
             cost, ev_rows, van_rows, gun_rows = detail
-            costs.append(cost)
+            row = {**row, **{k: v for k, v in cost.items() if k != "instance"}}
             sheets += [(f"{name}_EVs", ev_rows), (f"{name}_vans", van_rows),
                        (f"{name}_guns", gun_rows)]
-        # write the overall tables after every instance, so a long run keeps partial results
-        write_csv(os.path.join(args.out, "summary.csv"), summary)
-        write_csv(os.path.join(args.out, "costs.csv"), costs)
+        results.append(row)
+        # write the overall table after every instance, so a long run keeps partial results
+        write_csv(os.path.join(args.out, "results.csv"), tidy(results))
 
+    results = tidy(results)
     show = ["instance", "EVs", "vans", "binaries", "status", "Z_Rs", "best_bound_Rs",
             "gap_%", "runtime_s", "greedy_Z_Rs", "improvement_vs_greedy_%", "valid"]
     if args.gpu:
         show += ["gpu_root_LP_bound", "gpu_used"]
-    print_table("SUMMARY", summary, show)
-    print_table("COST BREAKDOWN (Rs)", costs)
-    write_csv(os.path.join(args.out, "summary.csv"), summary)
-    write_csv(os.path.join(args.out, "costs.csv"), costs)
+    print_table("SUMMARY", results, show)
+    print_table("COST BREAKDOWN (Rs)", [r_ for r_ in results if r_.get("total_Z", "") != ""],
+                ["instance", *COST_COLUMNS])
+    write_csv(os.path.join(args.out, "results.csv"), results)
     with open(os.path.join(args.out, "report.md"), "w") as fh:
-        fh.write("# MILP results (main_formulation, Gurobi)\n\n## Summary\n\n" + md_table(summary)
-                 + "\n## Cost breakdown (Rs)\n\n" + md_table(costs))
+        fh.write("# MILP results (main_formulation, Gurobi)\n\n## Results\n\n" + md_table(results))
         for name, rows in sheets:
             fh.write(f"\n## {name}\n\n" + md_table(rows))
-    ok = write_xlsx(os.path.join(args.out, "results.xlsx"),
-                    [("summary", summary), ("costs", costs), *sheets])
+    ok = write_xlsx(os.path.join(args.out, "results.xlsx"), [("results", results), *sheets])
     print(f"\nResults written to {os.path.abspath(args.out)}"
-          f" (summary.csv, costs.csv, report.md{', results.xlsx' if ok else ''}, per-instance folders)")
+          f" (results.csv, report.md{', results.xlsx' if ok else ''}, per-instance folders)")
 
 
 if __name__ == "__main__":
