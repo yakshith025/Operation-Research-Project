@@ -70,11 +70,11 @@ Minimize the total operating cost and penalty for customer inconvenience.
 \textbf{Notation} & \textbf{Description} \\
 \midrule
 $I=\{1,\dots,n\}$ & Set of EV charging requests. \\[2pt]
-$F$ & Set of fixed charging stations (FCS). \\[2pt]
-$G_f$ & Set of guns (charging points) at FCS $f$, with $|G_f|=2$. Define $G=\bigcup_{f\in F}G_f$, and let $f(g)$ denote the station associated with gun $g$. \\[2pt]
+$F$,\ \ $|F|=12$ (or $24$) & Set of fixed charging stations (FCS). Dataset: 12 stations in the 100-EV files, 24 in the 200-EV files. \\[2pt]
+$G_f$,\ \ $|G_f|=2$ & Set of guns (charging points) at FCS $f$, with $|G_f|=2$. Define $G=\bigcup_{f\in F}G_f$, and let $f(g)$ denote the station associated with gun $g$. Dataset: $|G|=24$ (or $48$). \\[2pt]
 $F_i=\{f\in F: d_{if}\le R_i\}$ & Set of FCS that EV $i$ can reach given its remaining range. \\[2pt]
 $G_i=\bigcup_{f\in F_i}G_f$ & Set of guns that EV $i$ can use. \\[2pt]
-$M$ & Set of mobile charging vans. \\[2pt]
+$M$,\ \ $|M|=5$ (or $12$) & Set of mobile charging vans. Dataset: 5 vans in the 100-EV files, 12 in the 200-EV files, for every instance size $n$. \\[2pt]
 $0,\ n+1$ & Start and end depot nodes, respectively, representing the same physical location. (assumed single depot) \\[2pt]
 $N=\{0\}\cup I\cup\{n+1\}$ & Set of routing nodes. \\[2pt]
 $A$ & Set of allowed van-routing arcs, defined as \newline
@@ -88,34 +88,37 @@ $G^{+}=\{g\in G: g\in G_i \text{ for some } i\in I\}$ & Set of guns that at leas
 
 \newpage
 \subsection*{Parameters}
+{\small
 \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{4.6cm}X@{}}
 \toprule
 \textbf{Notation} & \textbf{Description} \\
 \midrule
-$E_i$ & Energy demand of EV $i$ (kWh). \\[2pt]
-$r_i$ & Request (release) time (minutes). [$r_i=0$ for static demand] \\[2pt]
-$R_i$ & Remaining driving range of EV $i$ (km). \\[2pt]
-$w_i=1+\kappa\Big(1-\dfrac{R_i}{R_{\max}}\Big)$ & Priority weight of EV $i$ ($w_i\ge1$): EVs with less remaining range are more urgent and weigh more. $R_{\max}=\max_{i\in I}R_i$; $\kappa\ge0$ sets how strongly urgency counts ($\kappa=0$: all EVs weigh 1; $\kappa=2$: an EV with almost no range weighs about 3). \\[2pt]
-$P^{\mathrm F},\ P^{\mathrm M}$ & Charging power of an FCS gun (22\,kW) and an MCS (kW). \\[2pt]
-$\tau^{\mathrm F}_i=\dfrac{60\,E_i}{P^{\mathrm F}},\ \tau^{\mathrm M}_i=\dfrac{60\,E_i}{P^{\mathrm M}}$ & Charging duration of EV $i$ at an FCS and by an MCS, respectively (minutes). \\[2pt]
+$E_i\in[10,40]$ & Energy demand of EV $i$ (kWh). Dataset: Solomon DEMAND (1--50) mapped linearly, $E_i=10+30\,(\text{DEMAND}_i-1)/49$. \\[2pt]
+$r_i$ & Request (release) time (minutes). [$r_i=0$ for static demand] Dataset: Solomon READY TIME, unchanged. \\[2pt]
+$R_i$ & Remaining driving range of EV $i$ (km). Dataset: uniform on $[5,40]$; for 15\,\% of the EVs (``stranded'') $R_i$ is 20--80\,\% of the distance to their nearest FCS, so $F_i=\emptyset$ and only a van can serve them. \\[2pt]
+$w_i=1+\kappa\Big(1-\dfrac{R_i}{R_{\max}}\Big)$,\newline $\kappa=2$ & Priority weight of EV $i$ ($w_i\ge1$): EVs with less remaining range are more urgent and weigh more. $R_{\max}=\max_{i\in I}R_i$; $\kappa\ge0$ sets how strongly urgency counts ($\kappa=0$: all EVs weigh 1; $\kappa=2$: an EV with almost no range weighs about 3). Dataset: $\kappa=2$, so $w_i\in[1,3]$. \\[2pt]
+$P^{\mathrm F}=22,\ P^{\mathrm M}=30$ & Charging power of an FCS gun and an MCS (kW). \\[2pt]
+$\tau^{\mathrm F}_i=\dfrac{60\,E_i}{P^{\mathrm F}},\ \tau^{\mathrm M}_i=\dfrac{60\,E_i}{P^{\mathrm M}}$ & Charging duration of EV $i$ at an FCS and by an MCS, respectively (minutes). Dataset: $\tau^{\mathrm F}_i=60E_i/22\in[27,109]$, $\tau^{\mathrm M}_i=60E_i/30\in[20,80]$. \\[2pt]
 $d_{if},\ t_{if}=\dfrac{60\,d_{if}}{v}$ & Shortest-path distance (km) and travel time (minutes) from EV $i$ to FCS $f$. \\[2pt]
-$d_{ij},\ t_{ij}=\dfrac{60\,d_{ij}}{v}$ & Shortest-path distance (km) and travel time (minutes) between routing nodes. \\[2pt]
-$v$ & Travel speed (km/h), assumed identical for all vehicles. \\[2pt]
-$B_m$ & Usable battery capacity of MCS $m$ (kWh). \\[2pt]
-$Q_m$ & Maximum number of EVs MCS $m$ may serve during the planning period. \\[2pt]
-$\beta$ & Van driving energy consumption (kWh/km). \\[2pt]
-$\eta\in(0,1]$ & MCS charging efficiency (battery to EV). \\[2pt]
-$T$ & Length of the planning period (minutes). \\[2pt]
-$c^{\mathrm{EV}},\ c^{\mathrm M}$ & Cost per kilometre of EV driving and van driving, respectively (currency units/km). \\[2pt]
-$c^{\mathrm F}_m$ & Fixed dispatch cost of van $m$ (driver, depreciation). \\[2pt]
-$\pi^{\mathrm F},\ \pi^{\mathrm M}$ & Cost per kWh of grid energy at an FCS and energy stored in a van battery, respectively. \\[2pt]
-$c^{\mathrm W}$ & Inconvenience cost per minute of time lost by the driver (currency units/minute; an hourly value of time divided by 60). \\[2pt]
+$d_{ij},\ t_{ij}=\dfrac{60\,d_{ij}}{v}$ & Shortest-path distance (km) and travel time (minutes) between routing nodes. Dataset: $d=1.3\times0.2\times$ (straight-line distance in Solomon grid units), i.e.\ 1 grid unit $=0.2$\,km and a road detour factor of 1.3. \\[2pt]
+$v=15.6$ & Travel speed (km/h), assumed identical for all vehicles. Dataset: $v=60\times0.2\times1.3=15.6$\,km/h, so that $t$ in minutes equals the straight-line grid distance (Solomon's rule). \\[2pt]
+$B_m=150$ & Usable battery capacity of MCS $m$ (kWh). \\[2pt]
+$Q_m=6$ & Maximum number of EVs MCS $m$ may serve during the planning period. \\[2pt]
+$\beta=0.25$ & Van driving energy consumption (kWh/km). \\[2pt]
+$\eta=0.9$ & MCS charging efficiency (battery to EV), $\eta\in(0,1]$. \\[2pt]
+$T$ & Length of the planning period (minutes). Dataset: Solomon's depot due date, unchanged. 100-EV files: C1 1236, C2 3390, R1 230, R2 1000, RC1 240, RC2 960. 200-EV files: C1 1351, C2 3598, R1 634, R2 2535, RC1 634, RC2 2535. \\[2pt]
+$c^{\mathrm{EV}}=4,\ c^{\mathrm M}=15$ & Cost per kilometre of EV driving and van driving, respectively (Rs/km). \\[2pt]
+$c^{\mathrm F}_m=1500$ & Fixed dispatch cost of van $m$ (driver, depreciation) (Rs). \\[2pt]
+$\pi^{\mathrm F}=8.7,\ \pi^{\mathrm M}=10.7$ & Cost per kWh of grid energy at an FCS and energy stored in a van battery, respectively (Rs/kWh). \\[2pt]
+$c^{\mathrm W}=200/60\approx3.33$ & Inconvenience cost per minute of time lost by the driver (Rs/minute; an hourly value of time of Rs\,200 divided by 60). \\[2pt]
 $M^{\mathrm M}_{ij}=T+\tau^{\mathrm M}_i+t_{ij}$ & Big-$M$ constant for van sequencing constraints (minutes). \\[2pt]
 $M^{\mathrm F}_i=T+\tau^{\mathrm F}_i$ & Big-$M$ constant for gun sequencing constraints (minutes). \\
 \bottomrule
-\end{tabularx}
+\end{tabularx}}
 
-\textbf{Units.} Energy is in kWh, power in kW, distance in km and speed in km/h; every time quantity ($r_i$, $T$, $S_i$, $C_i$, $\tau$, $t$, big-$M$) is in minutes. Since kWh/kW and km/(km/h) give hours, charging and travel times are multiplied by 60. With $c^{\mathrm W}$ per minute, the term $c^{\mathrm W}w_i(C_i-r_i)$ is in currency units, like all other terms of $Z$.
+\textbf{Units.} Energy is in kWh, power in kW, distance in km and speed in km/h; every time quantity ($r_i$, $T$, $S_i$, $C_i$, $\tau$, $t$, big-$M$) is in minutes. Since kWh/kW and km/(km/h) give hours, charging and travel times are multiplied by 60. With $c^{\mathrm W}$ per minute, the term $c^{\mathrm W}w_i(C_i-r_i)$ is in currency units, like all other terms of $Z$. In the dataset the currency is Indian rupees (Rs).
+
+\textbf{Values.} An ``$=$'' in the tables gives the value used in every file of the EV-Solomon dataset (\texttt{dataset\_ev\_solomon}); a value in parentheses after ``or'' applies to the 200-EV (Gehring--Homberger) files. $T$, $r_i$, $E_i$ and the locations come from the Solomon / Gehring--Homberger source files; all other values are our assumptions.
 
 \newpage
 \subsection*{Decision Variables}
