@@ -189,7 +189,8 @@ def main():
     ap.add_argument("--samples", type=int, help="rollouts per instance (shared baseline)")
     ap.add_argument("--n-min", type=int)
     ap.add_argument("--n-max", type=int)
-    ap.add_argument("--lr", type=float)
+    ap.add_argument("--lr", type=float, help="learning rate (imitation, or REINFORCE without warm-up)")
+    ap.add_argument("--lr-reinforce", type=float, help="learning rate of REINFORCE after the warm-up")
     ap.add_argument("--file-sizes", nargs="*", type=int, help="train on templates of these file sizes (100, 200)")
     ap.add_argument("--threads", type=int, default=0, help="torch CPU threads (0 = all cores)")
     ap.add_argument("--device", default="auto", help="auto / cpu / cuda")
@@ -200,7 +201,7 @@ def main():
     RP = load_rl1_params(args.rl1_params)
     TR = RP["training"]
     for k in ("hours", "imitation_batches", "max_epochs", "iters_per_epoch", "batch_instances", "samples",
-              "n_min", "n_max", "lr"):
+              "n_min", "n_max", "lr", "lr_reinforce"):
         if getattr(args, k) is not None:
             TR[k] = getattr(args, k)
     if args.file_sizes:
@@ -257,7 +258,9 @@ def main():
     fails_in_row = 0
     try:
         while state["train_s"] < budget and state["epoch"] < TR["max_epochs"]:
-            lr = TR["lr"] * TR["lr_decay_per_epoch"] ** state["epoch"]
+            warm = int(TR["imitation_batches"]) > 0
+            base_lr = TR["lr_reinforce"] if warm and state["iters"] >= int(TR["imitation_batches"]) else TR["lr"]
+            lr = base_lr * TR["lr_decay_per_epoch"] ** state["epoch"]
             for grp in optim.param_groups:
                 grp["lr"] = lr
             t0 = time.time()

@@ -24,7 +24,7 @@
   },
 
   "training": {
-    "_about": "First imitation_batches warm-up batches teach the policy the greedy cost rule (teacher forcing; 0 = pure RL from random weights). Then REINFORCE with a shared baseline (POMO): every instance is rolled out `samples` times, the baseline is the mean cost of its own rollouts. Training cost = Z + drop_penalty x (instance cost scale) per EV that could not be placed. One epoch = iters_per_epoch batches, then validation on fixed generated instances against the greedy cost rule; model_best.pt = best validation.",
+    "_about": "First imitation_batches warm-up batches teach the policy the greedy cost rule (teacher forcing; 0 = pure RL from random weights). Then REINFORCE with a shared baseline (POMO): every instance is rolled out `samples` times, the baseline is the mean cost of its own rollouts. Training cost = Z + drop_penalty x (instance cost scale) per EV that could not be placed. lr = learning rate of the imitation warm-up (and of REINFORCE when imitation_batches = 0); lr_reinforce = learning rate of REINFORCE after a warm-up (smaller, so the noisy policy gradient does not undo the warm-up). One epoch = iters_per_epoch batches, then validation on fixed generated instances against the greedy cost rule; model_best.pt = best validation.",
     "hours": 8.0,
     "imitation_batches": 500,
     "max_epochs": 100000,
@@ -34,6 +34,7 @@
     "n_min": 10,
     "n_max": 100,
     "lr": 0.0001,
+    "lr_reinforce": 0.00002,
     "lr_decay_per_epoch": 0.998,
     "max_grad_norm": 1.0,
     "drop_penalty": 10.0,

@@ -61,7 +61,7 @@ The code imports the project's own modules from `../../code` (`results_io`, `che
   - Cost of a rollout: $\text{cost}=Z+\text{drop\_penalty}\cdot\text{scale}\cdot(\text{dropped EVs})$.
   - Shared baseline (POMO): $\text{adv}=(\text{cost}-\overline{\text{cost}})/\overline{\text{cost}}$, where the mean is over the instance's own rollouts.
   - REINFORCE loss: $\text{mean}(\text{adv}\cdot\log\pi)$.
-  - Optimiser: Adam, gradient clipping, slow learning-rate decay.
+  - Optimiser: Adam, gradient clipping, slow learning-rate decay. After the warm-up REINFORCE uses a 5× smaller learning rate (`lr_reinforce`). With the warm-up's rate, the noisy policy gradient first undid part of the warm-up.
 - **Validation:** after every epoch, the policy's greedy rollout is compared with the greedy cost rule of `solve_milp_f3` on fixed random instances (n = 20, 50, 100). The rule runs inside the same simulator, and `test_rl1.py` checks that it gives the identical plan. `model_best.pt` keeps the best epoch.
 - **Training data** (`rl1_generator.py`): for each Solomon class, the CSVs give T, depot, city area, fleet, stations and costs. The customers are new:
   - positions: uniform (R), clustered (C) or mixed (RC);
@@ -165,4 +165,15 @@ All settings are in `code/rl1_params.json`, each with an `_about` line, and can 
   - The greedy cost rule run inside the simulator gives the same plan and Z as `greedy_f3` on all 190 instances where greedy succeeds, and also fails on the other 38.
   - The simulator's Z equals `check_plan_f3`'s Z.
   - Plans of the untrained network with no unplaced EV pass the checker.
-- A short training and solving test ran end to end on the laptop's CPU. Those results are not in `results/`: training and solving for the report are to be run on the server.
+- Laptop training tests (4 CPU threads, about 30 min in all; nothing from them is in `model/` or `results/`):
+  - From random weights, the untrained policy costs about 1.4–1.8× the greedy rule on the validation instances.
+  - Pure REINFORCE reached 1.18 after 77 batches.
+  - The imitation warm-up reached about 1.002 after 400 batches.
+  - REINFORCE at `lr_reinforce` first wobbled up to 1.01, then came back to 1.0006, and below 1 at n = 100 (0.994–0.996) after about 110 batches.
+- That 30-minute model solved 8 EV-Solomon instances (C101, C205, R201, RC105 at n = 50 and 100) at about 4–19 s each with 520 rollouts:
+  - valid plans wherever the MILP has one;
+  - on average 2.9 % above the MILP plan and 0.4 % above greedy, cheaper than greedy on R201 n = 100;
+  - invalid plans on the two RC105 instances, which the MILP proves infeasible.
+
+  The server run trains far longer; `train_log.csv` shows whether REINFORCE keeps improving.
+- Time on the server: an RL batch at n = 100 took about 13 s on the laptop's 4 threads (about 6 s averaged over n = 10..100). With 32 threads, 8 h gives a few thousand batches. Solving 560 instances at 520 rollouts each takes roughly 1 h on the laptop, less on the server.
