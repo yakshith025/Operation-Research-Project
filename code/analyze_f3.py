@@ -24,7 +24,6 @@ Writes <results_dir>/analysis/:
   fig_cost_by_income.pdf/.png        perceived money and time cost by income
 """
 import csv
-import glob
 import json
 import math
 import os
@@ -34,6 +33,7 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import make_ev_solomon as mes  # noqa: E402
 import make_income as inc   # noqa: E402
 import results_io as rio    # noqa: E402
 BANDS = [(0.0, 0.2), (0.2, 0.4), (0.4, 0.6), (0.6, 0.8), (0.8, 1.0)]
@@ -90,18 +90,18 @@ def load(results_dir, run_id=None):
     for e in rio.iter_plan(results_dir, keys, types={"ev"}):
         plan.setdefault(rio.key_of(e), []).append(e)
     meta = rio.read_meta(results_dir).get(run_id, {})
-    instances = meta.get("instances", "")
-    instances = instances if instances and os.path.isdir(instances) else inc.DEFAULT_INSTANCES
+    instances = meta.get("instances", "")              # dataset folder of the run (CSV or text form)
+    data = mes.EvSolomonData(instances) if instances and os.path.isdir(instances) else None
+    if data is None or not data.names():
+        data = mes.EvSolomonData(inc.DEFAULT_CSV)
     params = meta.get("params", "")
     P3 = inc.load_params(params if params and os.path.isfile(params) else inc.DEFAULT_PARAMS)
-    files = {os.path.splitext(os.path.basename(p))[0]: p
-             for p in glob.glob(os.path.join(instances, "*", "EV-*.txt"))}
     evs, used = [], []
     for r in used_all:
         k = rio.key_of(r)
-        if k not in plan or r["instance"] not in files:
+        if k not in plan or r["instance"] not in data:
             continue
-        J = load_instance(files[r["instance"]], int(k[4]), P3, instances, greedy=False)
+        J = load_instance(r["instance"], int(k[4]), P3, data, greedy=False)
         attrs = {a["id"]: a for a in rio.ev_attributes(J)}
         used.append(r)
         fam = r.get("class", "")

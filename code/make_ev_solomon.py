@@ -16,6 +16,10 @@ Within a Solomon class (e.g. R101-R112) customer positions and demands are ident
 only the time windows differ. EV-Solomon keeps that structure: positions, energy, stations,
 ranges and priorities are the same for every instance of a class (seeded by class); only the
 request times (from Solomon READY TIME) differ.
+
+Reading the dataset (solvers): EvSolomonData(folder) lists the files and reads one (first n EVs)
+from the CSV form (dataset_ev_solomon/csv, export_csv.py) or from the text files; read_ev_solomon
+reads one text file. Both give the same dict (model_inputs).
 """
 import csv
 import glob
@@ -160,22 +164,211 @@ def read_ev_solomon(path, n=None):
             out["stations"].append(vals)
         else:
             out["evs"].append(vals)
-    dep = np.array(out["evs"][0][1:3])
-    n = n or len(out["evs"]) - 1                  # default: all EVs in the file
-    ev = np.array(out["evs"][1:n + 1])
-    st = np.array(out["stations"])
+    return model_inputs(out["name"], P, out["stations"], out["evs"], n)
+
+
+def model_inputs(name, P, stations, evs, n=None):
+    """Model inputs of one file (both readers end here, so text and CSV give the same dict).
+    P = scalar settings (keys of the text sections), stations = rows [no, x, y, guns, power],
+    evs = rows [no, x, y, energy, request, range] with the depot as row 0; keeps the first n EVs."""
+    n_file = len(evs) - 1
+    n = n or n_file                               # default: all EVs in the file
+    if not 1 <= n <= n_file:
+        raise ValueError(f"{name} has {n_file} EVs, asked for the first {n}")
+    dep = np.array(evs[0][1:3], dtype=float)
+    ev = np.array(evs[1:n + 1], dtype=float)
+    st = np.array(stations, dtype=float)
     k = P["detour"] * P["km_per_unit"]
     xy, fxy = ev[:, 1:3], st[:, 1:3]
     d_ev_fcs = k * np.linalg.norm(xy[:, None] - fxy[None], axis=2)
     nodes = np.vstack([dep, xy])
     d_nodes = k * np.linalg.norm(nodes[:, None] - nodes[None], axis=2)
     E, r, R = ev[:, 3], ev[:, 4], ev[:, 5]
-    return {"name": f"{out['name']}_n{n}", "n": n, "n_fcs": len(st), "params": P,
+    return {"name": f"{name}_n{n}", "n": n, "n_fcs": len(st), "params": P,
             "guns": st[:, 3].astype(int), "P_F": st[:, 4],
             "E": E, "r": r, "R": R, "w": 1 + P["kappa"] * (1 - R / R.max()),
             "tauF": 60 * E / st[0, 4], "tauM": 60 * E / P["P_M"],
             "d_ev_fcs": d_ev_fcs, "t_ev_fcs": 60 * d_ev_fcs / P["speed"],
             "d_nodes": d_nodes, "t_nodes": 60 * d_nodes / P["speed"]}
+
+
+# ---------------------------------------------------------------- CSV form (export_csv.py)
+SOURCE_OF_DIR = {"100": "solomon", "200": "gehring_homberger"}   # text folder -> CSV file stem
+CSV_PARAMS = {"T_min": "T", "speed_kmph": "speed", "km_per_unit": "km_per_unit", "detour": "detour",
+              "c_EV_Rs_per_km": "c_EV", "c_M_Rs_per_km": "c_M", "c_F_Rs_per_van": "c_F",
+              "pi_F_Rs_per_kWh": "pi_F", "pi_M_Rs_per_kWh": "pi_M", "c_W_Rs_per_min": "c_W",
+              "kappa": "kappa", "n_vans": "n_vans", "van_battery_kWh": "B", "van_max_evs": "Q",
+              "van_power_kW": "P_M", "van_use_kWh_per_km": "beta", "van_efficiency": "eta"}
+#              <source>_config.csv column -> key of read_ev_solomon's params
+
+
+def csv_model_inputs(name, config, rows, n=None):
+    """The dict of read_ev_solomon from the CSV form: config = the file's row of
+    <source>_config.csv, rows = its rows of <source>_data.csv (one depot, the stations, the EVs).
+    Raises ValueError if the rows do not make a complete file."""
+    try:
+        P = {key: float(config[col]) for col, key in CSV_PARAMS.items()}
+    except (KeyError, TypeError, ValueError) as e:
+        raise ValueError(f"{name}: config row incomplete ({type(e).__name__}: {e})") from None
+    by_type = {"depot": [], "station": [], "ev": []}
+    for r in rows:
+        if r.get("type") not in by_type:
+            raise ValueError(f"{name}: unknown row type {r.get('type')!r} in the data file")
+        by_type[r["type"]].append(r)
+    if len(by_type["depot"]) != 1:
+        raise ValueError(f"{name}: {len(by_type['depot'])} depot rows in the data file (need 1)")
+    cols = {"station": ("id", "x", "y", "guns", "power_kW"),
+            "ev": ("id", "x", "y", "energy_kWh", "request_min", "range_km")}
+    table = {}
+    for kind, want in (("station", "n_stations"), ("ev", "n_evs")):
+        try:
+            vals = sorted(([float(r[c]) for c in cols[kind]] for r in by_type[kind]), key=lambda v: v[0])
+        except (KeyError, TypeError, ValueError) as e:
+            raise ValueError(f"{name}: {kind} row with a missing or non-numeric value "
+                             f"({type(e).__name__}: {e})") from None
+        if [v[0] for v in vals] != list(range(1, len(vals) + 1)):
+            raise ValueError(f"{name}: {kind} ids are not 1..{len(vals)}")
+        if str(config.get(want, "")).strip() and int(float(config[want])) != len(vals):
+            raise ValueError(f"{name}: config says {want} = {config[want]}, data file has {len(vals)}")
+        table[kind] = vals
+    dep = by_type["depot"][0]
+    depot = [0.0, float(dep["x"]), float(dep["y"]), 0.0, 0.0, 0.0]
+    return model_inputs(name, P, table["station"], [depot] + table["ev"], n)
+
+
+def family_of(name):
+    """'EV-R105' -> 'R1', 'EV-C1_2_3' -> 'C1'; '' if the name has no Solomon class."""
+    try:
+        return solomon_class(name[3:] if name.upper().startswith("EV-") else name)
+    except AttributeError:
+        return ""
+
+
+def n_evs_in_file(path):
+    """Number of EVs in an EV-Solomon text file (rows after the depot in EV REQUESTS)."""
+    lines = open(path).read().splitlines()
+    k = lines.index("EV REQUESTS")
+    return sum(1 for s in lines[k + 2:] if s.strip()) - 1
+
+
+class EvSolomonData:
+    """The EV-Solomon dataset in either of its two forms, behind one interface for the solvers:
+      CSV folder   dataset_ev_solomon/csv: <source>_config.csv + <source>_data.csv per source
+                   (solomon = 56 files of 100 EVs, gehring_homberger = 60 files of 200 EVs)
+      text folder  dataset_ev_solomon/instances: <size>/EV-*.txt
+    The form is taken from the folder: *_config.csv files in it -> CSV, else the text files. Given
+    the dataset folder itself, its csv/ (first) or instances/ subfolder is used.
+    names() lists the files (e.g. EV-C101); read(name, n) gives the dict of read_ev_solomon for the
+    first n EVs, the same for both forms. A file that cannot be read raises only in read(), so one
+    bad file never stops a run; problems found while listing the files are kept in .problems."""
+
+    def __init__(self, folder):
+        folder = os.path.abspath(folder)
+        if not self._has_files(folder):
+            for sub in ("csv", "instances"):
+                if self._has_files(os.path.join(folder, sub)):
+                    folder = os.path.join(folder, sub)
+                    break
+        self.path = folder
+        self.problems = []
+        self._info = {}              # name -> source, n_evs, family, file (+ config row for CSV)
+        self._rows = {}              # CSV: source -> {name: data rows}, read on first use
+        configs = sorted(glob.glob(os.path.join(folder, "*_config.csv")))
+        self.kind = "csv" if configs else "txt"
+        if configs:
+            self._list_csv(configs)
+        else:
+            self._list_txt()
+
+    @staticmethod
+    def _has_files(folder):
+        return bool(glob.glob(os.path.join(folder, "*_config.csv"))
+                    or glob.glob(os.path.join(folder, "*", "EV-*.txt")))
+
+    def _add(self, name, info):
+        if name in self._info:
+            self.problems.append(f"{name} is in {self._info[name]['file']} and in {info['file']}; "
+                                 f"the first one is used")
+        else:
+            self._info[name] = info
+
+    def _list_csv(self, configs):
+        for cpath in configs:
+            source = os.path.basename(cpath)[:-len("_config.csv")]
+            dpath = os.path.join(self.path, source + "_data.csv")
+            if not os.path.exists(dpath):
+                self.problems.append(f"{os.path.basename(cpath)} has no {os.path.basename(dpath)} "
+                                     f"next to it; its files are skipped")
+                continue
+            try:
+                with open(cpath, newline="") as fh:
+                    rows = list(csv.DictReader(fh))
+            except (OSError, csv.Error, UnicodeDecodeError) as e:
+                self.problems.append(f"{os.path.basename(cpath)} not read ({e}); its files are skipped")
+                continue
+            for k, row in enumerate(rows, start=2):
+                name = str(row.get("instance") or "").strip()
+                try:
+                    n_evs = int(float(row["n_evs"]))
+                except (KeyError, TypeError, ValueError):
+                    n_evs = 0
+                if not name or n_evs < 1:
+                    self.problems.append(f"{os.path.basename(cpath)} line {k}: no instance name or no "
+                                         f"valid n_evs; skipped")
+                    continue
+                self._add(name, {"source": source, "n_evs": n_evs, "file": dpath, "config": row,
+                                 "family": str(row.get("class") or "").strip() or family_of(name)})
+
+    def _list_txt(self):
+        for path in sorted(glob.glob(os.path.join(self.path, "*", "EV-*.txt"))):
+            name = os.path.splitext(os.path.basename(path))[0]
+            folder = os.path.basename(os.path.dirname(path))
+            try:
+                n_evs = n_evs_in_file(path)
+            except (OSError, ValueError, UnicodeDecodeError) as e:
+                self.problems.append(f"{path} not read ({e}); skipped")
+                continue
+            self._add(name, {"source": SOURCE_OF_DIR.get(folder, folder), "n_evs": n_evs,
+                             "file": path, "family": family_of(name)})
+
+    def _data_rows(self, source):
+        if source not in self._rows:
+            by_name = {}
+            with open(os.path.join(self.path, source + "_data.csv"), newline="") as fh:
+                for row in csv.DictReader(fh):
+                    by_name.setdefault(str(row.get("instance") or "").strip(), []).append(row)
+            self._rows[source] = by_name
+        return self._rows[source]
+
+    def __contains__(self, name):
+        return name in self._info
+
+    def names(self):
+        return list(self._info)
+
+    def n_evs(self, name):
+        return self._info[name]["n_evs"]
+
+    def source(self, name):
+        """solomon / gehring_homberger (= the CSV file stem; text: from the 100 / 200 folder)."""
+        return self._info[name]["source"]
+
+    def family(self, name):
+        return self._info[name]["family"]
+
+    def file(self, name):
+        return self._info[name]["file"]
+
+    def read(self, name, n=None):
+        if name not in self._info:
+            raise KeyError(f"{name} is not in the dataset {self.path}")
+        info = self._info[name]
+        if self.kind == "txt":
+            return read_ev_solomon(info["file"], n)
+        rows = self._data_rows(info["source"]).get(name)
+        if not rows:
+            raise ValueError(f"{name}: no rows in {os.path.basename(info['file'])}")
+        return csv_model_inputs(name, info["config"], rows, n)
 
 
 # ---------------------------------------------------------------- feasibility check

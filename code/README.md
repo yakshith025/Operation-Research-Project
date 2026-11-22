@@ -2,9 +2,9 @@
 
 | File | What it does |
 |---|---|
-| `make_ev_solomon.py` | Builds the **EV-Solomon dataset** (`../dataset_ev_solomon`) from the Solomon and Gehring & Homberger files, and contains `read_ev_solomon(file, n)`, the reader used by the solver. |
-| `export_csv.py` | Writes the same data as CSV: `../dataset_ev_solomon/csv/` (data + config file per source). |
-| `solve_milp_f3.py` | Gurobi model of **`main_formulation_3`** (income θ ∈ [0, 1] per EV), equations (1)–(23). Every instance goes to Gurobi (nothing skipped beforehand); `--workers` solves several at once; validates every solution, writes everything to `../new_results` with the income analysis. See *Formulation 3* below. |
+| `make_ev_solomon.py` | Builds the **EV-Solomon dataset** (`../dataset_ev_solomon`) from the Solomon and Gehring & Homberger files. Also the readers: `EvSolomonData(folder)` lists the files and reads one (first n EVs) from the **CSV form** (`dataset_ev_solomon/csv`, the solver's input) or from the text files; `read_ev_solomon(file, n)` reads one text file. Both give the same instance. |
+| `export_csv.py` | Writes the same data as CSV: `../dataset_ev_solomon/csv/` (data + config file per source). This is what the solver and RL read; re-run it after rebuilding the text files. |
+| `solve_milp_f3.py` | Gurobi model of **`main_formulation_3`** (income θ ∈ [0, 1] per EV), equations (1)–(23). Reads `../dataset_ev_solomon/csv` (or the text files, see *Input*). Every instance goes to Gurobi (nothing skipped beforehand); `--workers` solves several at once; validates every solution, writes everything to `../new_results` with the income analysis. See *Formulation 3* below. |
 | `make_income.py` | Income data for formulation 3: θ per EV in `../dataset_ev_solomon/income/<FILE>.csv` (Beta draw), and the sensitivities μ(θ), c^a(θ), W(θ). Called by the solver automatically. |
 | `f3_params.json` | All income constants of formulation 3 (θ distribution, μ, values of time, queue tolerance, tariffs). Placeholder values: change them here, no code change needed. |
 | `check_plan_f3.py` | Checks a plan against every constraint of `main_formulation_3` (incl. the queue limit W_i) and recomputes Z1 … Z6. |
@@ -41,9 +41,20 @@ python solve_milp_f3.py --file-size 100 --workers 8 --threads 4   # the same wit
 python solve_milp_f3.py --only EV-R101 --sizes 25 --details        # one instance, printed in full
 python solve_milp_f3.py --resume ...                               # continue after an interruption
 python solve_milp_f3.py --reuse                                    # re-score every stored plan (after a checker change)
+python solve_milp_f3.py ../dataset_ev_solomon/instances --only EV-R101 --sizes 25   # read the text files instead
 python analyze_f3.py ../new_results [RUN_ID]               # re-make the income analysis only
 cd ../report_f3 && python prepare_report_f3.py ../new_results       # rebuild the report in new_results/report
 ```
+
+**Input.** By default the solver reads the CSV form of the dataset, `../dataset_ev_solomon/csv/`:
+`solomon_config.csv` + `solomon_data.csv` (56 files × 100 EVs) and `gehring_homberger_config.csv` +
+`gehring_homberger_data.csv` (60 files × 200 EVs). A "file" (`--only`, `instance` in the results) is one
+value of the CSV column `instance`, e.g. `EV-C101`; an instance is its first n EVs. The config row gives the
+scalars (T, speed, costs, vans), the data rows the depot, stations and EVs; distances and times are derived
+exactly as from the text files (`make_ev_solomon.model_inputs`). Giving `../dataset_ev_solomon/instances`
+reads the text files instead: all 116 files at every size n give identical instances, greedy plans and
+task lists in both forms (checked 22 Nov 2026). θ comes from `../dataset_ev_solomon/income/` in both cases.
+A file with incomplete rows becomes an `error` run with the reason; the other files still run.
 
 **Every instance is solved by Gurobi.** Nothing is filtered or decided before the solver: no
 feasibility pre-check, no replacement of the solver's plan. The status in `results.csv` is
@@ -60,6 +71,7 @@ Excel) the result waits in `_parts/` and is added by the next merge or the next 
 
 | Option | Meaning |
 |---|---|
+| `DATA` (first argument) | dataset folder: `../dataset_ev_solomon/csv` (default) or `../dataset_ev_solomon/instances` (text files) |
 | `--file-size 100/200`, `--families`, `--only`, `--sizes` | which instances (default sizes 10, 20, …, file size) |
 | `--time-limit S`, `--mip-gap G`, `--mip-focus F` | Gurobi settings per instance (default 300 s, 1e-4) |
 | `--workers W` | instances solved at the same time, each in its own process (default 1) |

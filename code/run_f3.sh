@@ -11,6 +11,8 @@
 # Usage (run from code/):  bash run_f3.sh [TIME_LIMIT_S] [WORKERS] [THREADS_PER_WORKER]
 #   bash run_f3.sh                # 300 s per instance, 8 instances at a time x 4 Gurobi threads = 32 cores
 #   bash run_f3.sh 300 16 2       # 16 at a time x 2 threads = 32 cores
+# Input: ../dataset_ev_solomon/csv (solomon_* and gehring_homberger_* data + config CSVs) and
+# ../dataset_ev_solomon/income/; both must be on the server.
 # Which instances (optional environment variables):
 #   FILE_SIZE="100"               # 56 Solomon files (default); "200" = 60 Homberger files; "100 200" = both
 #   SIZES="10 20 30 40 50 60 70 80 90 100"   # first n EVs of each file (default)

@@ -11,6 +11,14 @@ Usage examples (run from code/)
   python solve_milp_f3.py --only EV-R101 --sizes 10 --details
   python solve_milp_f3.py --resume ...                              # continue an interrupted run
   python solve_milp_f3.py --reuse                                   # re-score the plans in plan.csv
+  python solve_milp_f3.py ../dataset_ev_solomon/instances ...       # read the text files instead of the CSV
+
+Input (first argument, default ../dataset_ev_solomon/csv): the CSV form of the dataset,
+<source>_config.csv + <source>_data.csv per source (solomon = 56 files of 100 EVs,
+gehring_homberger = 60 files of 200 EVs; written by export_csv.py). The text folder
+../dataset_ev_solomon/instances (<size>/EV-*.txt) can be given instead; both give exactly the same
+instances (make_ev_solomon.EvSolomonData). "File" below = one source file, i.e. one value of the
+CSV column `instance` (e.g. EV-C101).
 
 Every instance goes to Gurobi with the complete model; nothing is skipped or decided before
 the solver. Gurobi's verdict (optimal / time_limit / infeasible / ...) is what is reported.
@@ -35,7 +43,6 @@ Outputs (all in --out, default ../new_results; schema in results_io.py, shared w
 """
 import argparse
 import gc
-import glob
 import json
 import os
 import subprocess
@@ -72,21 +79,29 @@ def peak_flags(r, tauF):
     return load.tolist(), ["peak" if l_ > med else "off-peak" for l_ in load], window
 
 
-def load_instance(path, n, P3, instances_dir, greedy=True):
-    """Read an EV-Solomon file (first n EVs) plus its income file and put everything in the
+def load_instance(ref, n, P3, data, greedy=True):
+    """Read one EV-Solomon file (first n EVs) plus its income file and put everything in the
     dict layout used by build_model / validate / results_io. greedy=False skips the greedy plan
-    (enough for scoring a given plan or for the analysis)."""
-    D = mes.read_ev_solomon(path, n)
+    (enough for scoring a given plan or for the analysis).
+    data = the dataset (make_ev_solomon.EvSolomonData, CSV or text form) and ref = the file name
+    (e.g. EV-C101); or, as before, data = the folder of the text files and ref = the path of one."""
+    if isinstance(data, mes.EvSolomonData):
+        base = base_of(ref)
+        D = data.read(base, n)
+        source, family, data_dir = data.source(base), data.family(base), data.path
+    else:
+        D = mes.read_ev_solomon(ref, n)
+        base = base_of(ref)
+        folder = os.path.basename(os.path.dirname(os.path.abspath(ref)))
+        source, family, data_dir = rio.SOURCE_OF_DIR.get(folder, folder), mes.family_of(base), data
     P = D["params"]
-    base = os.path.splitext(os.path.basename(path))[0]
     n = int(D["n"])
     guns = sorted(set(int(x) for x in D["guns"]))
-    theta = inc.read_income(instances_dir, base, n, P3)
+    theta = inc.read_income(data_dir, base, n, P3)
     sens = inc.sensitivities(theta, P3)
     load, period, window = peak_flags(D["r"], D["tauF"])
-    folder = os.path.basename(os.path.dirname(os.path.abspath(path)))
-    J = {"name": f"{base}_n{n}", "file": base, "family": mes.solomon_class(base[3:]),
-         "source": rio.SOURCE_OF_DIR.get(folder, folder),
+    J = {"name": f"{base}_n{n}", "file": base, "family": family,
+         "source": source,
          "n_ev": n, "n_fcs": int(D["n_fcs"]), "n_vans": int(P["n_vans"]),
          "params": {"T_min": float(P["T"]), "guns_per_fcs": max(guns), "guns": [int(g) for g in D["guns"]],
                     "eta": P["eta"], "beta_kWh_per_km": P["beta"], "B_kWh": P["B"], "Q": int(P["Q"]),
@@ -573,7 +588,7 @@ def rescore(tasks, args, P3):
     """--reuse: score the plans stored in plan.csv again (every method) for the selected
     instances, e.g. after a change of the checker or of f3_params.json. Nothing is solved."""
     out = args.out
-    where = {(os.path.splitext(os.path.basename(p_))[0], str(n_)): p_ for p_, n_ in tasks}
+    where = {(base_of(f_), str(n_)): f_ for f_, n_ in tasks}
     targets = [r for r in rio.read_runs(out)
                if (r["instance"], rio.key_of(r)[4]) in where and r.get("valid") in ("yes", "no")]
     keys = {rio.key_of(r) for r in targets}
@@ -585,7 +600,7 @@ def rescore(tasks, args, P3):
         k = rio.key_of(r)
         try:
             if (k[3], k[4]) not in cache:
-                cache[(k[3], k[4])] = load_instance(where[(k[3], k[4])], int(k[4]), P3, args.instances,
+                cache[(k[3], k[4])] = load_instance(where[(k[3], k[4])], int(k[4]), P3, args.data,
                                                     greedy=False)
             J = cache[(k[3], k[4])]
             metrics, rows, _ = rio.evaluate(J, rio.plan_from_rows(rows_by_key.get(k, []), J["n_ev"]))
@@ -607,8 +622,10 @@ def rescore(tasks, args, P3):
 DEFAULT_OUT = os.path.join(HERE, "..", "new_results")
 
 
-def base_of(path):
-    return os.path.splitext(os.path.basename(path))[0]
+def base_of(ref):
+    """File name of an instance reference: 'EV-C101' or a text-file path '.../100/EV-C101.txt'."""
+    base = os.path.basename(ref)
+    return base[:-4] if base.lower().endswith(".txt") else base
 
 
 def milp_key(args, path, n):
@@ -637,13 +654,12 @@ def error_keys(args, path, n, J=None):
     if J is not None:
         return run_keys(J, args.run_id, "MILP", args.seed)
     base = base_of(path)
-    folder = os.path.basename(os.path.dirname(os.path.abspath(path)))
     try:
-        cls = mes.solomon_class(base[3:])
+        source, cls = args.data.source(base), args.data.family(base)
     except Exception:
-        cls = ""
+        source, cls = "", mes.family_of(base)
     return {"run_id": args.run_id, "method": "MILP", "seed": args.seed, "instance": base,
-            "source": rio.SOURCE_OF_DIR.get(folder, folder), "class": cls, "n": n}
+            "source": source, "class": cls, "n": n}
 
 
 def run_one(path, n, args, P3, env=None):
@@ -656,7 +672,7 @@ def run_one(path, n, args, P3, env=None):
     t0 = time.time()
     J, g_row, g_plan, m_plan = None, None, [], []
     try:
-        J = load_instance(path, n, P3, args.instances)
+        J = load_instance(path, n, P3, args.data)
         try:
             g_row, g_plan = greedy_run(J)
         except Exception as e:
@@ -696,16 +712,15 @@ def run_one(path, n, args, P3, env=None):
 
 
 def collect_tasks(args):
-    """(file, n) pairs: every EV-Solomon file that passes the filters, at every requested size.
-    Default sizes: 10, 20, ..., up to the number of EVs in the file."""
-    files = sorted(glob.glob(os.path.join(args.instances, "*", "EV-*.txt")))
+    """(file name, n) pairs: every EV-Solomon file of the dataset that passes the filters, at every
+    requested size. Default sizes: 10, 20, ..., up to the number of EVs in the file."""
+    files = args.data.names()
     tasks, too_big = [], []
     for f in files:
-        base = base_of(f)
-        n_file = inc.n_evs_in_file(f)
-        if args.only and base not in args.only:
+        n_file = args.data.n_evs(f)
+        if args.only and f not in args.only:
             continue
-        if args.families and mes.solomon_class(base[3:]) not in [x.upper() for x in args.families]:
+        if args.families and args.data.family(f).upper() not in [x.upper() for x in args.families]:
             continue
         if args.file_size and n_file not in args.file_size:
             continue
@@ -722,8 +737,8 @@ def collect_tasks(args):
 
 def child_cmd(path, n, args):
     """Command that solves one instance in its own process (used by --workers > 1)."""
-    cmd = [sys.executable, os.path.abspath(__file__), os.path.abspath(args.instances),
-           "--one", os.path.abspath(path), str(n), "--out", os.path.abspath(args.out),
+    cmd = [sys.executable, os.path.abspath(__file__), args.data.path,
+           "--one", base_of(path), str(n), "--out", os.path.abspath(args.out),
            "--params", os.path.abspath(args.params), "--time-limit", str(args.time_limit),
            "--mip-gap", str(args.mip_gap), "--threads", str(args.threads),
            "--mip-focus", str(args.mip_focus), "--mem-limit-gb", str(args.mem_limit_gb),
@@ -759,8 +774,9 @@ def short(row):
 # ====================================================================== main
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("instances", nargs="?", default=inc.DEFAULT_INSTANCES,
-                    help="EV-Solomon instances folder (default ../dataset_ev_solomon/instances)")
+    ap.add_argument("data_dir", nargs="?", default=inc.DEFAULT_CSV, metavar="DATA",
+                    help="dataset folder: the CSV form (default ../dataset_ev_solomon/csv) or the text "
+                         "files (../dataset_ev_solomon/instances); both give the same instances")
     ap.add_argument("--out", default=DEFAULT_OUT, help="output folder (default ../new_results)")
     ap.add_argument("--params", default=inc.DEFAULT_PARAMS, help="income parameters (f3_params.json)")
     ap.add_argument("--run-id", default=None,
@@ -803,16 +819,20 @@ def main():
     args.workers = max(1, args.workers)
     if args.threads <= 0 and args.workers > 1:
         args.threads = max(1, cores // args.workers)
+    args.data = mes.EvSolomonData(args.data_dir)    # lists the files; each one is read when solved
 
     if args.one:                                   # worker: one instance, then exit
         run_one(args.one[0], int(args.one[1]), args, P3)
         return
 
+    for msg in args.data.problems:
+        print(f"WARNING (dataset): {msg}", flush=True)
     files, tasks = collect_tasks(args)
     if not files:
-        print(f"no EV-Solomon files found in {os.path.abspath(args.instances)}")
+        print(f"no EV-Solomon files found in {args.data.path}")
         return
-    inc.ensure_income(files, args.instances, P3)
+    print(f"input: {len(files)} file(s) from {args.data.path} ({args.data.kind})", flush=True)
+    inc.ensure_income([(f, args.data.n_evs(f)) for f in files], args.data.path, P3)
     out = args.out
     P = rio.paths(out)
     os.makedirs(P["logs"], exist_ok=True)
@@ -825,7 +845,8 @@ def main():
             "method": "MILP", "argv": sys.argv, "time_limit_s": args.time_limit, "mip_gap": args.mip_gap,
             "seed": args.seed, "workers": args.workers, "threads_per_instance": args.threads,
             "cores": cores, "warm_start": not args.no_warm_start,
-            "instances": os.path.abspath(args.instances), "params": os.path.abspath(args.params),
+            "instances": args.data.path, "input_format": args.data.kind,
+            "params": os.path.abspath(args.params),
             "f3_params": P3, "started": time.strftime("%Y-%m-%d %H:%M:%S")})
         rio.update_meta(out, "greedy", {
             "method": "greedy", "rule": "cost rule, else earliest-finish rule (solve_milp_f3.greedy_f3); "

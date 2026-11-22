@@ -15,13 +15,13 @@ f3_params.json never needs new data):
     W(theta)   queue tolerance at an FCS (min), non-increasing
 
 Usage (from code/)
-    python make_income.py                  # write the income files for every EV-Solomon file
+    python make_income.py [DATA]           # write the income files for every EV-Solomon file
+                                           # (DATA = ../dataset_ev_solomon/csv by default, or instances/)
     python make_income.py --force          # rewrite them (e.g. after changing theta_distribution)
 The solver (solve_milp_f3.py) calls ensure_income() itself, so this script is optional.
 """
 import argparse
 import csv
-import glob
 import json
 import os
 import sys
@@ -33,7 +33,8 @@ sys.path.insert(0, HERE)
 import make_ev_solomon as mes  # noqa: E402
 
 DEFAULT_PARAMS = os.path.join(HERE, "f3_params.json")
-DEFAULT_INSTANCES = os.path.join(HERE, "..", "dataset_ev_solomon", "instances")
+DEFAULT_INSTANCES = os.path.join(HERE, "..", "dataset_ev_solomon", "instances")   # text form
+DEFAULT_CSV = os.path.join(HERE, "..", "dataset_ev_solomon", "csv")               # CSV form (solver default)
 
 
 # ------------------------------------------------------------------ parameters
@@ -108,6 +109,7 @@ def draw_theta(base, N, P):
 
 
 def income_dir(instances_dir):
+    """<dataset>/income, next to the data folder (instances/ or csv/: both forms share it)."""
     return os.path.join(os.path.dirname(os.path.abspath(instances_dir.rstrip("/\\"))), "income")
 
 
@@ -116,15 +118,15 @@ def income_file(instances_dir, base):
 
 
 def n_evs_in_file(path):
-    """Number of EVs in an EV-Solomon file (rows after the depot in EV REQUESTS)."""
-    lines = open(path).read().splitlines()
-    k = lines.index("EV REQUESTS")
-    return sum(1 for s in lines[k + 2:] if s.strip()) - 1
+    """Number of EVs in an EV-Solomon text file (rows after the depot in EV REQUESTS)."""
+    return mes.n_evs_in_file(path)
 
 
 def ensure_income(files, instances_dir, P, force=False, quiet=False):
     """Write <income>/<FILE>.csv for every EV-Solomon file that has none (or all of them with
-    force=True, or when the theta settings changed since the files were written)."""
+    force=True, or when the theta settings changed since the files were written).
+    files: (name, number of EVs) pairs, or paths of EV-Solomon text files.
+    instances_dir: the data folder (instances/ or csv/); the income folder is next to it."""
     folder = income_dir(instances_dir)
     os.makedirs(folder, exist_ok=True)
     stamp_path = os.path.join(folder, "theta_settings.json")
@@ -138,12 +140,13 @@ def ensure_income(files, instances_dir, P, force=False, quiet=False):
             print(f"theta settings changed ({old} -> {stamp}): rewriting the income files", flush=True)
         force = True
     written = 0
-    for path in files:
-        base = os.path.splitext(os.path.basename(path))[0]
+    for item in files:
+        pair = isinstance(item, (tuple, list))
+        base = item[0] if pair else os.path.splitext(os.path.basename(item))[0]
         out = income_file(instances_dir, base)
         if os.path.exists(out) and not force:
             continue
-        N = n_evs_in_file(path)
+        N = int(item[1]) if pair else n_evs_in_file(item)
         theta = draw_theta(base, N, P)
         with open(out, "w", newline="") as fh:
             wr = csv.writer(fh)
@@ -173,23 +176,29 @@ def read_income(instances_dir, base, n, P):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("instances", nargs="?", default=DEFAULT_INSTANCES)
+    ap.add_argument("instances", nargs="?", default=DEFAULT_CSV,
+                    help="data folder: dataset_ev_solomon/csv (default) or dataset_ev_solomon/instances")
     ap.add_argument("--params", default=DEFAULT_PARAMS)
     ap.add_argument("--force", action="store_true", help="rewrite existing income files")
     args = ap.parse_args()
     P = load_params(args.params)
-    files = sorted(glob.glob(os.path.join(args.instances, "*", "EV-*.txt")))
-    ensure_income(files, args.instances, P, force=args.force)
+    data = mes.EvSolomonData(args.instances)
+    for msg in data.problems:
+        print(f"WARNING (dataset): {msg}", flush=True)
+    if not data.names():
+        print(f"no EV-Solomon files found in {data.path}")
+        return
+    files = [(name, data.n_evs(name)) for name in data.names()]
+    ensure_income(files, data.path, P, force=args.force)
     rows = []
-    for path in files:
-        base = os.path.splitext(os.path.basename(path))[0]
-        th = read_income(args.instances, base, n_evs_in_file(path), P)
+    for base, N in files:
+        th = read_income(data.path, base, N, P)
         rows.append({"file": base, "EVs": len(th), "theta_mean": round(float(th.mean()), 3),
                      "theta_min": round(float(th.min()), 3), "theta_max": round(float(th.max()), 3),
                      **{f"share_{lo:.1f}_{lo + 0.2:.1f}": round(float(np.mean(
                          (th >= lo) & ((th < lo + 0.2) if lo < 0.8 else (th <= 1.0)))), 3)
                         for lo in (0.0, 0.2, 0.4, 0.6, 0.8)}})
-    out = os.path.join(income_dir(args.instances), "summary.csv")
+    out = os.path.join(income_dir(data.path), "summary.csv")
     with open(out, "w", newline="") as fh:
         wr = csv.DictWriter(fh, fieldnames=list(rows[0]))
         wr.writeheader()
