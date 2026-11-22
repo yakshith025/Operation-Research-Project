@@ -1,0 +1,4 @@
+EV-R211_n90: building model ...
+Set parameter OutputFlag to value 1
+Set parameter LogToConsole to value 0
+EV-R211_n90: time limit, Z = 75,142.82 Rs, gap 1.631 %, 300.09 s, greedy 81,798.43, vans for free-choice EVs: 5/77, valid: yes

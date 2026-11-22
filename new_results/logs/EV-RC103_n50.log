@@ -1,0 +1,4 @@
+EV-RC103_n50: building model ...
+Set parameter OutputFlag to value 1
+Set parameter LogToConsole to value 0
+EV-RC103_n50: time limit, Z = 53,469.76 Rs, gap 11.159 %, 300.05 s, greedy 54,628.61, vans for free-choice EVs: 4/44, valid: yes

@@ -1,0 +1,54 @@
+
+Gurobi 13.0.3 (linux64) logging started Sat Nov 21 23:29:22 2026
+
+Set parameter OutputFlag to value 1
+Set parameter LogToConsole to value 0
+Gurobi Optimizer version 13.0.3 build v13.0.3rc0 (linux64 - "Ubuntu 22.04.4 LTS")
+
+CPU model: 13th Gen Intel(R) Core(TM) i9-13900K, instruction set [SSE2|AVX|AVX2]
+Thread count: 32 physical cores, 32 logical processors, using up to 4 threads
+
+Non-default parameters:
+TimeLimit  300
+LogToConsole  0
+Threads  4
+
+Academic license 2875154 - for non-commercial use only - registered to ya___@iisc.ac.in
+Optimize a model with 1856 rows, 837 columns and 10200 nonzeros (Min)
+Model fingerprint: 0x101720d8
+Model has 791 linear objective coefficients
+Variable types: 30 continuous, 807 integer (807 binary)
+Coefficient statistics:
+  Matrix range     [1e-01, 1e+03]
+  Objective range  [1e+00, 3e+03]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 3e+03]
+
+Loaded user MIP start with objective 11020.4
+
+Presolve removed 64 rows and 3 columns
+Presolve time: 0.01s
+Presolved: 1792 rows, 834 columns, 9671 nonzeros
+Variable types: 28 continuous, 806 integer (806 binary)
+
+Root relaxation: objective 1.083499e+04, 80 iterations, 0.00 seconds (0.00 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 10834.9948    0   14 11020.3710 10834.9948  1.68%     -    0s
+     0     0 10896.2166    0   16 11020.3710 10896.2166  1.13%     -    0s
+     0     0 10899.9811    0   11 11020.3710 10899.9811  1.09%     -    0s
+     0     0 10913.2287    0   10 11020.3710 10913.2287  0.97%     -    0s
+     0     0 10924.3677    0    2 11020.3710 10924.3677  0.87%     -    0s
+H    0     0                    11019.840494 10924.3677  0.87%     -    0s
+     0     0 10924.3677    0    8 11019.8405 10924.3677  0.87%     -    0s
+     0     0 infeasible    0      11019.8405 11019.8405  0.00%     -    0s
+
+Explored 1 nodes (120 simplex iterations) in 0.05 seconds (0.07 work units)
+Thread count was 4 (of 32 available processors)
+
+Solution count 2: 11019.8 11020.4 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 1.101984049409e+04, best bound 1.101984049409e+04, gap 0.0000%

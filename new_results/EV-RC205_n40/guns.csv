@@ -1,0 +1,25 @@
+gun,EVs,sequence,busy_min,utilisation_%
+FCS1-gun1,0,-,0,0.0
+FCS1-gun2,0,-,0,0.0
+FCS2-gun1,0,-,0,0.0
+FCS2-gun2,0,-,0,0.0
+FCS3-gun1,0,-,0,0.0
+FCS3-gun2,0,-,0,0.0
+FCS4-gun1,2,EV2 -> EV6,134.7,14.0
+FCS4-gun2,2,EV7 -> EV8,101.3,10.6
+FCS5-gun1,5,EV28 -> EV27 -> EV30 -> EV26 -> EV32,261.6,27.3
+FCS5-gun2,2,EV29 -> EV34,118.0,12.3
+FCS6-gun1,2,EV36 -> EV40,168.1,17.5
+FCS6-gun2,1,EV37,42.3,4.4
+FCS7-gun1,0,-,0,0.0
+FCS7-gun2,0,-,0,0.0
+FCS8-gun1,3,EV21 -> EV19 -> EV22,227.1,23.7
+FCS8-gun2,1,EV25,59.0,6.1
+FCS9-gun1,0,-,0,0.0
+FCS9-gun2,0,-,0,0.0
+FCS10-gun1,2,EV5 -> EV1,118.0,12.3
+FCS10-gun2,1,EV4,92.4,9.6
+FCS11-gun1,0,-,0,0.0
+FCS11-gun2,0,-,0,0.0
+FCS12-gun1,4,EV12 -> EV16 -> EV10 -> EV13,236.0,24.6
+FCS12-gun2,3,EV11 -> EV9 -> EV17,210.4,21.9

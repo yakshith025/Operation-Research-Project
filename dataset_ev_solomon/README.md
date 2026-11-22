@@ -1,6 +1,6 @@
 # EV-Solomon dataset
 
-EV-charging instances for `main_formulation.pdf` (EV → FCS / MCS assignment + mobile charger routing),
+EV-charging instances for `main_formulation_3.pdf` (EV → FCS / MCS assignment + mobile charger routing),
 built one-to-one on the classic VRPTW benchmarks:
 
 | Folder | Source | Instances | EVs per file | Stations (guns) | Vans |
@@ -54,6 +54,19 @@ EV NO.  XCOORD.  YCOORD.  ENERGY(kWh)  REQUEST(min)  RANGE(km)
 
 `code/make_ev_solomon.py` has `read_ev_solomon(path, n)`, which parses a file, keeps the first n EVs and returns all
 model inputs (τ, w, F_i data, distance and time matrices) ready for a solver.
+
+## CSV copies (`csv/`)
+
+The same data as CSV, two files per source. Built by `python code/export_csv.py`, which copies the values exactly as written in the text files:
+
+| File | Rows | Content |
+|---|---|---|
+| `solomon_data.csv` | 6328 (56 × (1 depot + 12 stations + 100 EVs)) | `instance, type, id, x, y, energy_kWh, request_min, range_km, guns, power_kW`; `type` = depot / station / ev |
+| `solomon_config.csv` | 56 (one per file) | `instance, source, class, n_evs`, T, speed, km per unit, detour, all costs, kappa, van block (`n_vans`, battery, max EVs, power, use, efficiency), `n_stations, guns_per_station, total_guns, station_power_kW` |
+| `gehring_homberger_data.csv` | 13500 (60 × (1 + 24 + 200)) | same columns |
+| `gehring_homberger_config.csv` | 60 | same columns |
+
+The energy/request/range columns are filled only for EV rows, and guns/power only for station rows. To get the first n EVs of a file, use `type == "ev"` and `id <= n`.
 
 ## How Solomon / Homberger data becomes EV data
 

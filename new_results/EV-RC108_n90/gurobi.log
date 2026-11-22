@@ -1,0 +1,123 @@
+
+Gurobi 13.0.3 (linux64) logging started Sun Nov 22 01:53:01 2026
+
+Set parameter OutputFlag to value 1
+Set parameter LogToConsole to value 0
+Gurobi Optimizer version 13.0.3 build v13.0.3rc0 (linux64 - "Ubuntu 22.04.4 LTS")
+
+CPU model: 13th Gen Intel(R) Core(TM) i9-13900K, instruction set [SSE2|AVX|AVX2]
+Thread count: 32 physical cores, 32 logical processors, using up to 4 threads
+
+Non-default parameters:
+TimeLimit  300
+LogToConsole  0
+Threads  4
+
+Academic license 2875154 - for non-commercial use only - registered to ya___@iisc.ac.in
+Optimize a model with 129260 rows, 46083 columns and 692448 nonzeros (Min)
+Model fingerprint: 0xc991ed52
+Model has 43035 linear objective coefficients
+Variable types: 270 continuous, 45813 integer (45813 binary)
+Coefficient statistics:
+  Matrix range     [7e-02, 4e+02]
+  Objective range  [8e-01, 2e+03]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 9e+02]
+
+Presolve removed 2904 rows and 2425 columns (presolve time = 5s)...
+Presolve removed 2904 rows and 2425 columns (presolve time = 10s)...
+Presolve removed 2904 rows and 2425 columns (presolve time = 15s)...
+Presolve removed 2904 rows and 2425 columns (presolve time = 20s)...
+Presolve removed 2904 rows and 2425 columns (presolve time = 25s)...
+Presolve removed 2904 rows and 2425 columns (presolve time = 30s)...
+Presolve removed 2904 rows and 2425 columns (presolve time = 35s)...
+Presolve removed 2904 rows and 2425 columns (presolve time = 40s)...
+Presolve removed 2904 rows and 2425 columns (presolve time = 45s)...
+Presolve removed 12091 rows and 10734 columns (presolve time = 50s)...
+Presolve removed 12091 rows and 10734 columns
+Presolve time: 51.92s
+Presolved: 117169 rows, 35349 columns, 620375 nonzeros
+Variable types: 248 continuous, 35101 integer (35101 binary)
+
+Deterministic concurrent LP optimizer: primal simplex, dual simplex, and barrier
+Showing barrier log only...
+
+Root barrier log...
+
+Elapsed ordering time = 6s
+Elapsed ordering time = 11s
+Elapsed ordering time = 12s
+Elapsed ordering time = 14s
+Elapsed ordering time = 15s
+Ordering time: 15.29s
+
+Barrier performed 0 iterations in 70.26 seconds (15.23 work units)
+Barrier solve interrupted - model solved by another algorithm
+
+Concurrent spin time: 12.99s (can be avoided by choosing Method=3)
+
+Solved with primal simplex
+
+Root relaxation: objective 7.956386e+04, 3758 iterations, 16.75 seconds (2.31 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 79563.8610    0  184          - 79563.8610      -     -   71s
+     0     0 79832.7209    0  219          - 79832.7209      -     -   94s
+     0     0 79980.2709    0  205          - 79980.2709      -     -  106s
+     0     0 79991.6253    0  214          - 79991.6253      -     -  108s
+     0     0 79991.9314    0  211          - 79991.9314      -     -  108s
+     0     0 79991.9314    0  211          - 79991.9314      -     -  109s
+     0     0 80390.6358    0  279          - 80390.6358      -     -  121s
+     0     0 80426.1361    0  294          - 80426.1361      -     -  130s
+     0     0 80426.3214    0  278          - 80426.3214      -     -  130s
+     0     0 80426.5735    0  270          - 80426.5735      -     -  130s
+     0     0 80426.5735    0  270          - 80426.5735      -     -  131s
+     0     0 80566.9390    0  294          - 80566.9390      -     -  142s
+     0     0 80584.2033    0  313          - 80584.2033      -     -  147s
+     0     0 80585.5208    0  316          - 80585.5208      -     -  148s
+     0     0 80586.6948    0  318          - 80586.6948      -     -  149s
+     0     0 80586.8206    0  320          - 80586.8206      -     -  150s
+     0     0 80586.8677    0  337          - 80586.8677      -     -  150s
+     0     0 80680.5502    0  323          - 80680.5502      -     -  156s
+     0     0 80680.6034    0  301          - 80680.6034      -     -  157s
+     0     0 80686.3757    0  309          - 80686.3757      -     -  165s
+     0     0 80687.7842    0  321          - 80687.7842      -     -  166s
+     0     0 80687.8088    0  352          - 80687.8088      -     -  167s
+     0     0 80708.0560    0  316          - 80708.0560      -     -  174s
+     0     0 80711.5351    0  317          - 80711.5351      -     -  185s
+     0     0 80711.5674    0  328          - 80711.5674      -     -  186s
+     0     0 80725.6260    0  315          - 80725.6260      -     -  193s
+     0     0 80725.7360    0  322          - 80725.7360      -     -  220s
+     0     0 80729.8322    0  316          - 80729.8322      -     -  225s
+     0     0 80730.1190    0  319          - 80730.1190      -     -  237s
+     0     0 80730.4347    0  329          - 80730.4347      -     -  242s
+     0     0 80731.3242    0  314          - 80731.3242      -     -  252s
+     0     0 80731.3242    0  314          - 80731.3242      -     -  253s
+     0     0 80731.5322    0  304          - 80731.5322      -     -  257s
+     0     0 80731.5322    0  296          - 80731.5322      -     -  277s
+     0     0 80731.5512    0  311          - 80731.5512      -     -  281s
+     0     0 80731.5512    0  311          - 80731.5512      -     -  283s
+     0     0 80731.5512    0  277          - 80731.5512      -     -  284s
+     0     2 80737.3517    0  269          - 80737.3517      -     -  299s
+
+Cutting planes:
+  Gomory: 12
+  Cover: 32
+  Implied bound: 67
+  Clique: 13
+  MIR: 71
+  StrongCG: 6
+  Zero half: 4
+  RLT: 5
+  Relax-and-lift: 62
+  BQP: 8
+
+Explored 1 nodes (11818 simplex iterations) in 300.01 seconds (83.90 work units)
+Thread count was 4 (of 32 available processors)
+
+Solution count 0
+
+Time limit reached
+Best objective -, best bound 8.073735171802e+04, gap -

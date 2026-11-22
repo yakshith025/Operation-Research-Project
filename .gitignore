@@ -2,7 +2,11 @@
 server_license/
 *.lic
 
-# Over GitHub's 100 MB file limit; same data is in dataset/
+# Old material set aside on 22 Nov 2026 (old dataset, main formulation, formulation 2, drafts).
+# Local only; the tracked parts are still in git history (commit 7111d7e).
+trash/
+
+# Over GitHub's 100 MB file limit (now in trash/old_dataset/)
 ev_charging_dataset_200_to_1000.zip
 
 # Python / OS clutter

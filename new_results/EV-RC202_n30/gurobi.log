@@ -1,0 +1,63 @@
+
+Gurobi 13.0.3 (linux64) logging started Sat Nov 21 23:40:29 2026
+
+Set parameter OutputFlag to value 1
+Set parameter LogToConsole to value 0
+Gurobi Optimizer version 13.0.3 build v13.0.3rc0 (linux64 - "Ubuntu 22.04.4 LTS")
+
+CPU model: 13th Gen Intel(R) Core(TM) i9-13900K, instruction set [SSE2|AVX|AVX2]
+Thread count: 32 physical cores, 32 logical processors, using up to 4 threads
+
+Non-default parameters:
+TimeLimit  300
+LogToConsole  0
+Threads  4
+
+Academic license 2875154 - for non-commercial use only - registered to ya___@iisc.ac.in
+Optimize a model with 14264 rows, 5684 columns and 77470 nonzeros (Min)
+Model fingerprint: 0xc5a5ebc5
+Model has 5341 linear objective coefficients
+Variable types: 90 continuous, 5594 integer (5594 binary)
+Coefficient statistics:
+  Matrix range     [1e-01, 1e+03]
+  Objective range  [7e-01, 3e+03]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 3e+03]
+
+Loaded user MIP start with objective 29470.1
+
+Presolve removed 242 rows and 69 columns
+Presolve time: 0.25s
+Presolved: 14022 rows, 5615 columns, 75944 nonzeros
+Variable types: 82 continuous, 5533 integer (5533 binary)
+
+Root relaxation: objective 2.862816e+04, 416 iterations, 0.04 seconds (0.03 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 28628.1552    0   22 29470.1396 28628.1552  2.86%     -    0s
+     0     0 28677.1664    0   25 29470.1396 28677.1664  2.69%     -    0s
+H    0     0                    29363.322456 28677.1664  2.34%     -    0s
+     0     0 29067.6514    0   62 29363.3225 29067.6514  1.01%     -    0s
+     0     0 29067.6514    0   26 29363.3225 29067.6514  1.01%     -    0s
+     0     0 29067.6514    0    8 29363.3225 29067.6514  1.01%     -    0s
+     0     0 29251.1312    0   14 29363.3225 29251.1312  0.38%     -    0s
+     0     0     cutoff    0      29363.3225 29363.3225  0.00%     -    0s
+
+Cutting planes:
+  Learned: 7
+  Gomory: 2
+  Implied bound: 2
+  MIR: 1
+  Zero half: 1
+  RLT: 1
+  Relax-and-lift: 1
+
+Explored 1 nodes (830 simplex iterations) in 0.83 seconds (0.80 work units)
+Thread count was 4 (of 32 available processors)
+
+Solution count 4: 29363.3 29363.3 29470.1 29470.1 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 2.936332245635e+04, best bound 2.936332245635e+04, gap 0.0000%

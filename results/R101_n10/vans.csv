@@ -1,2 +1,0 @@
-van,route,stops,km,kWh_delivered,kWh_drawn,battery_left_kWh,back_at_depot_min,slack_to_T_min
-1,D -> EV5 -> EV4 -> D,2,22.58,46.33,57.12,92.88,151.7,148.3

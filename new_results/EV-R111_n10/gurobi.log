@@ -1,0 +1,66 @@
+
+Gurobi 13.0.3 (linux64) logging started Sat Nov 21 23:29:19 2026
+
+Set parameter OutputFlag to value 1
+Set parameter LogToConsole to value 0
+Gurobi Optimizer version 13.0.3 build v13.0.3rc0 (linux64 - "Ubuntu 22.04.4 LTS")
+
+CPU model: 13th Gen Intel(R) Core(TM) i9-13900K, instruction set [SSE2|AVX|AVX2]
+Thread count: 32 physical cores, 32 logical processors, using up to 4 threads
+
+Non-default parameters:
+TimeLimit  300
+LogToConsole  0
+Threads  4
+
+Academic license 2875154 - for non-commercial use only - registered to ya___@iisc.ac.in
+Optimize a model with 1552 rows, 804 columns and 8554 nonzeros (Min)
+Model fingerprint: 0x1aeea593
+Model has 773 linear objective coefficients
+Variable types: 30 continuous, 774 integer (774 binary)
+Coefficient statistics:
+  Matrix range     [7e-01, 3e+02]
+  Objective range  [8e-01, 2e+03]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 8e+02]
+
+Loaded user MIP start with objective 9495.64
+
+Presolve removed 457 rows and 268 columns
+Presolve time: 0.02s
+Presolved: 1095 rows, 536 columns, 5962 nonzeros
+Variable types: 24 continuous, 512 integer (512 binary)
+
+Root relaxation: objective 8.847878e+03, 87 iterations, 0.00 seconds (0.00 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 8847.87833    0   22 9495.63953 8847.87833  6.82%     -    0s
+     0     0 9123.49545    0   24 9495.63953 9123.49545  3.92%     -    0s
+     0     0 9123.49545    0   20 9495.63953 9123.49545  3.92%     -    0s
+     0     0 9123.49545    0   23 9495.63953 9123.49545  3.92%     -    0s
+     0     0 9373.35591    0   13 9495.63953 9373.35591  1.29%     -    0s
+     0     0 9383.55405    0   15 9495.63953 9383.55405  1.18%     -    0s
+     0     0 9399.16318    0    9 9495.63953 9399.16318  1.02%     -    0s
+
+Cutting planes:
+  Gomory: 4
+  Cover: 3
+  Implied bound: 7
+  Clique: 2
+  MIR: 2
+  Flow cover: 2
+  GUB cover: 1
+  Zero half: 1
+  RLT: 1
+  Relax-and-lift: 4
+  BQP: 3
+
+Explored 1 nodes (240 simplex iterations) in 0.11 seconds (0.13 work units)
+Thread count was 4 (of 32 available processors)
+
+Solution count 2: 9495.64 9495.64 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 9.495639525859e+03, best bound 9.495639525859e+03, gap 0.0000%

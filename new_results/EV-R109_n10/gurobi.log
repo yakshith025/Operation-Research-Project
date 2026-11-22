@@ -1,0 +1,50 @@
+
+Gurobi 13.0.3 (linux64) logging started Sat Nov 21 23:29:19 2026
+
+Set parameter OutputFlag to value 1
+Set parameter LogToConsole to value 0
+Gurobi Optimizer version 13.0.3 build v13.0.3rc0 (linux64 - "Ubuntu 22.04.4 LTS")
+
+CPU model: 13th Gen Intel(R) Core(TM) i9-13900K, instruction set [SSE2|AVX|AVX2]
+Thread count: 32 physical cores, 32 logical processors, using up to 4 threads
+
+Non-default parameters:
+TimeLimit  300
+LogToConsole  0
+Threads  4
+
+Academic license 2875154 - for non-commercial use only - registered to ya___@iisc.ac.in
+Optimize a model with 1552 rows, 804 columns and 8554 nonzeros (Min)
+Model fingerprint: 0xaadb8709
+Model has 773 linear objective coefficients
+Variable types: 30 continuous, 774 integer (774 binary)
+Coefficient statistics:
+  Matrix range     [7e-01, 3e+02]
+  Objective range  [8e-01, 2e+03]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 8e+02]
+
+Loaded user MIP start with objective 9561.28
+
+Presolve removed 393 rows and 275 columns
+Presolve time: 0.02s
+Presolved: 1159 rows, 529 columns, 6372 nonzeros
+Variable types: 24 continuous, 505 integer (505 binary)
+
+Root relaxation: objective 8.867415e+03, 76 iterations, 0.00 seconds (0.00 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 8867.41489    0   22 9561.28157 8867.41489  7.26%     -    0s
+     0     0 9371.42012    0   21 9561.28157 9371.42012  1.99%     -    0s
+H    0     0                    9516.6315259 9371.42012  1.53%     -    0s
+     0     0     cutoff    0      9516.63153 9516.63153  0.00%     -    0s
+
+Explored 1 nodes (154 simplex iterations) in 0.08 seconds (0.09 work units)
+Thread count was 4 (of 32 available processors)
+
+Solution count 2: 9516.63 9561.28 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 9.516631525859e+03, best bound 9.516631525859e+03, gap 0.0000%

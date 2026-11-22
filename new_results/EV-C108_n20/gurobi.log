@@ -1,0 +1,59 @@
+
+Gurobi 13.0.3 (linux64) logging started Sat Nov 21 23:29:25 2026
+
+Set parameter OutputFlag to value 1
+Set parameter LogToConsole to value 0
+Gurobi Optimizer version 13.0.3 build v13.0.3rc0 (linux64 - "Ubuntu 22.04.4 LTS")
+
+CPU model: 13th Gen Intel(R) Core(TM) i9-13900K, instruction set [SSE2|AVX|AVX2]
+Thread count: 32 physical cores, 32 logical processors, using up to 4 threads
+
+Non-default parameters:
+TimeLimit  300
+LogToConsole  0
+Threads  4
+
+Academic license 2875154 - for non-commercial use only - registered to ya___@iisc.ac.in
+Optimize a model with 7784 rows, 2767 columns and 42270 nonzeros (Min)
+Model fingerprint: 0x2fb02a8b
+Model has 2611 linear objective coefficients
+Variable types: 60 continuous, 2707 integer (2707 binary)
+Coefficient statistics:
+  Matrix range     [7e-02, 1e+03]
+  Objective range  [7e-01, 2e+03]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 4e+03]
+
+Loaded user MIP start with objective 18181.5
+
+Presolve removed 157 rows and 7 columns
+Presolve time: 0.06s
+Presolved: 7627 rows, 2760 columns, 41044 nonzeros
+Variable types: 54 continuous, 2706 integer (2706 binary)
+
+Root relaxation: objective 1.761735e+04, 175 iterations, 0.01 seconds (0.01 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 17617.3454    0   18 18181.5348 17617.3454  3.10%     -    0s
+     0     0 17623.8130    0   19 18181.5348 17623.8130  3.07%     -    0s
+H    0     0                    18179.532976 17623.8130  3.06%     -    0s
+     0     0 17883.9382    0   23 18179.5330 17883.9382  1.63%     -    0s
+     0     0 17883.9382    0    6 18179.5330 17883.9382  1.63%     -    0s
+     0     0 17883.9382    0   17 18179.5330 17883.9382  1.63%     -    0s
+     0     0 17884.6896    0   13 18179.5330 17884.6896  1.62%     -    0s
+H    0     0                    18089.008797 17884.6896  1.13%     -    0s
+
+Cutting planes:
+  Gomory: 1
+  Implied bound: 3
+  RLT: 3
+
+Explored 1 nodes (331 simplex iterations) in 0.39 seconds (0.36 work units)
+Thread count was 4 (of 32 available processors)
+
+Solution count 5: 18089 18179.5 18179.5 ... 18181.5
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 1.808900879706e+04, best bound 1.808900879706e+04, gap 0.0000%

@@ -3,79 +3,20 @@
 | File | What it does |
 |---|---|
 | `make_ev_solomon.py` | Builds the **EV-Solomon dataset** (`../dataset_ev_solomon`) from the Solomon and Gehring & Homberger files, and contains `read_ev_solomon(file, n)`, the reader used by the solver. |
-| `solve_milp.py` | Gurobi model of `main_formulation`, equations (1)–(20), one-to-one. Reads EV-Solomon files, solves each one at the chosen sizes, validates every solution and writes result tables. |
-| `check_plan.py` | Checks a plan against every constraint of `main_formulation` and recomputes Z from scratch. Used for the greedy plans and for every MILP solution. |
-| `make_dataset.py` | Older generator for `../dataset` (superseded by EV-Solomon). |
+| `export_csv.py` | Writes the same data as CSV: `../dataset_ev_solomon/csv/` (data + config file per source). |
+| `solve_milp_f3.py` | Gurobi model of **`main_formulation_3`** (income θ ∈ [0, 1] per EV), equations (1)–(23). Every instance goes to Gurobi (nothing skipped beforehand); `--workers` solves several at once; validates every solution, writes everything to `../new_results` with the income analysis. See *Formulation 3* below. |
+| `make_income.py` | Income data for formulation 3: θ per EV in `../dataset_ev_solomon/income/<FILE>.csv` (Beta draw), and the sensitivities μ(θ), c^a(θ), W(θ). Called by the solver automatically. |
+| `f3_params.json` | All income constants of formulation 3 (θ distribution, μ, values of time, queue tolerance, tariffs). Placeholder values: change them here, no code change needed. |
+| `check_plan_f3.py` | Checks a plan against every constraint of `main_formulation_3` (incl. the queue limit W_i) and recomputes Z1 … Z6. |
+| `analyze_f3.py` | Income insights from a run: share served by a van per income band, peak vs off-peak, waits, perceived cost, logistic regression, figures. |
+| `results_io.py` | **Output schema shared by every method** (MILP, greedy, RL): `runs.csv` + `plan.csv` + `meta.json` + `logs.zip`; `evaluate(J, plan)` scores any plan with the same checker. See *Output schema* below. |
+| `convert_results_f3.py` | Converts a results folder of the old layout (one folder per instance) to the shared schema, without solving. |
+| `run_f3.sh` | Server script: 56 Solomon files at n = 10…100, 300 s, 8 workers × 4 threads (32 cores), all output and the report in `../new_results`. |
 
 ## Requirements
 
 Python 3.10+, `numpy`, `gurobipy` (13.x, with a licence: the free pip licence is too small for n ≥ 25),
 `openpyxl` (optional, for `results.xlsx`). Install with `pip install -r requirements.txt`.
-
-## Running the MILP
-
-An **instance** is one EV-Solomon file plus a size n: its **first n EVs** (Solomon's convention). By default every
-100-EV file (Solomon) is solved at n = 25, 50, 100 and every 200-EV file (Homberger) at n = 50, 100, 200.
-
-```bash
-cd code
-python solve_milp.py                                         # every file at its default sizes (348 instances)
-python solve_milp.py --file-size 100 --sizes 25              # the 56 Solomon files, first 25 EVs
-python solve_milp.py --only EV-R101 EV-C101 --sizes 10 25 50  # chosen files and sizes (any n works)
-python solve_milp.py --families C1 R1 --sizes 25 --details    # families, print all tables
-python solve_milp.py --resume                                # continue after an interruption
-```
-
-On a server, run it in the background so it survives logout, for example:
-
-```bash
-nohup python solve_milp.py --time-limit 600 --threads 16 > run.log 2>&1 &
-```
-
-Instances are solved from small to large. `results.csv` is rewritten after every instance, so
-partial results are kept; `report.md` and `results.xlsx` are written at the end (or re-create them any time with
-`--reuse`). If one instance fails (e.g. out of memory), it is recorded as `error` in the summary and the run continues.
-
-Every instance is solved with the complete `main_formulation`, equations (1)–(20).
-
-**Infeasible instances.** The dataset keeps Solomon's exact timing, so some R1 / RC1 instances cannot serve every EV
-by T. If the data already proves this (an EV that cannot be charged by T even in the best case), the instance is
-reported as `infeasible (proven: EVs …)` without building the model; `--solve-infeasible` runs Gurobi on them anyway.
-Instances that are not provably infeasible are always solved, and Gurobi decides (status `optimal`, `time limit`
-or `infeasible`). The greedy plan is used as a warm start when it exists (`greedy_Z_Rs` empty = none found).
-
-| Option | Meaning |
-|---|---|
-| `instances` (positional) | EV-Solomon instances folder (default `../dataset_ev_solomon/instances`) |
-| `--only NAME ...` | only these files (e.g. `EV-C101 EV-R1_2_1`) |
-| `--families F ...` | only these families (`C1 C2 R1 R2 RC1 RC2`) |
-| `--file-size 100/200` | only Solomon (100-EV) or Homberger (200-EV) files |
-| `--sizes N ...` | number of EVs to solve (first n of each file) |
-| `--time-limit S` | seconds per instance (default 300) |
-| `--mip-gap G` | relative gap to stop at (default 1e-4 = 0.01 %) |
-| `--threads K` | CPU threads (default 0 = all cores) |
-| `--solve-infeasible` | also run Gurobi on instances the data proves infeasible |
-| `--gpu` | also solve the LP relaxation with PDHG on the GPU (see below) |
-| `--no-warm-start` | do not give Gurobi the greedy plan as a starting solution |
-| `--resume` | skip instances that already have `solution.json` in `--out` |
-| `--reuse` | do not solve at all; rebuild all tables from existing `solution.json` files |
-| `--mip-focus F` | Gurobi MIPFocus (0 default, 1 = good solutions first) |
-| `--node-file-dir DIR` | write Gurobi node files to DIR to save RAM |
-| `--details` | print per-EV, per-van and per-gun tables |
-| `--out DIR` | output folder (default `../results_ev_solomon`) |
-
-## Output (in `../results_ev_solomon`)
-
-| File | Content |
-|---|---|
-| `results.csv` | **all instance-level results in one file**, one row per instance: family, EVs, T, stations, guns, vans, graph nodes, model size, status, Z, best bound, gap, runtime, nodes explored, greedy Z, improvement over greedy, validity, then Z1 … Z5, operating cost (Z1–Z4), EVs at FCS / by van, vans used, mean and max time until charged, van km. Infeasible instances have a row with their status and blank cost columns |
-| `<instance>/evs.csv` | per EV: resource (gun or van), start, end, time until charged, km driven, inconvenience cost |
-| `<instance>/vans.csv` | per van: route, stops, km, kWh delivered and drawn, battery left, return time, slack to T |
-| `<instance>/guns.csv` | per gun: EVs in order, busy minutes, utilisation |
-| `<instance>/gurobi.log`, `solution.json` | full solver log and solution |
-| `report.md`, `results.xlsx` | all of the above in one Markdown file and one Excel workbook |
-
-Every solution is re-checked by `check_plan.validate` (column `valid`) and its Z is recomputed independently.
 
 ## About the GPU
 
@@ -84,3 +25,96 @@ on the CPU. With `--gpu`, the script solves the LP relaxation of the model with 
 and reports its bound (`gpu_root_LP_bound`) and whether the GPU was really used (`gpu_used`).
 The GPU is only used by a **GPU build** of Gurobi (Linux with an NVIDIA data-centre GPU); the standard
 `pip install gurobipy` is not a GPU build, so Gurobi prints "Not a GPU build" and runs PDHG on the CPU.
+
+## Formulation 3: income θ ∈ [0, 1] (`solve_milp_f3.py`)
+
+`main_formulation_3.pdf` replaces the three customer classes of formulation 2 with a continuous
+income index θ_i per EV (0 = lowest, 1 = highest income). θ sets each customer's money sensitivity
+μ(θ) (falls with income), values of time c^D, c^Q, c^C, c^V (rise with income) and queue tolerance
+W(θ) (falls with income). The objective is the operator's cost plus the customers' perceived cost,
+so who is served at an FCS and who by a van follows from income, costs and capacity.
+
+```bash
+cd code
+bash run_f3.sh                                             # server: 56 Solomon files, n = 10..100, 300 s, 8 x 4 threads
+python solve_milp_f3.py --file-size 100 --workers 8 --threads 4   # the same without the report step
+python solve_milp_f3.py --only EV-R101 --sizes 25 --details        # one instance, printed in full
+python solve_milp_f3.py --resume ...                               # continue after an interruption
+python solve_milp_f3.py --reuse                                    # re-score every stored plan (after a checker change)
+python analyze_f3.py ../new_results [RUN_ID]               # re-make the income analysis only
+cd ../report_f3 && python prepare_report_f3.py ../new_results       # rebuild the report in new_results/report
+```
+
+**Every instance is solved by Gurobi.** Nothing is filtered or decided before the solver: no
+feasibility pre-check, no replacement of the solver's plan. The status in `results.csv` is
+Gurobi's verdict (optimal / time limit / infeasible / ...), and `valid` is the independent check of
+the plan Gurobi returned. The greedy plan is only offered as a MIP start (`--no-warm-start` turns
+that off); it is also stored as a run of its own (method `greedy`) for comparison. The run never
+stops because of one instance: an error becomes that run's status `error` (message column,
+traceback in `logs.zip`), and the next instance starts. With `--workers W` each instance runs in
+its own process, so a crash (e.g. out of memory) only affects that instance; when the Gurobi
+licence has no free session the worker waits and retries (`--licence-wait`, default 1 h). Each
+finished instance is appended to `runs.csv` / `plan.csv` at once; if a table is locked (open in
+Excel) the result waits in `_parts/` and is added by the next merge or the next run. Re-running with
+`--resume` skips instances whose run (same run id and seed) is already in `runs.csv`.
+
+| Option | Meaning |
+|---|---|
+| `--file-size 100/200`, `--families`, `--only`, `--sizes` | which instances (default sizes 10, 20, …, file size) |
+| `--time-limit S`, `--mip-gap G`, `--mip-focus F` | Gurobi settings per instance (default 300 s, 1e-4) |
+| `--workers W` | instances solved at the same time, each in its own process (default 1) |
+| `--threads K` | Gurobi threads per instance (default: cores / workers) |
+| `--mem-limit-gb X` | Gurobi SoftMemLimit per instance: stops cleanly at X GB instead of being killed |
+| `--out DIR` | output folder (default `../new_results`) |
+| `--run-id ID`, `--seed S` | name of this MILP run in the tables (default `milp_<time limit>s`) and Gurobi seed |
+| `--resume`, `--reuse`, `--fresh` | continue / re-score the plans in `plan.csv` / first remove every run of this run id |
+| `--params FILE` | income constants (default `f3_params.json`) |
+| `--no-warm-start` | do not give Gurobi the greedy plan as a starting solution |
+| `--gpu` | also solve the LP relaxation with PDHG on the GPU (see *About the GPU*) |
+| `--node-file-dir DIR` | write Gurobi node files to DIR to save RAM |
+| `--no-analysis`, `--details`, `--verbose` | skip the income analysis / print per-EV and van tables / show the Gurobi log |
+
+The first run writes `../dataset_ev_solomon/income/<FILE>.csv` (θ per EV; the same EV number has
+the same θ in every file of a class). Changing `theta_distribution` in `f3_params.json` rewrites them.
+
+**Output (all in `../new_results`)**: `runs.csv`, `plan.csv`, `meta.json`, `logs.zip` (see *Output
+schema*), `analysis/` (income tables, `ev_level.csv`, `insights.md`, `key_numbers.json`, figures)
+and `report/` (the report, see below).
+
+### Output schema (`results_io.py`, the same for MILP, greedy and RL)
+
+Four files, whatever the number of methods or instances. The keys are those of the input CSVs
+(`dataset_ev_solomon/csv/`): `instance` = file name (e.g. `EV-C101`), `n` = its first n EVs, and in
+`plan.csv` `id` = EV or van number.
+
+| File | One row per | Columns |
+|---|---|---|
+| `runs.csv` | run = (`run_id`, `method`, `seed`, `instance`, `n`) | `source`, `class`; `status`, `valid`, `violations`, `violation_detail`; `Z_total`, Z1–Z6, operator and customer cost; EVs at FCS / by van, stranded, free-choice EVs by van and their shares (all, peak, off-peak), mean θ of each group, vans used, van km, queue / van wait / time to charged; `solve_s`, `train_s` (RL), `wall_clock_s`; solver only: `best_bound`, `gap_%`, `solver_obj`, `nodes`, model size, `build_s`, `warm_start`, GPU bound; `message` |
+| `plan.csv` | decision, `type` = `ev` or `van` | run key, `type`, `id`; ev: `resource_type` (FCS / MCS), `resource` (`FCS6-gun1` / `van2`), `seq` (position on the gun / in the van route), `start_min`, `end_min` (full precision), drive, queue, van wait, charge, time to charged, money paid, perceived money, time cost, customer cost, operator energy; van: `stops`, `km`, kWh delivered / drawn, battery left, `return_min` |
+| `meta.json` | run id | settings (time limit, threads, seed, paths, `f3_params`, start / finish time) |
+| `logs.zip` | instance | `<run_id>__<instance>_n<n>.gurobi.log`, `.log` (console), `.error.log` |
+
+Status values: `optimal`, `time_limit`, `infeasible`, `<status>_no_plan` (e.g. `time_limit_no_plan`),
+`error` (MILP); `plan` / `no_plan` (greedy, RL). `valid` is blank when there is no plan.
+
+Rules: a method only produces a plan, and `results_io.evaluate(J, plan)` scores it with
+`check_plan_f3.validate`, so every number means the same for every method. Invalid plans are kept
+(`valid = no`). Inputs (θ, E, r, range, period) are not copied into the output;
+`results_io.ev_attributes(J)` rebuilds them (the analysis joins them on `instance, n, id`). A van
+route is its EV rows with `resource = van<k>` sorted by `seq`; `results_io.plan_from_rows` rebuilds
+the plan from `plan.csv`, and it re-scores to exactly the stored Z.
+
+An RL method writes into the same folder: per instance, `keys = {run_id, method, seed, instance,
+source, class, n}`, `metrics, rows, _ = results_io.evaluate(J, plan)`, then
+`results_io.write_part(out, [results_io.run_row(keys, "plan", metrics, solve_s=..., train_s=...)],
+results_io.with_key(keys, rows))` and `results_io.merge_parts(out)`.
+
+**Peak / off-peak** (analysis only, not in the model): load_i = requests released in
+[r_i − mean τ^F, r_i]; EV i is in the peak if its load is above the instance median.
+
+**Report** (built in `<results_dir>/report/`; `../report_f3` keeps only the template and the script):
+`prepare_report_f3.py [results_dir]` copies the template and the formulation body from
+`main_formulation_3.tex`, draws the income figures, writes every results table **and the insight
+paragraphs** (`tables/insight_*.tex`, worded from the run's own numbers, e.g. van share per income
+band, peak vs off-peak, short vs long horizon, logistic regression), then compiles `report_f3.pdf`.
+Nothing in the report text is fixed in advance, so it is correct for whatever run it is built from.

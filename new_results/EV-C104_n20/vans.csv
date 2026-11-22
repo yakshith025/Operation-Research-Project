@@ -1,0 +1,2 @@
+van,route,stops,mean_theta_served,km,kWh_delivered,kWh_drawn,battery_left_kWh,back_at_depot_min,slack_to_T_min
+1,D -> EV3 -> EV13 -> EV17 -> EV11 -> EV9 -> D,5,0.644,21.67,95.92,112.0,38.0,585.1,650.9

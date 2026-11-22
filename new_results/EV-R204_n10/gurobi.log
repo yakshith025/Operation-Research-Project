@@ -1,0 +1,51 @@
+
+Gurobi 13.0.3 (linux64) logging started Sat Nov 21 23:29:20 2026
+
+Set parameter OutputFlag to value 1
+Set parameter LogToConsole to value 0
+Gurobi Optimizer version 13.0.3 build v13.0.3rc0 (linux64 - "Ubuntu 22.04.4 LTS")
+
+CPU model: 13th Gen Intel(R) Core(TM) i9-13900K, instruction set [SSE2|AVX|AVX2]
+Thread count: 32 physical cores, 32 logical processors, using up to 4 threads
+
+Non-default parameters:
+TimeLimit  300
+LogToConsole  0
+Threads  4
+
+Academic license 2875154 - for non-commercial use only - registered to ya___@iisc.ac.in
+Optimize a model with 1728 rows, 825 columns and 9532 nonzeros (Min)
+Model fingerprint: 0x23f02ce6
+Model has 787 linear objective coefficients
+Variable types: 30 continuous, 795 integer (795 binary)
+Coefficient statistics:
+  Matrix range     [7e-01, 1e+03]
+  Objective range  [2e+00, 2e+03]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 3e+03]
+
+Loaded user MIP start with objective 9380.48
+
+Presolve removed 213 rows and 145 columns
+Presolve time: 0.03s
+Presolved: 1515 rows, 680 columns, 8189 nonzeros
+Variable types: 26 continuous, 654 integer (654 binary)
+
+Root relaxation: objective 8.898648e+03, 103 iterations, 0.00 seconds (0.00 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 8898.64775    0   26 9380.48242 8898.64775  5.14%     -    0s
+     0     0 8951.39072    0   32 9380.48242 8951.39072  4.57%     -    0s
+     0     0 8955.42154    0   22 9380.48242 8955.42154  4.53%     -    0s
+     0     0 9263.30603    0   10 9380.48242 9263.30603  1.25%     -    0s
+     0     0 9338.94953    0    3 9380.48242 9338.94953  0.44%     -    0s
+
+Explored 1 nodes (172 simplex iterations) in 0.08 seconds (0.11 work units)
+Thread count was 4 (of 32 available processors)
+
+Solution count 2: 9380.48 9380.48 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 9.380482421673e+03, best bound 9.380482421673e+03, gap 0.0000%

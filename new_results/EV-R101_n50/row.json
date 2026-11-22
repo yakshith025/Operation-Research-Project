@@ -1,0 +1,20 @@
+{
+ "instance": "EV-R101_n50",
+ "family": "R1",
+ "EVs": 50,
+ "T_min": 230.0,
+ "stations": 12,
+ "guns": 24,
+ "vans": 5,
+ "graph_nodes": 63,
+ "binaries": 14817,
+ "continuous": 150,
+ "constraints": 44688,
+ "build_s": 0.66,
+ "status": "infeasible",
+ "runtime_s": 0.05,
+ "nodes_explored": 0,
+ "greedy_Z_Rs": "",
+ "greedy_rule": "",
+ "wall_clock_s": 0.7
+}

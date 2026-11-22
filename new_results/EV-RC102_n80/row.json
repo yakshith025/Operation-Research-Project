@@ -1,0 +1,20 @@
+{
+ "instance": "EV-RC102_n80",
+ "family": "RC1",
+ "EVs": 80,
+ "T_min": 240.0,
+ "stations": 12,
+ "guns": 24,
+ "vans": 5,
+ "graph_nodes": 93,
+ "binaries": 36395,
+ "continuous": 240,
+ "constraints": 101392,
+ "build_s": 4.07,
+ "status": "infeasible",
+ "runtime_s": 1.78,
+ "nodes_explored": 0,
+ "greedy_Z_Rs": "",
+ "greedy_rule": "",
+ "wall_clock_s": 6.0
+}
