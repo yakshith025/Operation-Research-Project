@@ -1,0 +1,51 @@
+{
+  "_about": "Settings of RL1 (attention policy + REINFORCE with a shared baseline) for main_formulation_3. Every value can also be overridden on the command line of train_rl1.py / solve_rl1.py. Formulation data (costs, fleet, T, ...) are NOT here: they come from dataset_ev_solomon/csv and code/f3_params.json.",
+
+  "generator": {
+    "_about": "Random training instances (rl1_generator.py). Fleet, stations, costs, T, depot and city area come from the CSV dataset per (file size, class); these settings only shape the new random customers.",
+    "file_sizes": [100],
+    "clusters": [5, 12],
+    "cluster_sigma_share": [0.015, 0.05],
+    "request_zero_share": [0.15, 0.30],
+    "request_beta": [1.0, 2.5],
+    "request_max_share": [0.83, 0.92],
+    "T_jitter": 0.15,
+    "kmeans_iters": 100
+  },
+
+  "model": {
+    "_about": "Policy network (rl1_model.Policy): embedding size d, attention heads, encoder layers, feed-forward width, logit clipping C, hidden width of the small MLPs on the dynamic features.",
+    "d": 128,
+    "heads": 8,
+    "layers": 3,
+    "ff": 512,
+    "clip": 10.0,
+    "dyn_hidden": 32
+  },
+
+  "training": {
+    "_about": "First imitation_batches warm-up batches teach the policy the greedy cost rule (teacher forcing; 0 = pure RL from random weights). Then REINFORCE with a shared baseline (POMO): every instance is rolled out `samples` times, the baseline is the mean cost of its own rollouts. Training cost = Z + drop_penalty x (instance cost scale) per EV that could not be placed. One epoch = iters_per_epoch batches, then validation on fixed generated instances against the greedy cost rule; model_best.pt = best validation.",
+    "hours": 8.0,
+    "imitation_batches": 500,
+    "max_epochs": 100000,
+    "iters_per_epoch": 50,
+    "batch_instances": 32,
+    "samples": 8,
+    "n_min": 10,
+    "n_max": 100,
+    "lr": 0.0001,
+    "lr_decay_per_epoch": 0.998,
+    "max_grad_norm": 1.0,
+    "drop_penalty": 10.0,
+    "val_sizes": [20, 50, 100],
+    "val_instances_per_size": 24,
+    "val_seed": 777
+  },
+
+  "inference": {
+    "_about": "solve_rl1.py: per instance, `augment` symmetric copies of the input (rotations / reflections of the map, 1..8) x (1 greedy rollout + `samples` sampled rollouts); the plan with the fewest unplaced EVs, then the lowest Z, is kept. chunk = rollouts simulated together (memory).",
+    "samples": 64,
+    "augment": 8,
+    "chunk": 1040
+  }
+}
