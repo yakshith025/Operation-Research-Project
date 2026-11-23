@@ -63,6 +63,12 @@ The code imports the project's own modules from `../../code` (`results_io`, `che
   - REINFORCE loss: $\text{mean}(\text{adv}\cdot\log\pi)$.
   - Optimiser: Adam, gradient clipping, slow learning-rate decay. After the warm-up REINFORCE uses a 5× smaller learning rate (`lr_reinforce`). With the warm-up's rate, the noisy policy gradient first undid part of the warm-up.
 - **Validation:** after every epoch, the policy's greedy rollout is compared with the greedy cost rule of `solve_milp_f3` on fixed random instances (n = 20, 50, 100). The rule runs inside the same simulator, and `test_rl1.py` checks that it gives the identical plan. `model_best.pt` keeps the best epoch.
+- **When training stops:** at whichever of these comes first (settings in `rl1_params.json`):
+  - `max_epochs` = 500 epochs in total, warm-up included;
+  - early stop: `patience_epochs` = 10 REINFORCE epochs in a row whose validation ratio is not better than the best so far. The count starts only after `min_epochs` = 200: the first 200 epochs always run, so the earliest early stop is at epoch 210;
+  - the time cap `hours`.
+
+  `train_meta.json` records the reason (`stop_reason`), and `train_log.csv` has the counter (`epochs_without_improvement`).
 - **Training data** (`rl1_generator.py`): for each Solomon class, the CSVs give T, depot, city area, fleet, stations and costs. The customers are new:
   - positions: uniform (R), clustered (C) or mixed (RC);
   - stations: k-means of the customers;
@@ -111,8 +117,8 @@ tail -f run_rl1.log
 
 `run_rl1.sh HOURS THREADS` runs these steps in order:
 - the self-checks (`test_rl1.py --quick`, about a minute);
-- training for HOURS of compute (`train_rl1.py --resume`). If it is stopped, the same command continues from `model_last.pt`;
-- solving the 56 Solomon files × n = 10..100 (`solve_rl1.py --resume`; with an unchanged model, instances already in `runs.csv` are skipped);
+- training (`train_rl1.py`), always a new model from epoch 1: at least 200 epochs, then until 10 epochs without improvement, 500 epochs or HOURS, whichever comes first. The previous run's model files are first moved to `model/previous_runs/<date-time>/`, so nothing is lost;
+- solving the 56 Solomon files × n = 10..100 with the new model (`solve_rl1.py --resume`; a new model means every instance is solved again);
 - the comparison with `../../new_results`.
 
 Set `FILE_SIZE="100 200"` to also solve the Homberger files.
@@ -137,7 +143,8 @@ python compare_rl1.py --milp ../../new_results
 
 `model/` (training):
 - `model_best.pt` is used by `solve_rl1.py`.
-- `model_last.pt` is for resuming.
+- `model_last.pt` is the last epoch (only used with an explicit `train_rl1.py --resume`).
+- `previous_runs/<date-time>/` holds the files of earlier runs, moved there when a new run starts.
 - `train_log.csv` has one row per epoch: the validation ratio RL1 / greedy rule (overall and per *n*), the unplaced-EV share of both, the learning rate and the minutes so far.
 - `train_meta.json` holds the settings and the total training seconds.
 

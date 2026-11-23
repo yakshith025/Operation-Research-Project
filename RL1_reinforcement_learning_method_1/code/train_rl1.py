@@ -13,16 +13,27 @@ current policy (random map symmetry per instance). For rollout j of instance b
 After every epoch the greedy rollout of the policy is compared with the greedy cost rule of
 solve_milp_f3 (same simulator) on fixed validation instances; the best epoch is kept.
 
+Training stops at whichever comes first (all in rl1_params.json):
+  max_epochs        total epochs, warm-up included (default 500)
+  patience_epochs   early stop: this many REINFORCE epochs in a row without a better validation
+                    result (default 10; 0 = off). The count starts only after min_epochs (default
+                    200): the first min_epochs epochs always run, so the earliest early stop is at
+                    epoch min_epochs + patience_epochs.
+  hours             time budget (a safety cap)
+
 Usage (from RL1_reinforcement_learning_method_1/code)
-  python train_rl1.py                         # settings of rl1_params.json (time budget `hours`)
-  python train_rl1.py --hours 12 --threads 32
-  python train_rl1.py --resume                # continue model/model_last.pt until the budget is used
+  python train_rl1.py                         # new training from epoch 1, settings of rl1_params.json
+  python train_rl1.py --max-epochs 500 --min-epochs 200 --patience 10 --threads 32
+  python train_rl1.py --resume                # only if asked: continue model/model_last.pt
+Every run without --resume starts at epoch 1 with new weights; the previous run's files (models, log,
+meta) are first moved to model/previous_runs/<date-time>/, so nothing is deleted.
 The run never stops because of one bad batch (it is logged in train_errors.log and skipped);
 Ctrl-C saves the model first.
 
 Outputs in --model-dir (default ../model)
   model_best.pt    network of the best validation epoch (solve_rl1.py uses this one)
-  model_last.pt    network + optimiser of the last epoch (for --resume)
+  model_last.pt    network + optimiser of the last epoch (for an explicit --resume)
+  previous_runs/   files of earlier runs, one folder per run (moved there when a new run starts)
   train_log.csv    one row per epoch: batches, training cost spread, unplaced EVs, validation ratio
                    RL / greedy rule (overall and per n), learning rate, minutes
   train_meta.json  settings, data templates, torch version, total training seconds
@@ -31,6 +42,7 @@ import argparse
 import csv
 import json
 import os
+import shutil
 import sys
 import time
 import traceback
@@ -49,7 +61,8 @@ DEFAULT_RL1_PARAMS = os.path.join(HERE, "rl1_params.json")
 DEFAULT_MODEL_DIR = os.path.join(RL1_DIR, "model")
 LOG_COLUMNS = ["epoch", "phase", "iters", "batches_this_epoch", "failed_batches", "imitation_nll",
                "train_cost_spread_%", "train_unplaced_%", "val_ratio_rl_over_greedy", "val_unplaced_rl_%",
-               "val_unplaced_greedy_%", "val_ratio_by_n", "lr", "train_min", "time"]
+               "val_unplaced_greedy_%", "val_ratio_by_n", "epochs_without_improvement", "lr", "train_min",
+               "time"]
 
 
 def strip_about(d):
@@ -154,6 +167,19 @@ def save(path, policy, optim, state, RP, args):
     os.replace(tmp, path)
 
 
+def archive_previous(model_dir, paths):
+    """New training: move the previous run's files to <model_dir>/previous_runs/<date-time>/ (kept, not
+    deleted), so the new run starts with an empty train_log.csv and its own model_best.pt."""
+    old = [p for p in paths.values() if os.path.exists(p)]
+    if not old:
+        return None
+    dest = os.path.join(model_dir, "previous_runs", time.strftime("%Y%m%d-%H%M%S"))
+    os.makedirs(dest, exist_ok=True)
+    for p in old:
+        shutil.move(p, os.path.join(dest, os.path.basename(p)))
+    return dest
+
+
 def append_log(path, row):
     new = not os.path.exists(path)
     try:
@@ -181,9 +207,15 @@ def main():
     ap.add_argument("--f3-params", default=DEFAULT_PARAMS_F3, help="code/f3_params.json")
     ap.add_argument("--rl1-params", default=DEFAULT_RL1_PARAMS)
     ap.add_argument("--model-dir", default=DEFAULT_MODEL_DIR)
-    ap.add_argument("--hours", type=float, help="training time budget (total, also across --resume)")
+    ap.add_argument("--hours", type=float, help="training time cap")
     ap.add_argument("--imitation-batches", type=int, help="warm-up batches imitating the greedy rule (0 = none)")
-    ap.add_argument("--max-epochs", type=int)
+    ap.add_argument("--max-epochs", type=int, help="stop after this many epochs in total")
+    ap.add_argument("--min-epochs", type=int,
+                    help="epochs that always run; the early-stop count starts after them")
+    ap.add_argument("--patience", type=int,
+                    help="stop after this many REINFORCE epochs without a better validation (0 = off)")
+    ap.add_argument("--min-improvement", type=float,
+                    help="a validation ratio counts as better only if it beats the best by more than this")
     ap.add_argument("--iters-per-epoch", type=int)
     ap.add_argument("--batch-instances", type=int)
     ap.add_argument("--samples", type=int, help="rollouts per instance (shared baseline)")
@@ -195,7 +227,8 @@ def main():
     ap.add_argument("--threads", type=int, default=0, help="torch CPU threads (0 = all cores)")
     ap.add_argument("--device", default="auto", help="auto / cpu / cuda")
     ap.add_argument("--seed", type=int, default=1)
-    ap.add_argument("--resume", action="store_true", help="continue from model_last.pt if it exists")
+    ap.add_argument("--resume", action="store_true",
+                    help="continue from model_last.pt instead of starting at epoch 1 (run_rl1.sh does not use it)")
     args = ap.parse_args()
 
     RP = load_rl1_params(args.rl1_params)
@@ -204,6 +237,15 @@ def main():
               "n_min", "n_max", "lr", "lr_reinforce"):
         if getattr(args, k) is not None:
             TR[k] = getattr(args, k)
+    if args.patience is not None:
+        TR["patience_epochs"] = args.patience
+    if args.min_improvement is not None:
+        TR["min_improvement"] = args.min_improvement
+    if args.min_epochs is not None:
+        TR["min_epochs"] = args.min_epochs
+    patience = int(TR.get("patience_epochs", 0))
+    min_epochs = int(TR.get("min_epochs", 0))
+    min_imp = float(TR.get("min_improvement", 0.0))
     if args.file_sizes:
         RP["generator"]["file_sizes"] = args.file_sizes
     if args.threads > 0:
@@ -215,6 +257,11 @@ def main():
     paths = {k: os.path.join(args.model_dir, f) for k, f in
              (("last", "model_last.pt"), ("best", "model_best.pt"), ("log", "train_log.csv"),
               ("meta", "train_meta.json"), ("err", "train_errors.log"))}
+    resuming = args.resume and os.path.exists(paths["last"])
+    if not resuming:                                   # new training from epoch 1
+        moved = archive_previous(args.model_dir, paths)
+        if moved:
+            print(f"new training from epoch 1; the previous run's files were moved to {moved}", flush=True)
 
     P3 = inc.load_params(args.f3_params)
     dataset = CsvDataset(args.csv, P3)
@@ -224,8 +271,9 @@ def main():
     gen = Generator(dataset, RP["generator"], P3, seed=args.seed, file_sizes=RP["generator"]["file_sizes"])
     policy = Policy(**RP["model"]).to(device)
     optim = torch.optim.Adam(policy.parameters(), lr=TR["lr"])
-    state = {"epoch": 0, "iters": 0, "train_s": 0.0, "best_val": float("inf"), "best_epoch": None}
-    if args.resume and os.path.exists(paths["last"]):
+    # stale = REINFORCE epochs in a row without a better validation (early-stop counter)
+    state = {"epoch": 0, "iters": 0, "train_s": 0.0, "best_val": float("inf"), "best_epoch": None, "stale": 0}
+    if resuming:
         ck = torch.load(paths["last"], map_location=device, weights_only=False)
         policy = Policy(**ck["model_cfg"]).to(device)
         policy.load_state_dict(ck["model"])
@@ -241,7 +289,9 @@ def main():
             "parameters": sum(p.numel() for p in policy.parameters())}
     write_meta(paths["meta"], {**meta, **state})
     print(f"RL1 training on {device} ({torch.get_num_threads()} threads), {meta['parameters']:,} parameters, "
-          f"templates {gen.keys}; budget {TR['hours']} h, {state['train_s'] / 3600:.2f} h used", flush=True)
+          f"templates {gen.keys}; stops at {TR['max_epochs']} epochs, after "
+          f"{patience or 'no'} REINFORCE epochs without improvement (counted after epoch {min_epochs}), "
+          f"or after {TR['hours']} h ({state['train_s'] / 3600:.2f} h used)", flush=True)
     t_val = time.time()
     val = make_validation(dataset, RP, P3, device)
     print(f"validation: {sum(v['batch'].B for v in val)} fixed instances, n = {TR['val_sizes']} "
@@ -255,9 +305,13 @@ def main():
                                   "time": time.strftime("%Y-%m-%d %H:%M:%S")})
         print(f"untrained policy: RL / greedy rule = {v['ratio']:.4f}", flush=True)
 
+    def early_stop():
+        return patience > 0 and state["epoch"] >= min_epochs + patience and state["stale"] >= patience
+
     fails_in_row = 0
+    interrupted = False
     try:
-        while state["train_s"] < budget and state["epoch"] < TR["max_epochs"]:
+        while state["train_s"] < budget and state["epoch"] < TR["max_epochs"] and not early_stop():
             warm = int(TR["imitation_batches"]) > 0
             base_lr = TR["lr_reinforce"] if warm and state["iters"] >= int(TR["imitation_batches"]) else TR["lr"]
             lr = base_lr * TR["lr_decay_per_epoch"] ** state["epoch"]
@@ -286,15 +340,20 @@ def main():
             v = validate(policy, val, TR["drop_penalty"])
             state["train_s"] += time.time() - t0
             state["epoch"] += 1
-            better = v["ratio"] < state["best_val"]
-            if better:
-                state["best_val"], state["best_epoch"] = v["ratio"], state["epoch"]
-            save(paths["last"], policy, optim, state, RP, args)
-            if better:
-                save(paths["best"], policy, optim, state, RP, args)
             phases = sorted({s["phase"] for s in stats})
             rl = [s for s in stats if s["phase"] == "reinforce"]
             im = [s for s in stats if s["phase"] == "imitation"]
+            better = v["ratio"] < state["best_val"] - min_imp
+            if better:
+                state["best_val"], state["best_epoch"] = v["ratio"], state["epoch"]
+                state["stale"] = 0
+            elif rl and state["epoch"] > min_epochs:     # count only REINFORCE epochs after min_epochs
+                state["stale"] += 1
+            else:                                        # still inside the epochs that always run
+                state["stale"] = 0
+            save(paths["last"], policy, optim, state, RP, args)
+            if better:
+                save(paths["best"], policy, optim, state, RP, args)
             row = {"epoch": state["epoch"], "phase": "+".join(phases), "iters": state["iters"],
                    "batches_this_epoch": len(stats), "failed_batches": failed,
                    "imitation_nll": round(float(np.mean([s["nll"] for s in im])), 4) if im else "",
@@ -302,24 +361,44 @@ def main():
                    "train_unplaced_%": round(float(np.mean([s["unplaced"] for s in rl])), 3) if rl else "",
                    "val_ratio_rl_over_greedy": round(v["ratio"], 4), "val_unplaced_rl_%": round(v["unplaced"], 2),
                    "val_unplaced_greedy_%": round(v["ref_unplaced"], 2), "val_ratio_by_n": json.dumps(v["by_n"]),
+                   "epochs_without_improvement": state["stale"],
                    "lr": round(lr, 8), "train_min": round(state["train_s"] / 60, 1),
                    "time": time.strftime("%Y-%m-%d %H:%M:%S")}
             append_log(paths["log"], row)
             write_meta(paths["meta"], {**meta, **state})
             what = (f"imitation loss {row['imitation_nll']}" if im and not rl else
                     f"unplaced in training {row['train_unplaced_%']} %")
+            if not patience:
+                waiting = ""
+            elif state["epoch"] <= min_epochs:
+                waiting = f", early stop counted after epoch {min_epochs}"
+            else:
+                waiting = f", no improvement for {state['stale']}/{patience} epochs"
             print(f"epoch {state['epoch']} [{row['phase']}]: {len(stats)} batches ({failed} failed), {what}, "
                   f"validation RL / greedy rule {v['ratio']:.4f} {v['by_n']} "
-                  f"(best {state['best_val']:.4f} at epoch {state['best_epoch']}), unplaced RL "
-                  f"{v['unplaced']:.2f} % vs greedy {v['ref_unplaced']:.2f} %, "
-                  f"{state['train_s'] / 60:.0f} of {budget / 60:.0f} min", flush=True)
+                  f"(best {state['best_val']:.4f} at epoch {state['best_epoch']}{waiting}), "
+                  f"unplaced RL {v['unplaced']:.2f} % vs greedy {v['ref_unplaced']:.2f} %, "
+                  f"epoch {state['epoch']} of {TR['max_epochs']}, {state['train_s'] / 60:.0f} min", flush=True)
     except KeyboardInterrupt:
+        interrupted = True
         print("\ninterrupted: saving model_last.pt", flush=True)
         save(paths["last"], policy, optim, state, RP, args)
     if not os.path.exists(paths["best"]):
         save(paths["best"], policy, optim, state, RP, args)
-    write_meta(paths["meta"], {**meta, **state, "finished": time.strftime("%Y-%m-%d %H:%M:%S")})
-    print(f"training finished: {state['epoch']} epochs, {state['iters']} batches, "
+    if interrupted:
+        reason = "interrupted (Ctrl-C)"
+    elif early_stop():
+        reason = (f"early stop: no better validation in the last {patience} REINFORCE epochs after epoch "
+                  f"{min_epochs} (best at epoch {state['best_epoch']})")
+    elif state["epoch"] >= TR["max_epochs"]:
+        reason = f"reached max_epochs = {TR['max_epochs']}"
+    elif state["train_s"] >= budget:
+        reason = f"time budget of {TR['hours']} h used"
+    else:
+        reason = "stopped (too many failed batches, see train_errors.log)"
+    write_meta(paths["meta"], {**meta, **state, "stop_reason": reason,
+                               "finished": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"training finished ({reason}): {state['epoch']} epochs, {state['iters']} batches, "
           f"{state['train_s'] / 3600:.2f} h; best validation RL / greedy rule {state['best_val']:.4f} "
           f"(epoch {state['best_epoch']}); models in {os.path.abspath(args.model_dir)}", flush=True)
 

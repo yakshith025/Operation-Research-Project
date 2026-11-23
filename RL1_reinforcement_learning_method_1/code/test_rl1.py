@@ -25,7 +25,7 @@ from solve_milp_f3 import greedy_f3, load_instance
 from rl1_env import Batch, Env, GreedyRule, heuristic_rollout, plan_of
 from rl1_generator import Generator
 from rl1_model import Policy, rollout
-from train_rl1 import imitation_step, load_rl1_params, train_step
+from train_rl1 import imitation_step, load_rl1_params, pick_device, train_step
 
 
 def compare(a, b, path=""):
@@ -62,7 +62,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv", default=DEFAULT_CSV)
     ap.add_argument("--quick", action="store_true")
+    ap.add_argument("--device", default="auto", help="auto (GPU if torch sees one) / cpu / cuda")
     args = ap.parse_args()
+    dev = pick_device(args.device)
+    print(f"device: {dev}" + (f" ({torch.cuda.get_device_name(0)})" if dev == "cuda" else ""), flush=True)
     torch.manual_seed(0)
     P3 = inc.load_params()
     RP = load_rl1_params()
@@ -95,7 +98,7 @@ def main():
     for f, n in tasks:
         J = ds.instance(f, n)
         g = greedy_f3(J)
-        env = heuristic_rollout(Env(Batch([J])))
+        env = heuristic_rollout(Env(Batch([J], dev)))
         plan, dropped = plan_of(env, 0, J)
         err, Z, _, _ = validate(J, plan)
         envZ = float(env.cost[0])
@@ -119,14 +122,14 @@ def main():
                                                       f"where the cost rule fails in both", bad[:5])
 
     # 3 ------------------------------------------------------------------
-    policy = Policy(**RP["model"])
+    policy = Policy(**RP["model"]).to(dev)
     bad, valid, flagged, forced = [], 0, 0, 0
     with torch.no_grad():
         for f, n in tasks[: (4 if args.quick else 12)]:
             J = ds.instance(f, n)
-            batch = Batch([J])
+            batch = Batch([J], dev)
             env = Env(batch.repeat(8))
-            emb = policy.encode(*env.static_features(torch.arange(8)))
+            emb = policy.encode(*env.static_features(torch.arange(8, device=dev)))
             rollout(policy, env, emb)
             for row in range(env.B):
                 plan, dropped = plan_of(env, row, J)
@@ -157,7 +160,7 @@ def main():
     gen = Generator(ds, RP["generator"], P3, seed=5, file_sizes=(100, 200))
     for key in gen.keys:
         J = gen.sample(30 if args.quick else 60, key)
-        env = heuristic_rollout(Env(Batch([J])))
+        env = heuristic_rollout(Env(Batch([J], dev)))
         plan, dropped = plan_of(env, 0, J)
         err, Z, _, _ = validate(J, plan)
         cnt += 1
@@ -170,8 +173,8 @@ def main():
     gen1 = Generator(ds, RP["generator"], P3, seed=6, file_sizes=(100,))
     optim = torch.optim.Adam(policy.parameters(), lr=1e-4)
     try:
-        im = imitation_step(policy, optim, gen1, TR, "cpu", np.random.default_rng(0))
-        st = train_step(policy, optim, gen1, TR, "cpu", np.random.default_rng(0))
+        im = imitation_step(policy, optim, gen1, TR, dev, np.random.default_rng(0))
+        st = train_step(policy, optim, gen1, TR, dev, np.random.default_rng(0))
         finite = all(torch.isfinite(p).all() for p in policy.parameters()) and np.isfinite(im["nll"])
         results["5 training step"] = (finite, f"imitation loss {im['nll']:.3f}; REINFORCE: unplaced "
                                               f"{st['unplaced']:.1f} %, spread {st['spread']:.2f} %", [])
