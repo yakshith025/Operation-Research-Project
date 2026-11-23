@@ -1,0 +1,103 @@
+{
+  "_about": "Parameter experiments of formulation 4. Each experiment changes ONE factor at a time (one variant = one change); every other input stays as in the baseline. A variant is applied with --set overrides when the solver reads the data: no data or parameter file is copied. The baseline itself is NOT solved again: the analysis takes it from baseline_MILP/results (run milp_300s) and baseline_RL/results (run rl_f4). Folder names: <folder>_MILP and <folder>_RL inside 2026-11-22_formulation_4/. Priority 1 runs first (user, 22 Nov 2026: E5 and E6 first, then E1, E2, E8). Experiment numbers are those of the experiment table (comprehensive report, Section 4.14 extensions).",
+
+  "instances": {
+    "_about": "Same instance set as the baselines: the 56 Solomon files at n = 10, 20, ..., 100 = 560 instances.",
+    "file_size": [100],
+    "sizes": [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+  },
+
+  "baseline": {
+    "milp_results": "baseline_MILP/results",
+    "milp_run_id": "milp_300s",
+    "rl_results": "baseline_RL/results",
+    "rl_run_id": "rl_f4",
+    "rl_model": "baseline_RL/model/model_best.pt"
+  },
+
+  "solver": {
+    "_about": "Settings of the experiment runs = the baseline runs, so a variant differs from the baseline only in its input. RL: rl_f4_zero_shot = the baseline model applied to the variant's inputs; rl_f4_retrained = a new model trained on the variant (same recipe as the baseline training).",
+    "milp_time_limit_s": 300,
+    "milp_workers": 8,
+    "milp_threads": 4,
+    "milp_run_id": "milp_300s",
+    "rl_zero_shot_run_id": "rl_f4_zero_shot",
+    "rl_retrained_run_id": "rl_f4_retrained"
+  },
+
+  "experiments": [
+    {
+      "id": "E5", "number": 5, "priority": 1, "folder": "E5_value_of_charging_time",
+      "name": "Value of charging time at theta = 1",
+      "question": "How sensitive is the van share (per segment) to the most influential assumed value?",
+      "_about": "Personal: c^{C,1} (value of a minute of FCS charging at the top income), the most influential value in formulation 3. Commercial: the downtime rate at theta = 1 (D = C = V, and Q with it), the commercial counterpart; it is scaled as a whole so that D = C = V still holds. +-25 %.",
+      "variants": [
+        {"id": "E5_cC1_personal_7.5", "label": "personal c^{C,1} = 7.5 (-25 %)", "factor": "personal c^{C,1}", "value": 7.5,
+         "set": {"personal.value_of_time_Rs_per_min.C.theta1": 7.5}},
+        {"id": "E5_cC1_personal_12.5", "label": "personal c^{C,1} = 12.5 (+25 %)", "factor": "personal c^{C,1}", "value": 12.5,
+         "set": {"personal.value_of_time_Rs_per_min.C.theta1": 12.5}},
+        {"id": "E5_omega1_commercial_4.5", "label": "commercial downtime rate at theta = 1: 4.5 (-25 %)", "factor": "commercial omega^1", "value": 4.5,
+         "set": {"commercial.value_of_time_Rs_per_min.D.theta1": 4.5, "commercial.value_of_time_Rs_per_min.C.theta1": 4.5,
+                 "commercial.value_of_time_Rs_per_min.V.theta1": 4.5, "commercial.value_of_time_Rs_per_min.Q.theta1": 5.625}},
+        {"id": "E5_omega1_commercial_7.5", "label": "commercial downtime rate at theta = 1: 7.5 (+25 %)", "factor": "commercial omega^1", "value": 7.5,
+         "set": {"commercial.value_of_time_Rs_per_min.D.theta1": 7.5, "commercial.value_of_time_Rs_per_min.C.theta1": 7.5,
+                 "commercial.value_of_time_Rs_per_min.V.theta1": 7.5, "commercial.value_of_time_Rs_per_min.Q.theta1": 9.375}}
+      ],
+      "baseline_values": {"personal c^{C,1}": 10.0, "commercial omega^1": 6.0}
+    },
+    {
+      "id": "E6", "number": 6, "priority": 1, "folder": "E6_money_sensitivity",
+      "name": "Money sensitivity at theta = 0, mu^0",
+      "question": "How sensitive are Z and the van share to the coefficient with the largest elasticity on Z?",
+      "_about": "mu^0 of each segment separately, +-25 % (mu^1 = 0.5 stays, so mu stays non-increasing).",
+      "variants": [
+        {"id": "E6_mu0_personal_1.125", "label": "personal mu^0 = 1.125 (-25 %)", "factor": "personal mu^0", "value": 1.125,
+         "set": {"personal.money_sensitivity_mu.theta0": 1.125}},
+        {"id": "E6_mu0_personal_1.875", "label": "personal mu^0 = 1.875 (+25 %)", "factor": "personal mu^0", "value": 1.875,
+         "set": {"personal.money_sensitivity_mu.theta0": 1.875}},
+        {"id": "E6_mu0_commercial_1.125", "label": "commercial mu^0 = 1.125 (-25 %)", "factor": "commercial mu^0", "value": 1.125,
+         "set": {"commercial.money_sensitivity_mu.theta0": 1.125}},
+        {"id": "E6_mu0_commercial_1.875", "label": "commercial mu^0 = 1.875 (+25 %)", "factor": "commercial mu^0", "value": 1.875,
+         "set": {"commercial.money_sensitivity_mu.theta0": 1.875}}
+      ],
+      "baseline_values": {"personal mu^0": 1.5, "commercial mu^0": 1.5}
+    },
+    {
+      "id": "E1", "number": 1, "priority": 2, "folder": "E1_van_tariff",
+      "name": "Van tariff p^M",
+      "question": "Who gets vans (per segment and income), and at what cost to the operator and to equity?",
+      "_about": "p^M = 15 equals the FCS tariff p^F (no van premium); 35 doubles the premium.",
+      "variants": [
+        {"id": "E1_pM_15", "label": "p^M = 15 Rs/kWh (= p^F)", "factor": "p^M", "value": 15.0,
+         "set": {"tariff_Rs_per_kWh.p_M": 15.0}},
+        {"id": "E1_pM_35", "label": "p^M = 35 Rs/kWh", "factor": "p^M", "value": 35.0,
+         "set": {"tariff_Rs_per_kWh.p_M": 35.0}}
+      ],
+      "baseline_values": {"p^M": 25.0}
+    },
+    {
+      "id": "E2", "number": 2, "priority": 2, "folder": "E2_van_fleet_and_seats",
+      "name": "Van fleet and seats (one at a time)",
+      "question": "Where does another van or seat pay off, and where is capacity idle?",
+      "_about": "Number of vans |M| (config n_vans) and EVs per van Q (config van_max_evs) for every Solomon file.",
+      "variants": [
+        {"id": "E2_vans_3", "label": "3 vans", "factor": "vans", "value": 3, "set": {"config.n_vans": 3}},
+        {"id": "E2_vans_7", "label": "7 vans", "factor": "vans", "value": 7, "set": {"config.n_vans": 7}},
+        {"id": "E2_seats_4", "label": "4 EVs per van", "factor": "seats", "value": 4, "set": {"config.van_max_evs": 4}},
+        {"id": "E2_seats_8", "label": "8 EVs per van", "factor": "seats", "value": 8, "set": {"config.van_max_evs": 8}}
+      ],
+      "baseline_values": {"vans": 5, "seats": 6}
+    },
+    {
+      "id": "E8", "number": 8, "priority": 2, "folder": "E8_van_battery",
+      "name": "Van battery upper bound B",
+      "question": "Is recharging worth modelling? If Z barely moves, drop it.",
+      "decision_threshold_pct": 1.0,
+      "_about": "B = 200 kWh for every van. If the mean change of Z on paired instances stays below decision_threshold_pct, a larger battery (or recharging) changes little and van recharging need not be modelled.",
+      "variants": [
+        {"id": "E8_battery_200", "label": "B = 200 kWh", "factor": "battery", "value": 200, "set": {"config.van_battery_kWh": 200}}
+      ],
+      "baseline_values": {"battery": 150}
+    }
+  ]
+}

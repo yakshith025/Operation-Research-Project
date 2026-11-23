@@ -1,0 +1,71 @@
+{
+ "inputs": {
+  "urban_car_ownership_all": 0.14,
+  "urban_car_ownership_top_quintile": 0.3,
+  "commercial_share_of_registrations_sC": 0.1,
+  "daily_km_ratio_commercial_over_personal": 5.0,
+  "public_share_personal": 0.1,
+  "public_share_commercial": 0.5,
+  "commercial_percentile_low": 0.25,
+  "commercial_percentile_high": 0.5,
+  "commercial_percentile_sd": 0.16
+ },
+ "ranges": {
+  "commercial_share_of_registrations_sC": [
+   0.08,
+   0.15
+  ],
+  "daily_km_ratio_commercial_over_personal": [
+   4.0,
+   6.0
+  ],
+  "public_share_personal": [
+   0.07,
+   0.15
+  ],
+  "public_share_commercial": [
+   0.35,
+   0.65
+  ]
+ },
+ "sources": {
+  "DFI": "Data for India, 'Vehicle ownership in India' (HCES, MPCE quintiles), https://www.dataforindia.com/vehicle-ownership/",
+  "EVR": "EVreporter, 'Analysis of India's CY 2024 EV sales' (Vahan registrations), https://evreporter.com/analysis-of-indias-cy-2024-ev-sales/",
+  "TATA": "Tata Motors / TATA.ev statement reported in the press: 93 % of its EV owners charge privately (home / work) and use public chargers mainly for emergencies and long trips",
+  "PAIGAM": "PAIGAM, IFAT and University of Pennsylvania (2024), 'Prisoners on Wheels': survey of about 5,300 app-based cab drivers in 8 cities; 43 % report net monthly earnings below Rs 15,000",
+  "CIS": "Centre for Internet and Society, 'Platforming precarity: Mumbai': median monthly income of taxi workers, adjusted to a 48-hour week, Rs 14,846, https://cis-india.org/raw/mumbai-platforming-precarity",
+  "CSTEP": "CSTEP (2024), 'EV perceptions and usage patterns: lessons from four Indian cities' (878 personal and 855 commercial EV users); its per-segment charging figures could not be read (PDF link returned 404 on 22 Nov 2026), so they are not used"
+ },
+ "derived": {
+  "k_public_requests_ratio": 25.0,
+  "pi_commercial_central": 0.735,
+  "pi_commercial_low": 0.448,
+  "pi_commercial_high": 0.908,
+  "personal_beta_a": 2.508,
+  "personal_beta_b": 1.0,
+  "implied_urban_car_ownership_by_quintile": [
+   0.0124,
+   0.058,
+   0.1241,
+   0.2056,
+   0.3
+  ],
+  "personal_theta_mean": 0.715,
+  "commercial_beta_a": 3.06,
+  "commercial_beta_b": 5.1,
+  "commercial_theta_mean": 0.375
+ },
+ "recommended": {
+  "pi_commercial": 0.7,
+  "personal_beta": [
+   2.5,
+   1.0
+  ],
+  "commercial_beta": [
+   3.0,
+   5.0
+  ],
+  "mixture_theta_mean": 0.477,
+  "note": "used in common/f4_params.json; pi_C rounded down from the central value, Beta parameters rounded to half units"
+ }
+}
