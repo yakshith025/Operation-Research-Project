@@ -1,0 +1,36 @@
+%=====================================================================
+\section{Glossary of RL terms}
+\label{sec:glossary}
+
+{\small
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}p{12.4cm}@{}}
+\toprule
+\textbf{Term} & \textbf{Meaning in this project} \\
+\midrule
+\endhead
+Episode & The construction of one complete plan for one instance, from an empty plan to the moment every EV is placed (or dropped). \\
+State $s_t$ & What the decision maker sees before decision $t$: which EVs are placed, when each gun becomes free, where each van is, when it is free, how much battery it has left and how many EVs it has served. \\
+Action $a_t$ & One pair (EV $i$, resource $k$): EV $i$ is appended to the end of the queue of gun $k$ or to the end of the route of van $k$. \\
+Mask & The set of actions that are allowed in a state. An action that would break a constraint of formulation 3 gets probability zero. \\
+Reward & Minus the increase of the objective $Z$ caused by the action. Over an episode the rewards add up to $-Z$ of the plan. \\
+Policy $p_\phi(a\mid s)$ & The neural network with weights $\phi$: a probability for every allowed action in the current state. \\
+Rollout & One episode played by the policy, either by sampling actions from $p_\phi$ or greedily (always the most likely action). \\
+Constructive heuristic & A method that builds a solution one piece at a time and never undoes a piece. The policy is a learned constructive heuristic. \\
+Encoder / embedding & The part of the network that reads the whole instance once and turns every node (EV, station, depot) into a vector $h\in\mathbb R^{128}$, its \emph{embedding}, that also carries information about the other nodes. \\
+Attention & The operation that lets every node weigh every other node when its embedding is computed (self-attention), and lets the decoder weigh all candidate EVs or resources when it chooses (pointer). \\
+Decoder & The part of the network that is run at every step: from the embeddings and the current state it produces the action probabilities. \\
+Pointer & An attention score used directly as the logit of choosing an item (Kool et al.\ 2019): the decoder ``points'' at an EV or a resource. \\
+REINFORCE & The policy-gradient rule of Williams (1992): make the actions of rollouts that turned out cheaper than expected more likely, and those of dearer rollouts less likely. \\
+Baseline & The ``expected'' cost that a rollout is compared with in REINFORCE. It does not change the direction of learning on average, but it reduces its noise. \\
+Shared baseline & The POMO idea: roll out the same instance several times and use the mean cost of these rollouts as the baseline of each of them. \\
+Advantage & How much better (negative) or worse (positive) a rollout is than its baseline; here relative: (cost $-$ baseline) / baseline. \\
+Imitation / teacher forcing & Training the policy to repeat the actions of a teacher (here the greedy cost rule) by maximising their log-probability while the teacher's actions are played. \\
+Map symmetry (augmentation) & One of the 8 rotations/reflections of the map around the depot. Distances do not change, so the instance is the same, but the network sees different coordinates and may build a different plan. \\
+Active search & Continuing to train on one test instance only, so that the policy specialises to it (Bello et al.\ 2016). \\
+Efficient Active Search (EAS) & Active search that changes only a small part of the parameters (here: the instance embeddings) while the network stays frozen (Hottung et al.\ 2022). \\
+Incumbent & The best plan found so far for an instance. \\
+Epoch & 50 training batches followed by one validation. \\
+Validation ratio & Mean over fixed validation instances of (cost of the policy's greedy rollout) / (cost of the greedy cost rule). Below 1 means the policy beats the rule. \\
+Dropped / unplaced EV & An EV for which no allowed action is left. It is counted, penalised in training, and makes the plan invalid. \\
+\bottomrule
+\end{longtable}}

@@ -30,7 +30,10 @@ RL2_reinforcement_learning_method_2/
 │   ├── rl2_params.json  all RL2 settings (new: n_weight_power, active_search section)
 │   ├── run_rl2.sh       everything in one command on the server
 │   └── requirements.txt numpy, torch
-├── papers/README.md     the paper behind the new part (the RL1 papers are in ../RL1_.../papers)
+├── papers/              the EAS paper (Hottung et al. 2022) + README (the RL1 papers are in ../RL1_.../papers)
+├── reports/             RL_implementation_report.tex/.pdf (32 pages): the full write-up of the RL method
+│                        (choice of method, papers, assumptions, MDP with proofs, network, training,
+│                        active search, principles, evidence, limits); sections/, figures/, make_figures.py
 ├── model/               written by train_rl2.py
 └── results/             written by solve_rl2.py / compare_rl2.py (format of code/results_io.py)
 ```

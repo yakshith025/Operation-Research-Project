@@ -1,0 +1,33 @@
+%=====================================================================
+\section{Principles implemented in the RL programs}
+\label{sec:principles}
+
+The design follows a small number of principles. They are the ``ideology'' of the implementation: when a decision was open, these settled it.
+
+\begin{enumerate}[leftmargin=*,label=\textbf{P\arabic*.}]
+  \item \textbf{Learn only what cannot be computed.} Start times, waits, feasibility and costs follow exactly from the model, so the simulator computes them (Proposition~\ref{prop:timing}). The network decides only what has no closed form: which EV next and which resource. Fewer things to learn means faster, more reliable learning.
+
+  \item \textbf{The objective is the reward.} The reward is the exact increase of $Z$; the rewards of an episode add up to $-Z$ (Proposition~\ref{prop:reward}). There is no hand-made shaping that could teach the policy to optimise something else. The only addition is the penalty for an EV that cannot be served, which corresponds to a hard constraint of the model.
+
+  \item \textbf{Feasible by construction, honest about failure.} Masks make it impossible to place an EV in a way that breaks a constraint. When an EV is left without options it is not hidden: it is counted, penalised in training, and the plan is reported as invalid with its violations listed by the checker.
+
+  \item \textbf{One judge for every method.} RL plans, MILP plans and greedy plans are all scored by \code{check\_plan\_f3} and written by \code{results\_io}. The simulator is tested to agree with the checker. A comparison between methods is therefore a comparison of plans, not of two different cost calculations.
+
+  \item \textbf{The complete model, never a restricted one.} Every gun of every station and every van is offered at every step; only infeasible pairs are removed. No neighbour lists, no candidate shortlists, no reduced station sets.
+
+  \item \textbf{Remove redundancy, exploit free symmetry.} Identical idle guns and unused vans are offered once (lossless, Assumption~\ref{as:sym}). The 8 map symmetries, which change the input but not the instance, are used for free diversity at test time and during active search.
+
+  \item \textbf{Size-free and scale-free representation.} Attention without positional encoding handles any $n$ and any fleet; all features are ratios scaled by $T$, $B$, the city size or the instance's cost scale; advantages are relative costs. One network serves instances whose $Z$ differ by orders of magnitude.
+
+  \item \textbf{Start from what is known, then improve.} Training starts by imitating the greedy cost rule and then improves on it with REINFORCE; active search starts from the best sampled plan and improves around it. Neither stage throws away what the previous one achieved.
+
+  \item \textbf{Never worse.} At test time the best of all plans is kept, and active search can only replace the incumbent by a strictly better plan. Adding RL2's search to RL1's sampling cannot make the reported plan worse.
+
+  \item \textbf{Generalise, do not memorise.} The policy is trained only on fresh random instances; the 56 test files are never seen in training. Validation uses separate fixed random instances.
+
+  \item \textbf{Measure against the strongest and the simplest reference.} Every RL result is reported against the 300-second MILP (and its proven optima) and against the greedy rule. A learned method is only interesting if it is close to the first and clearly better than the second.
+
+  \item \textbf{Separate, reproducible experiments.} RL1 and RL2 are separate folders with their own code copies, models and results; RL2 only reads RL1. Seeds are fixed per instance; every training run starts at epoch 1 and archives the previous run instead of deleting it; settings are saved with every model and result.
+
+  \item \textbf{Long runs never die on one case.} A failed training batch is logged and skipped; a failed instance becomes a row with status \code{error} and a traceback; results are appended after every instance and \code{-{}-resume} skips what is done.
+\end{enumerate}

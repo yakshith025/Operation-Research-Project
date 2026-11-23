@@ -1,0 +1,82 @@
+%=====================================================================
+\section{The policy network}
+\label{sec:network}
+
+The network (\code{rl2\_model.Policy}, the same architecture in RL1 and RL2) has 765\,474 parameters. Figure~\ref{fig:arch} shows its structure.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  font=\footnotesize,
+  box/.style={draw=headblue!70,fill=blue!4,rounded corners=2pt,align=center,minimum height=8mm,inner sep=3pt},
+  data/.style={draw=black!40,fill=black!3,rounded corners=2pt,align=center,minimum height=7mm,inner sep=3pt},
+  arr/.style={-{Stealth[length=2.2mm]},thick,draw=black!60}]
+\node[data] (st) at (0,0) {station features\\ 4 per station};
+\node[data] (ev) at (-4.2,0) {EV features\\ 16 per EV};
+\node[data] (dep) at (4.2,0) {depot features\\ 4};
+\node[box,text width=11.2cm] (enc) at (0,-1.7) {Encoder: linear input per node type $\rightarrow$ 3 Transformer layers ($d=128$, 8 heads, feed-forward 512, pre-norm) $\rightarrow$ embeddings $h_i$ (EVs), $h_f$ (stations), $h_0$ (depot)};
+\draw[arr] (ev) -- (ev |- enc.north);
+\draw[arr] (st) -- (enc);
+\draw[arr] (dep) -- (dep |- enc.north);
+\node[box,text width=5.3cm] (d1) at (-3.0,-4.1) {\textbf{Step 1: choose EV $i$}\\ context = [mean of open EVs, depot, 4 global features]; glimpse = 8-head attention over open EVs; pointer + MLP(7 dynamic EV features), clip, mask};
+\node[box,text width=5.3cm] (d2) at (3.0,-4.1) {\textbf{Step 2: choose resource $k$}\\ query = $[h_i,\ \text{glimpse}]$; key = station emb.\ (gun) or current node emb.\ (van) + resource state; pointer + MLP(6 pair features), clip, mask};
+\draw[arr] (enc.south -| d1) -- (d1.north);
+\draw[arr] (enc.south -| d2) -- (d2.north);
+\draw[arr] (d1.east) -- node[above,font=\scriptsize]{$i$} (d2.west);
+\node[data] (p1) at (-3.0,-6.0) {$p(i)$};
+\node[data] (p2) at (3.0,-6.0) {$p(k\mid i)$};
+\draw[arr] (d1) -- (p1);
+\draw[arr] (d2) -- (p2);
+\node[box,text width=11.2cm,fill=orange!6,draw=orange!70] (env) at (0,-7.5) {Simulator: append $i$ to $k$, earliest start, $\Delta Z$, new masks and dynamic features};
+\draw[arr] (p1) -- (p1 |- env.north);
+\draw[arr] (p2) -- (p2 |- env.north);
+\draw[arr,dashed] (env.east) -- ++(0.35,0) |- node[pos=0.25,right,font=\scriptsize,align=left]{next\\ step} (d2.east);
+\end{tikzpicture}
+\caption{Policy network and its loop with the simulator. The encoder runs once per instance (per map symmetry); the two decoder steps and the simulator run once per placed EV.}
+\label{fig:arch}
+\end{figure}
+
+\subsection{Encoder}
+
+Three node types get their own linear input layers into $\mathbb R^{128}$:
+\begin{itemize}
+  \item \textbf{EV} (16 static features): position relative to the depot ($x,y$, scaled, one of 8 symmetries), request time $r_i/T$, charging times $\tau^\Fcs_i/T$ and $\tau^\Mcs_i/T$, queue tolerance $W_i/T$, income $\theta_i$, energy $E_i/B$, ``stranded'' flag (no reachable station), share of reachable stations, time to the nearest reachable station, time back to the depot, range relative to the city size, cheapest gun cost and van cost (both divided by the instance's cost scale $\sigma$), and the slack $(T-r_i-\tau^\Mcs_i-t_{i0})/T$ (how late a van may come).
+  \item \textbf{Station} (4): position, number of guns, share of EVs that can reach it.
+  \item \textbf{Depot} (4): van seats per EV ($QM/n$), guns per EV ($|G|/n$), $\log T$, and $n/100$.
+\end{itemize}
+The node embeddings pass through three Transformer encoder layers (multi-head self-attention with 8 heads, feed-forward width 512, layer norm before each sublayer, no dropout) and a final layer norm. There is no positional encoding: permuting the EVs permutes the embeddings and nothing else. The encoder therefore works for any $n$, any number of stations and any number of vans.
+
+All features are ratios or are scaled by $T$, $B$, the city size or $\sigma$, so that instances of very different size and cost (C2 with $T=3390$ minutes, R1 with $T=230$) look alike to the network.
+
+\subsection{Decoder step 1: choose the EV}
+
+The context vector combines the mean embedding of the EVs still open, the depot embedding and 4 global state features (share of EVs placed, mean gun busy time, share of vans in use, mean van battery left):
+\[
+q=W_{\text{ctx}}\,[\bar h_{\text{open}};\,h_0;\,\text{global}] .
+\]
+A multi-head attention ``glimpse'' over the open EVs turns $q$ into $g$. The score of EV $i$ is
+\[
+u_i=C\tanh\!\Big(\frac{g^\top W_K h_i}{\sqrt d}+\mathrm{MLP}(\varphi_i)\Big),\qquad C=10,
+\]
+masked to $-\infty$ for EVs that are not selectable, and $p(i)=\mathrm{softmax}(u)_i$. The dynamic EV features $\varphi_i$ (7) are recomputed at every step from the simulator's options: share of resources still feasible, cheapest $\Delta Z$, regret (second cheapest minus cheapest), earliest finish, cheapest gun minus cheapest van, request time relative to the earliest open request, and the EV's place in the queue of open requests ($f_{\text{rank}}$).
+
+\begin{whybox}[title=Why dynamic features are added to the pointer]
+In routing problems such as the TSP the state is almost fully described by ``where am I and what is left''. In formulation 3 the cost of an EV depends on the current gun free times and van positions, which change after every step. The static embeddings cannot know them, so the cheapest option and the regret of each EV enter the score directly. The \emph{regret} is the classical signal of insertion heuristics: an EV whose second-best option is much worse than its best should be placed before its best option is taken by another EV.
+\end{whybox}
+
+\subsection{Decoder step 2: choose the resource}
+
+For the chosen EV $i$ the query is $q_i=W_R[h_i;g]$. The key of a resource is its base embedding plus a linear map of its current state:
+\[
+\text{key}_g=W_{\text{key}}h_{f(g)}+W_{\text{gun}}\,\rho_g,\qquad \text{key}_m=W_{\text{key}}h_{\ell_m}+W_{\text{van}}\,\rho_m,
+\]
+where $h_{\ell_m}$ is the embedding of the van's current node (depot or last EV) and $\rho$ holds 6 resource features (free time, a van flag, battery left, seats used, in use, time back to the depot; the van-only entries are 0 for a gun). The score adds an MLP of 6 pair features of $(i,k)$: $\Delta Z(i,k)/\sigma$, its excess over the cheapest option, the wait, the finish time, the van battery left after serving $i$, and a van flag. The scores are clipped, masked to the feasible resources of $i$ and normalised: $p(k\mid i)$.
+
+The probability of the action is $p(i,k)=p(i)\,p(k\mid i)$, and the log-probability of a whole episode is the sum over its steps:
+\[
+\log p_\phi(\pi\mid x)=\sum_t\big[\log p(i_t)+\log p(k_t\mid i_t)\big].
+\]
+
+\subsection{Rollouts}
+
+The function \code{rollout} plays a batch of episodes. For each row it either samples the actions from $p$, takes the most likely ones (greedy), or plays the actions of a \emph{teacher} and returns their log-probability (teacher forcing, used by the imitation warm-up and by active search). Projections that depend only on the embeddings (glimpse keys and values, EV keys, station and node keys) are computed once per batch of rollouts, not at every step.

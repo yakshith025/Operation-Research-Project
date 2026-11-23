@@ -1,0 +1,96 @@
+%=====================================================================
+\section{The chain of thought: how the method was chosen}
+\label{sec:chain}
+
+This section records the reasoning in the order it happened. Each step states the question that was asked, what was found, and what was decided.
+
+\subsection{Step 1: what kind of problem is this, seen from RL?}
+
+Before looking at any paper, five properties of formulation 3 were listed, because they decide which RL family can work at all.
+\begin{enumerate}
+  \item \textbf{Static, not online.} All requests of the period are known at time 0 (assumption 1 of formulation 3). The task is to write one complete plan per instance, not to react to requests as they arrive. An RL method for online dispatching would solve a different, harder problem and could not be compared fairly with the MILP.
+  \item \textbf{One central decision maker.} The operator decides for every gun and every van with full information. There is no need for several learning agents that must coordinate.
+  \item \textbf{Variable size.} $n$ runs from 10 to 100 (200 in the Gehring--Homberger files), and the number of resources from 24 guns + 5 vans to 48 guns + 12 vans. A method with a fixed-size input (a state vector of fixed length) would need padding or one network per size.
+  \item \textbf{Hard constraints.} Queue tolerance $W_i$, deadline $T$, range $R_i$, van battery and van seats are hard. The MILP itself fails to find a feasible plan for 30 instances. Feasibility must be built into the method, not only encouraged by a penalty.
+  \item \textbf{Exact evaluation exists.} \code{check\_plan\_f3} scores any plan with the formulation's own $Z$ and lists every violated constraint. Any RL method must produce a plan in the same format so that it is judged by the same rules as the MILP.
+\end{enumerate}
+
+\subsection{Step 2: what does the literature use for EV charging and routing?}
+
+A search was made for RL in EV-charging assignment, mobile-charger routing and vehicle routing with time windows (abstracts and search results were read; the papers that were finally used were read in full). The methods fall into five families:
+
+{\small
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.3cm}>{\raggedright\arraybackslash}p{4.3cm}>{\raggedright\arraybackslash}p{7.7cm}@{}}
+\toprule
+\textbf{Family} & \textbf{Examples} & \textbf{Fit for formulation 3} \\
+\midrule
+\endhead
+Value-based or PPO agents with a hand-made state & DQN/PPO for scheduling mobile chargers \cite{wang2023} & \textbf{Weak.} Fixed-size state and action vectors do not handle $n=10\ldots200$; they are built for online dispatch and learn a value function per state, not a complete plan. \\
+Multi-agent RL & Stations or vans as agents, e.g.\ MASTER for charging recommendation \cite{master2021} & \textbf{Unneeded.} The operator decides centrally with full information (property 2). Several learners add non-stationarity and coordination problems for no gain. \\
+Constructive attention policies (``learning to construct'') & Pointer networks with RL \cite{bello2016,nazari2018}, Attention Model \cite{kool2019}, POMO \cite{kwon2020}, EVRPTW \cite{lin2021}, heterogeneous fleet \cite{li2021}, Edge-DIRECT \cite{edgedirect} & \textbf{Best fit.} Size-free by construction (attention over a set of nodes), constraints enforced by masks, output is a complete plan, trained without labels. \\
+Learning to improve (neural local search, neural LNS) & \cite{wu2021,hottung2020} & \textbf{Good second stage, poor first stage.} They need a feasible starting plan. Greedy fails exactly on the hard R1/RC1 instances. Repairing with a sub-MILP would mean a restricted model, which the project rules out. \\
+Hybrid RL + heuristics for fixed + mobile chargers & Charging-station planning papers & \textbf{Different question.} They place stations (strategic); formulation 3 assigns and routes for one period (operational). \\
+\bottomrule
+\end{longtable}}
+
+\subsection{Step 3: the choice and the reasons for it}
+
+\begin{keybox}
+\textbf{Decision.} A constructive attention policy (Attention Model family) that, at each step, chooses an EV and then a resource; trained with REINFORCE and a shared baseline (POMO); with a deterministic simulator of formulation 3 that computes all times, masks infeasible choices and returns $-\Delta Z$ as the reward.
+\end{keybox}
+
+The reasons, each tied to a property of Step 1:
+\begin{enumerate}
+  \item \emph{Static problem} $\Rightarrow$ a policy that writes one complete plan per episode matches the task exactly.
+  \item \emph{Exact, additive objective} $\Rightarrow$ every term of $Z$ can be charged at the moment an EV is placed. The van's return leg is charged incrementally (Section~\ref{sec:reward}). So the reward is exact and adds up to $-Z$; no reward shaping is needed.
+  \item \emph{Timing need not be learned.} Once the assignment and the order on each resource are fixed, starting every session as early as possible is optimal (Proposition~\ref{prop:timing}). The project's fixed-plan LP confirms it in practice: with all binaries fixed and only the times free, the LP optimum equals the plan's own cost for all 502 valid RL1 plans (whose times are earliest starts) and all 479 MILP plans. The network therefore makes only discrete choices; continuous times come from the simulator.
+  \item \emph{Variable size} $\Rightarrow$ attention over a set of nodes has no fixed input size and no positional encoding; one network serves every $n$ and every number of guns and vans.
+  \item \emph{Hard constraints} $\Rightarrow$ masks. Only actions that keep the plan feasible can be chosen. An EV that is left without any allowed action is dropped and the plan is flagged invalid.
+  \item \emph{Two kinds of resources} $\Rightarrow$ a two-step decoder: first the EV, then its resource, as in the heterogeneous-fleet decoder of Li et al.\ \cite{li2021}. The ``fleet'' here mixes guns that stay at their station and vans that move.
+  \item \emph{Simple, stable training} $\Rightarrow$ REINFORCE with a shared baseline needs no critic network (unlike PPO or actor--critic) and no second copy of the policy (unlike the greedy-rollout baseline of Kool et al.).
+  \item \emph{Exact evaluation} $\Rightarrow$ the policy is just another method feeding \code{results\_io.evaluate}: its plans are scored by \code{check\_plan\_f3} exactly like MILP and greedy plans.
+\end{enumerate}
+
+\subsection{Step 4: the design questions inside the method}
+
+Choosing the family leaves many smaller decisions. They are listed here with the alternatives that were considered.
+
+{\small
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.4cm}>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}p{7.5cm}@{}}
+\toprule
+\textbf{Question} & \textbf{Options considered} & \textbf{Choice and reason} \\
+\midrule
+\endhead
+What is one action? & (a) next node of one van (routing view); (b) resource for the next EV in release order (dispatch view); (c) pair (EV, resource) & \textbf{(c).} (a) ignores guns; (b) fixes the processing order, which loses optimal plans when a later request should take a gun first. (c) can reach every plan (Proposition~\ref{prop:complete}). \\
+Who decides the times? & network outputs times; simulator & \textbf{Simulator}, earliest start (Proposition~\ref{prop:timing}). Learning a continuous time would only add noise. \\
+How are constraints handled? & penalties only; masks; masks + penalty for dead ends & \textbf{Masks + a penalty} per dropped EV. Masks keep every placed EV feasible; the penalty teaches the policy to avoid leaving an EV without options. \\
+What is the reward? & sparse (only $-Z$ at the end); dense $-\Delta Z$ & \textbf{Dense $-\Delta Z$}, exact. REINFORCE uses only the episode sum, but the per-step cost is also used for features (cheapest option, regret). \\
+One decoder or two? & joint softmax over $n\times K$ pairs; two steps & \textbf{Two steps} (EV, then resource). The joint softmax has up to $100\times60$ outputs per step and would mix two different decisions. \\
+Which baseline? & critic; greedy rollout of a frozen copy (Kool); shared mean of $S$ rollouts (POMO) & \textbf{Shared mean}, normalised by itself. No extra network, no extra rollout, scale-free across instances. \\
+How to start training? & random weights; imitation of a heuristic first & \textbf{Imitation warm-up} of the greedy cost rule, then REINFORCE. On the laptop, pure REINFORCE from random weights was still 18\,\% worse than the rule after 77 batches; with the warm-up the policy matched the rule after a few hundred cheap batches. \\
+Training data? & the 56 Solomon files; random instances & \textbf{Random instances} from the EV-Solomon rules (Section~\ref{sec:generator}). Within a Solomon class all files share positions, demands and $\theta$, so training on them would memorise the test set. \\
+How to use test time? & one greedy rollout; sampling; sampling + augmentation; active search & RL1: \textbf{sampling + 8 map symmetries}. RL2 adds \textbf{Efficient Active Search} after the RL1 results showed that more sampling gains little (Section~\ref{sec:evidence}). \\
+Symmetric resources? & offer all; offer one representative & \textbf{One representative} of identical idle guns of a station and of unused vans. Lossless and it removes probability mass spread over identical choices. \\
+\bottomrule
+\end{longtable}}
+
+\subsection{Step 5: decisions forced by evidence during development}
+
+Several choices were not made on paper but in response to what the first runs showed:
+\begin{enumerate}
+  \item \textbf{Imitation warm-up and the queue-position feature.} Pure REINFORCE learned slowly from random weights (validation ratio 1.18 after 77 batches). The greedy cost rule processes EVs ``stranded first, then by request time, then by income''; a network cannot copy that order unless it can see it, so a feature $f_{\text{rank}}$ (the EV's place among the open requests) was added, and the rule was taught by imitation first.
+  \item \textbf{A smaller learning rate after the warm-up} (\code{lr\_reinforce} $=2\times10^{-5}$, five times smaller than the warm-up rate). At the warm-up rate the noisy policy gradient undid part of the warm-up in laptop tests.
+  \item \textbf{Slower learning-rate decay on the GPU} ($0.9998$ per epoch instead of $0.998$), because the GPU runs hundreds of epochs and the old decay would have frozen learning too early.
+  \item \textbf{Stopping rules} (from the user): at least 200 epochs, then early stop after 10 epochs without a better validation, at most 500 epochs; and every run starts at epoch 1, older files are archived, not deleted.
+  \item \textbf{RL2.} RL1 stopped improving after about epoch 150, its gap to the MILP was largest at $n=60$--$90$, and 8$\times$ more sampling reduced the gap on seven test instances only from 1.83\,\% to 1.43\,\%. Active search on RL1's model reduced the gap on the three hardest of them from 2.76\,\% to 0.61\,\% on average. That is why RL2 combines retraining aimed at large $n$ with Efficient Active Search, and keeps RL1 untouched as the reference.
+\end{enumerate}
+
+\subsection{Step 6: rules that constrained the design}
+
+Some project rules were fixed before the RL work began and shaped it:
+\begin{itemize}
+  \item \textbf{No reduced or restricted model.} The policy is offered every gun of every station and every van at every step; only infeasible pairs are masked. There are no neighbour lists or candidate shortlists.
+  \item \textbf{One scorer for all methods.} RL plans go through \code{check\_plan\_f3}; the simulator is tested to give the same $Z$.
+  \item \textbf{Runs never stop on one instance.} A failure becomes status \code{error} with a traceback; the run continues.
+  \item \textbf{Experiments are separate.} RL2 has its own copy of the code and writes only into its own folder; RL1's code, model and results are only read.
+\end{itemize}

@@ -1,0 +1,79 @@
+%=====================================================================
+\section{The papers and what was taken from each}
+\label{sec:papers}
+
+The implementation rests on six papers. The PDFs of the first four are in \code{RL1\_reinforcement\_learning\_method\_1/papers/}, the EAS paper in \code{RL2\_reinforcement\_learning\_method\_2/papers/}.
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.4cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{2.6cm}@{}}
+\toprule
+\textbf{Paper} & \textbf{Taken into the implementation} & \textbf{Where in code} \\
+\midrule
+Kool et al.\ 2019 \cite{kool2019} & Transformer encoder over nodes without positional encoding; context + glimpse + pointer decoder; logit clipping $C\tanh(\cdot)$; masking; REINFORCE training & \code{rl2\_model.py} \\
+Kwon et al.\ 2020 (POMO) \cite{kwon2020} & Shared baseline = mean cost of several rollouts of one instance; 8 map symmetries at inference & \code{train\_rl2.py}, \code{solve\_rl2.py}, \code{dihedral} in \code{rl2\_env.py} \\
+Li et al.\ 2021 \cite{li2021} & Two decisions per step for a heterogeneous fleet (vehicle selection + node selection) & two-step decoder in \code{rl2\_model.py} \\
+Lin et al.\ 2021 \cite{lin2021} & Evidence that masks for battery, time windows and charging work with an attention policy & masks in \code{rl2\_env.py} \\
+Williams 1992 \cite{williams1992} & The REINFORCE gradient estimator & \code{train\_step} \\
+Hottung et al.\ 2022 (EAS) \cite{hottung2022} & EAS-Emb: tune only instance embeddings at test time with REINFORCE + imitation of the incumbent & \code{rl2\_eas.py} (RL2 only) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Kool, van Hoof, Welling: \emph{Attention, learn to solve routing problems!} (ICLR 2019)}
+
+\textbf{Main idea.} A routing solution is built one node at a time by a network with two parts. The \emph{encoder} is a stack of Transformer layers (multi-head self-attention and feed-forward sublayers, Vaswani et al.\ \cite{vaswani2017}) applied to the set of nodes; because there is no positional encoding, the result does not depend on the order in which the nodes are listed, and the same weights work for any number of nodes. The \emph{decoder} is run at every construction step: it forms a context vector from the graph embedding and the current state, refines it with one multi-head attention ``glimpse'' over the nodes, and then computes single-head compatibilities with every node. These are clipped, $u=C\tanh(\cdot)$ with $C=10$, masked and passed through a softmax. Training is REINFORCE with a greedy-rollout baseline.
+
+\textbf{What was taken.} The encoder (3 layers, $d=128$, 8 heads, feed-forward 512), the glimpse-then-pointer decoder, the clipping constant $C=10$, masking of infeasible nodes, and REINFORCE.
+
+\textbf{What was changed and why.}
+\begin{itemize}
+  \item Three node types (EVs, stations, depot) with their own input layers, because they carry different features.
+  \item The pointer score gets an additional learned term from \emph{dynamic} features (cheapest option, regret, time pressure, \dots), because in formulation 3 the cost of an EV depends strongly on the current queues and van positions, which static embeddings cannot know. In the AM the state enters only through the context vector.
+  \item The greedy-rollout baseline was replaced by POMO's shared baseline (next paper).
+\end{itemize}
+
+\subsection{Kwon et al.: \emph{POMO} (NeurIPS 2020)}
+
+\textbf{Main idea.} Many combinatorial problems have several optimal solutions (e.g.\ a tour can start anywhere). POMO rolls out the same instance many times from different starts and uses the \emph{mean} cost of these rollouts as the REINFORCE baseline for each of them. This baseline is low-variance and needs no critic and no frozen policy copy. At inference POMO also uses \emph{instance augmentation}: the 8 symmetries of the unit square give 8 inputs that describe the same instance; the best result over all of them is kept.
+
+\textbf{What was taken.} The shared baseline (each training instance is rolled out $S=8$ times; the baseline is their mean) and the 8 dihedral augmentations (coordinates are taken relative to the depot, so every symmetry leaves all distances unchanged).
+
+\textbf{What was changed and why.} POMO's ``multiple optima'' come from forcing different first nodes. In formulation 3 the first decision is a pair and the rollouts differ by sampling, not by forced starts; each training instance also gets a random symmetry, which gives the same kind of diversity. The advantage is divided by the baseline (relative cost) so that cheap and expensive instances contribute on the same scale.
+
+\subsection{Li et al.: \emph{DRL for the heterogeneous capacitated VRP} (IEEE T-Cyb 2021)}
+
+\textbf{Main idea.} With vehicles of different types, each step has two decisions: which vehicle moves next and which customer it serves. The paper uses a vehicle-selection decoder followed by a node-selection decoder, and multiplies their probabilities.
+
+\textbf{What was taken.} The two-step structure and $\log p(a)=\log p(\text{first choice})+\log p(\text{second}\mid\text{first})$.
+
+\textbf{What was changed and why.} The order is reversed: first the EV, then its resource. In formulation 3 the scarce, decisive question is ``which request is handled next'', and the resource choice for a given EV is local (it depends on that EV's distances and options). Choosing the EV first also lets the resource decoder use pair features of exactly that EV (its cost and wait on every resource). The ``fleet'' contains two very different types: guns are fixed at a station and keyed by the station's embedding; vans move and are keyed by the embedding of the node where they currently are.
+
+\subsection{Lin, Ghaddar, Nathwani: \emph{DRL for the EVRPTW} (IEEE T-ITS 2021)}
+
+\textbf{Main idea.} An attention-based policy for electric vehicle routing with time windows and charging stations, with masks for battery level, time windows and the possibility to reach a charging station.
+
+\textbf{What was taken.} No component directly, but the evidence that the method copes with the same kind of hard time and energy constraints as formulation 3. The design of the van masks (enough battery to serve the EV \emph{and} return; back at the depot by $T$) follows the same reasoning as their battery and time-window masks: a mask must guarantee that the partial route can still be completed.
+
+\subsection{Williams: \emph{Simple statistical gradient-following algorithms} (Machine Learning 1992)}
+
+\textbf{Main idea.} For a stochastic policy, $\nabla_\phi\,\E_{\pi\sim p_\phi}[c(\pi)]=\E\big[(c(\pi)-b)\,\nabla_\phi\log p_\phi(\pi)\big]$ for any baseline $b$ that does not depend on the sampled $\pi$. The gradient can be estimated from sampled rollouts.
+
+\textbf{What was taken.} This estimator, with the shared baseline of POMO.
+
+\subsection{Hottung, Kwon, Tierney: \emph{Efficient active search} (ICLR 2022)}
+
+\textbf{Main idea.} Bello et al.\ \cite{bello2016} proposed \emph{active search}: keep training the model on the one test instance to be solved. It works, but updating all weights for every instance is slow and memory-hungry. EAS updates only a small subset of parameters. In \emph{EAS-Emb} (Section~3.1 of the paper) the embeddings produced by the encoder become trainable parameters for that instance, the rest of the network is frozen, and the loss is
+\[
+\mathcal L_{\text{RIL}}=\mathcal L_{\text{RL}}+\lambda\,\mathcal L_{\text{IL}},
+\]
+where $\mathcal L_{\text{RL}}$ is REINFORCE on sampled solutions and $\mathcal L_{\text{IL}}$ is the negative log-likelihood of re-generating the best solution found so far (teacher forcing). The imitation term pulls the search towards the incumbent; the paper shows (its Section~4.5) that a moderate $\lambda$ improves results on TSP and CVRP. The paper runs 200 search iterations per instance and tunes $\lambda$ and the learning rate by Bayesian optimisation on validation instances.
+
+\textbf{What was taken.} EAS-Emb with the RL + IL loss, the shared baseline per symmetry, Adam on the embeddings, the incumbent replay, and 200 iterations.
+
+\textbf{What was changed and why.}
+\begin{itemize}
+  \item In the paper's POMO implementation only the single-head keys of the last decoder layer are updated. Here all encoder outputs (EV, station and depot embeddings) are updated, because the decoder of this project uses them in several places (context mean, glimpse keys and values, EV keys, resource keys); updating only one projection would leave the others unchanged.
+  \item A wall-clock cap (10 s per instance) besides the 200 iterations, so that the total solve time of 560 instances is bounded.
+  \item $\lambda=0.01$ and learning rate $0.004$ were set by hand, not tuned (a limitation, Section~\ref{sec:limits}).
+  \item The incumbent is selected lexicographically (fewest dropped EVs, then lowest $Z$), and it is only replaced by a strictly better plan, so EAS can never return a worse plan than the sampling step.
+\end{itemize}

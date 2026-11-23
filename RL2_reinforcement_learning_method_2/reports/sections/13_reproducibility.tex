@@ -1,0 +1,85 @@
+%=====================================================================
+\section{Reproducing the work}
+\label{sec:repro}
+
+\subsection{Files}
+
+{\small
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{5.2cm}>{\raggedright\arraybackslash}p{10.8cm}@{}}
+\toprule
+\textbf{File (in \code{RL2\_reinforcement\_learning\_method\_2/})} & \textbf{Content} \\
+\midrule
+\endhead
+\code{code/rl2\_data.py} & CSV dataset $\rightarrow$ instance dict (layout of the MILP's \code{load\_instance}) \\
+\code{code/rl2\_generator.py} & random training instances with the EV-Solomon rules \\
+\code{code/rl2\_env.py} & batched simulator: options, masks, $\Delta Z$, features, greedy rule, \code{plan\_of} \\
+\code{code/rl2\_model.py} & policy network and \code{rollout} \\
+\code{code/train\_rl2.py} & warm-up, REINFORCE, validation, stop rules, archive of previous runs \\
+\code{code/rl2\_eas.py} & Efficient Active Search (EAS-Emb) and incumbent replay \\
+\code{code/solve\_rl2.py} & the two runs per test instance, results in the \code{results\_io} format \\
+\code{code/compare\_rl2.py} & RL2-EAS vs RL2 vs RL1 vs greedy vs MILP \\
+\code{code/test\_rl2.py} & the six self-checks \\
+\code{code/rl2\_params.json} & every RL2 setting (Table~\ref{tab:hyper}) \\
+\code{code/run\_rl2.sh} & tests $\rightarrow$ training $\rightarrow$ solving $\rightarrow$ comparison, one command \\
+\code{papers/} & the EAS paper (RL1's papers are in \code{../RL1\_.../papers/}) \\
+\code{model/}, \code{results/} & written by training and solving \\
+\code{reports/} & this report: \code{RL\_implementation\_report.tex} with \code{sections/}, \code{figures/} and \code{make\_figures.py} \\
+\bottomrule
+\end{longtable}}
+
+RL2 reads the project's \code{dataset\_ev\_solomon/csv} and \code{income/}, the project code in \code{code/} (\code{make\_income}, \code{results\_io}, \code{check\_plan\_f3}, \code{solve\_milp\_f3}), RL1's \code{results/runs.csv} and the MILP's \code{new\_results/runs.csv} (for the comparison). It writes only into its own folder.
+
+\subsection{Commands}
+
+On the server, from \code{RL2\_reinforcement\_learning\_method\_2/code} with the \code{yakshith} conda environment:
+{\small
+\begin{verbatim}
+# six self-checks
+python test_rl2.py --quick
+# train, solve the 560 instances, compare (in the background)
+nohup bash run_rl2.sh 8 32 > run_rl2.log 2>&1 &
+\end{verbatim}}
+Separately:
+{\small
+\begin{verbatim}
+python train_rl2.py              # new training from epoch 1
+python solve_rl2.py              # 56 Solomon files x n = 10..100, both runs
+python solve_rl2.py --no-eas     # sampling run only
+python compare_rl2.py            # comparison tables
+# ablation: both steps with RL1's trained model (read only)
+python solve_rl2.py --run-id-prefix rl1model \
+  --model ../../RL1_reinforcement_learning_method_1/model/model_best.pt
+\end{verbatim}}
+The figures of this report: \code{python make\_figures.py} in \code{reports/}; the PDF: \code{latexmk -pdf RL\_implementation\_report.tex}.
+
+\subsection{All settings}
+
+\begin{table}[h]
+\centering\footnotesize
+\caption{Settings of RL1 and RL2 (\code{rl1\_params.json}, \code{rl2\_params.json}). Formulation data (costs, fleet, $T$, income sensitivities) are not RL settings; they come from the dataset and \code{code/f3\_params.json}.}
+\label{tab:hyper}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{5.6cm}>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}p{3.0cm}@{}}
+\toprule
+group & setting & RL1 & RL2 \\
+\midrule
+network & embedding $d$ / heads / layers / feed-forward & 128 / 8 / 3 / 512 & same \\
+ & logit clip $C$ / hidden width of feature MLPs & 10 / 32 & same \\
+ & parameters & 765\,474 & same \\
+training & warm-up batches (imitation) & 500 & 500 \\
+ & batches per epoch & 50 & 50 \\
+ & instances per batch $B$ / rollouts per instance $S$ & 32 / 8 & \textbf{64} / 8 \\
+ & $n$ range / weighting & 10--100 / uniform & 10--100 / $\boldsymbol{\propto n}$ \\
+ & learning rate warm-up / REINFORCE & $10^{-4}$ / $2\times10^{-5}$ & same \\
+ & decay per epoch / gradient clip & 0.9998 / 1.0 & same \\
+ & drop penalty $\lambda_{\text{drop}}$ (times cost scale) & 10 & 10 \\
+ & epochs: min / patience / max / hours & 200 / 10 / 500 / 8 & same \\
+ & validation sizes $\times$ instances & $\{20,50,100\}\times24$ & $\boldsymbol{\{20,50,80,100\}\times50}$ \\
+generator & clusters / cluster width (share of city) & 5--12 / 0.015--0.05 & same \\
+ & requests at 0 / Beta$(a,b)$ / max share of $T$ & 15--30\,\% / (1, 2.5) / 0.83--0.92 & same \\
+ & $T$ jitter / templates & $\pm15$\,\% / 100-EV files & same \\
+inference & symmetries $\times$ (greedy + samples) & $8\times(1+64)$ & same \\
+active search & iterations / seconds & -- & \textbf{200 / 10} \\
+ & samples per symmetry / learning rate / $\lambda$ & -- & \textbf{32 / 0.004 / 0.01} \\
+\bottomrule
+\end{tabular}
+\end{table}
