@@ -1,0 +1,162 @@
+{
+ "rl1": {
+  "method": "RL1",
+  "argv": [
+   "solve_rl1.py",
+   "--file-size",
+   "100",
+   "--sizes",
+   "10",
+   "20",
+   "30",
+   "40",
+   "50",
+   "60",
+   "70",
+   "80",
+   "90",
+   "100",
+   "--threads",
+   "32",
+   "--resume"
+  ],
+  "model": "/mnt/DataDrive_2/Yakshith/or_project/project/rl1/RL1_reinforcement_learning_method_1/model/model_best.pt",
+  "model_id": "/mnt/DataDrive_2/Yakshith/or_project/project/rl1/RL1_reinforcement_learning_method_1/model/model_best.pt|2026-11-22 18:57:51|epoch 153",
+  "model_cfg": {
+   "d": 128,
+   "heads": 8,
+   "layers": 3,
+   "ff": 512,
+   "clip": 10.0,
+   "dyn_hidden": 32
+  },
+  "training_state": {
+   "epoch": 153,
+   "iters": 7650,
+   "train_s": 1675.9473259449005,
+   "best_val": 0.968971632208989,
+   "best_epoch": 153,
+   "stale": 0
+  },
+  "training_params": {
+   "generator": {
+    "file_sizes": [
+     100
+    ],
+    "clusters": [
+     5,
+     12
+    ],
+    "cluster_sigma_share": [
+     0.015,
+     0.05
+    ],
+    "request_zero_share": [
+     0.15,
+     0.3
+    ],
+    "request_beta": [
+     1.0,
+     2.5
+    ],
+    "request_max_share": [
+     0.83,
+     0.92
+    ],
+    "T_jitter": 0.15,
+    "kmeans_iters": 100
+   },
+   "model": {
+    "d": 128,
+    "heads": 8,
+    "layers": 3,
+    "ff": 512,
+    "clip": 10.0,
+    "dyn_hidden": 32
+   },
+   "training": {
+    "hours": 8.0,
+    "imitation_batches": 500,
+    "max_epochs": 500,
+    "min_epochs": 200,
+    "patience_epochs": 10,
+    "min_improvement": 0.0,
+    "iters_per_epoch": 50,
+    "batch_instances": 32,
+    "samples": 8,
+    "n_min": 10,
+    "n_max": 100,
+    "lr": 0.0001,
+    "lr_reinforce": 2e-05,
+    "lr_decay_per_epoch": 0.9998,
+    "max_grad_norm": 1.0,
+    "drop_penalty": 10.0,
+    "val_sizes": [
+     20,
+     50,
+     100
+    ],
+    "val_instances_per_size": 24,
+    "val_seed": 777
+   },
+   "inference": {
+    "samples": 64,
+    "augment": 8,
+    "chunk": 1040
+   }
+  },
+  "train_s": 1675.9,
+  "samples": 64,
+  "augment": 8,
+  "seed": 0,
+  "device": "cuda",
+  "threads": 32,
+  "csv": "/mnt/DataDrive_2/Yakshith/or_project/project/rl1/dataset_ev_solomon/csv",
+  "f3_params": {
+   "_about": "Income-related parameters of main_formulation_3 (everything else is read from the EV-Solomon files). Placeholder values for the experiments: the formulation only needs the directions (mu non-increasing, every value of time non-decreasing, W non-increasing in income). Each sensitivity is a straight line from its value at theta = 0 (lowest income) to its value at theta = 1 (highest income).",
+   "theta_distribution": {
+    "_about": "theta_i ~ Beta(a, b), drawn independently per EV. a = b = 1 is uniform on [0, 1]; a = b = 2 is bell-shaped (most customers in the middle). The same EV number gets the same theta in every file of a Solomon class (seed = seed_base + class + file size).",
+    "a": 2.0,
+    "b": 2.0,
+    "seed_base": 2611
+   },
+   "money_sensitivity_mu": {
+    "_about": "Perceived cost per rupee paid (Rs/Rs). Must satisfy theta0 >= theta1 > 0.",
+    "theta0": 1.5,
+    "theta1": 0.5
+   },
+   "value_of_time_Rs_per_min": {
+    "_about": "D = driving to an FCS, Q = queueing at an FCS, C = charging at an FCS (driver present), V = car parked while it waits for and is charged by a van (driver free). Each must satisfy theta1 >= theta0 >= 0; Q > D and V <= C at both ends, and V may not rise faster than C.",
+    "D": {
+     "theta0": 1.5,
+     "theta1": 15.0
+    },
+    "Q": {
+     "theta0": 2.5,
+     "theta1": 25.0
+    },
+    "V": {
+     "theta0": 0.5,
+     "theta1": 5.0
+    },
+    "C": {
+     "theta0": 1.0,
+     "theta1": 10.0
+    }
+   },
+   "queue_tolerance_W_min": {
+    "_about": "Longest queue a customer accepts at an FCS (minutes). Must satisfy theta0 >= theta1 >= 0.",
+    "theta0": 60.0,
+    "theta1": 15.0
+   },
+   "tariff_Rs_per_kWh": {
+    "_about": "What the customer pays per kWh at an FCS (p_F) and for the van service (p_M), with p_M >= p_F.",
+    "p_F": 15.0,
+    "p_M": 25.0
+   }
+  },
+  "selection": "fewest unplaced EVs, then lowest Z; scored by check_plan_f3 (results_io.evaluate)",
+  "started": "2026-11-22 19:08:32",
+  "finished": "2026-11-22 19:09:40"
+ }
+}
