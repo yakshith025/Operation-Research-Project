@@ -1,0 +1,128 @@
+# E6: Money sensitivity at theta = 0, mu^0 (RL)
+
+**Question.** How sensitive are Z and the van share to the coefficient with the largest elasticity on Z?
+
+mu^0 of each segment separately, +-25 % (mu^1 = 0.5 stays, so mu stays non-increasing).
+
+Baseline: `rl_f4` in `baseline_RL/results`. Changes are over paired instances (valid in both). Van shares are pooled over the free-choice EVs of the paired instances.
+
+## Variants against the baseline
+
+| variant | run_id | valid | paired | newly_valid | no_longer_valid | mean_dZ_% | median_dZ_% | mean_d_operator_cost_% | mean_d_customer_cost_% | baseline_share_van_personal_% | share_van_personal_% | baseline_share_van_commercial_% | share_van_commercial_% | vans_used | baseline_vans_used | mean_gap_to_milp_% |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| E6_mu0_personal_1.125 | rl_f4_zero_shot | 500 | 499 | 1 | 1 | -1.281 | -1.228 | 0.098 | -1.886 | 6.73 | 7.03 | 0.93 | 0.86 | 2.21 | 2.2 | 0.915 |
+| E6_mu0_personal_1.125 | rl_f4_retrained | 501 | 500 | 1 | 0 | -1.224 | -1.189 | 0.066 | -1.789 | 6.73 | 7.8 | 0.94 | 0.73 | 2.21 | 2.21 | 0.946 |
+| E6_mu0_personal_1.875 | rl_f4_zero_shot | 500 | 499 | 1 | 1 | 1.294 | 1.245 | -0.025 | 1.886 | 6.73 | 6.46 | 0.93 | 0.85 | 2.21 | 2.2 | 0.798 |
+| E6_mu0_personal_1.875 | rl_f4_retrained | 499 | 499 | 0 | 1 | 1.36 | 1.259 | 0.095 | 1.938 | 6.74 | 7.28 | 0.91 | 0.83 | 2.22 | 2.2 | 0.838 |
+| E6_mu0_commercial_1.125 | rl_f4_zero_shot | 499 | 499 | 0 | 1 | -6.308 | -6.46 | 0.075 | -9.178 | 6.74 | 6.82 | 0.91 | 0.88 | 2.21 | 2.2 | 0.867 |
+| E6_mu0_commercial_1.125 | rl_f4_retrained | 500 | 500 | 0 | 0 | -6.246 | -6.451 | -0.121 | -9.008 | 6.73 | 7.09 | 0.94 | 0.79 | 2.19 | 2.21 | 0.912 |
+| E6_mu0_commercial_1.875 | rl_f4_zero_shot | 500 | 499 | 1 | 1 | 6.336 | 6.454 | 0.037 | 9.185 | 6.73 | 6.84 | 0.93 | 0.86 | 2.21 | 2.2 | 0.798 |
+| E6_mu0_commercial_1.875 | rl_f4_retrained | 500 | 499 | 1 | 1 | 6.334 | 6.412 | 0.121 | 9.154 | 6.74 | 7.79 | 0.91 | 0.6 | 2.21 | 2.2 | 0.789 |
+
+## Headlines
+
+- E6_mu0_personal_1.125 (rl_f4_zero_shot): Z -1.281 % on average over 499 paired instances; van share personal 6.73 -> 7.03 %, commercial 0.93 -> 0.86 %; 1 instance(s) newly solved, 1 lost.
+- E6_mu0_personal_1.125 (rl_f4_retrained): Z -1.224 % on average over 500 paired instances; van share personal 6.73 -> 7.8 %, commercial 0.94 -> 0.73 %; 1 instance(s) newly solved, 0 lost.
+- E6_mu0_personal_1.875 (rl_f4_zero_shot): Z +1.294 % on average over 499 paired instances; van share personal 6.73 -> 6.46 %, commercial 0.93 -> 0.85 %; 1 instance(s) newly solved, 1 lost.
+- E6_mu0_personal_1.875 (rl_f4_retrained): Z +1.36 % on average over 499 paired instances; van share personal 6.74 -> 7.28 %, commercial 0.91 -> 0.83 %; 0 instance(s) newly solved, 1 lost.
+- E6_mu0_commercial_1.125 (rl_f4_zero_shot): Z -6.308 % on average over 499 paired instances; van share personal 6.74 -> 6.82 %, commercial 0.91 -> 0.88 %; 0 instance(s) newly solved, 1 lost.
+- E6_mu0_commercial_1.125 (rl_f4_retrained): Z -6.246 % on average over 500 paired instances; van share personal 6.73 -> 7.09 %, commercial 0.94 -> 0.79 %; 0 instance(s) newly solved, 0 lost.
+- E6_mu0_commercial_1.875 (rl_f4_zero_shot): Z +6.336 % on average over 499 paired instances; van share personal 6.73 -> 6.84 %, commercial 0.93 -> 0.86 %; 1 instance(s) newly solved, 1 lost.
+- E6_mu0_commercial_1.875 (rl_f4_retrained): Z +6.334 % on average over 499 paired instances; van share personal 6.74 -> 7.79 %, commercial 0.91 -> 0.6 %; 1 instance(s) newly solved, 1 lost.
+
+## Van share by segment and income band (all valid plans)
+
+| run | segment | income_band | EVs | free_choice | share_van_free_choice_% | mean_queue_FCS_min | mean_customer_cost_Rs |
+|---|---|---|---|---|---|---|---|
+| baseline (rl_f4) | personal | 0.0-0.2 | 141 | 141 | 0.0 | 2.47 | 531.45 |
+| baseline (rl_f4) | personal | 0.2-0.4 | 745 | 652 | 0.0 | 1.58 | 645.53 |
+| baseline (rl_f4) | personal | 0.4-0.6 | 1650 | 1322 | 1.4 | 1.03 | 678.46 |
+| baseline (rl_f4) | personal | 0.6-0.8 | 2201 | 1896 | 4.7 | 0.98 | 713.0 |
+| baseline (rl_f4) | personal | 0.8-1.0 | 3031 | 2716 | 12.7 | 0.19 | 721.92 |
+| baseline (rl_f4) | commercial | 0.0-0.2 | 2832 | 2572 | 0.5 | 5.18 | 614.32 |
+| baseline (rl_f4) | commercial | 0.2-0.4 | 8237 | 6901 | 1.3 | 3.57 | 608.07 |
+| baseline (rl_f4) | commercial | 0.4-0.6 | 5798 | 4754 | 0.7 | 2.4 | 581.04 |
+| baseline (rl_f4) | commercial | 0.6-0.8 | 1334 | 1110 | 0.5 | 2.11 | 575.96 |
+| baseline (rl_f4) | commercial | 0.8-1.0 | 81 | 81 | 0.0 | 1.01 | 442.35 |
+| E6_mu0_personal_1.125 (rl_f4_zero_shot) | personal | 0.0-0.2 | 142 | 142 | 0.0 | 2.72 | 435.75 |
+| E6_mu0_personal_1.125 (rl_f4_zero_shot) | personal | 0.2-0.4 | 744 | 652 | 0.0 | 1.42 | 555.26 |
+| E6_mu0_personal_1.125 (rl_f4_zero_shot) | personal | 0.4-0.6 | 1653 | 1324 | 1.4 | 1.07 | 612.56 |
+| E6_mu0_personal_1.125 (rl_f4_zero_shot) | personal | 0.6-0.8 | 2196 | 1890 | 5.6 | 0.77 | 672.75 |
+| E6_mu0_personal_1.125 (rl_f4_zero_shot) | personal | 0.8-1.0 | 3033 | 2718 | 12.8 | 0.2 | 711.31 |
+| E6_mu0_personal_1.125 (rl_f4_zero_shot) | commercial | 0.0-0.2 | 2826 | 2566 | 0.5 | 5.28 | 613.07 |
+| E6_mu0_personal_1.125 (rl_f4_zero_shot) | commercial | 0.2-0.4 | 8237 | 6898 | 1.1 | 3.54 | 608.68 |
+| E6_mu0_personal_1.125 (rl_f4_zero_shot) | commercial | 0.4-0.6 | 5816 | 4772 | 1.0 | 2.52 | 584.42 |
+| E6_mu0_personal_1.125 (rl_f4_zero_shot) | commercial | 0.6-0.8 | 1332 | 1108 | 0.7 | 1.97 | 579.06 |
+| E6_mu0_personal_1.125 (rl_f4_zero_shot) | commercial | 0.8-1.0 | 81 | 81 | 1.2 | 0.98 | 451.49 |
+| E6_mu0_personal_1.125 (rl_f4_retrained) | personal | 0.0-0.2 | 142 | 142 | 0.7 | 5.8 | 458.78 |
+| E6_mu0_personal_1.125 (rl_f4_retrained) | personal | 0.2-0.4 | 746 | 653 | 0.0 | 2.64 | 571.17 |
+| E6_mu0_personal_1.125 (rl_f4_retrained) | personal | 0.4-0.6 | 1657 | 1328 | 2.3 | 1.77 | 630.19 |
+| E6_mu0_personal_1.125 (rl_f4_retrained) | personal | 0.6-0.8 | 2210 | 1903 | 5.8 | 1.15 | 688.94 |
+| E6_mu0_personal_1.125 (rl_f4_retrained) | personal | 0.8-1.0 | 3044 | 2728 | 14.1 | 0.26 | 715.18 |
+| E6_mu0_personal_1.125 (rl_f4_retrained) | commercial | 0.0-0.2 | 2841 | 2580 | 0.7 | 5.23 | 613.46 |
+| E6_mu0_personal_1.125 (rl_f4_retrained) | commercial | 0.2-0.4 | 8261 | 6919 | 0.9 | 3.6 | 606.26 |
+| E6_mu0_personal_1.125 (rl_f4_retrained) | commercial | 0.4-0.6 | 5830 | 4783 | 0.7 | 2.16 | 579.33 |
+| E6_mu0_personal_1.125 (rl_f4_retrained) | commercial | 0.6-0.8 | 1338 | 1113 | 0.6 | 1.85 | 571.8 |
+| E6_mu0_personal_1.125 (rl_f4_retrained) | commercial | 0.8-1.0 | 81 | 81 | 1.2 | 1.0 | 445.71 |
+| E6_mu0_personal_1.875 (rl_f4_zero_shot) | personal | 0.0-0.2 | 142 | 142 | 0.0 | 3.63 | 634.91 |
+| E6_mu0_personal_1.875 (rl_f4_zero_shot) | personal | 0.2-0.4 | 744 | 652 | 0.2 | 2.23 | 740.91 |
+| E6_mu0_personal_1.875 (rl_f4_zero_shot) | personal | 0.4-0.6 | 1653 | 1324 | 1.5 | 1.18 | 743.47 |
+| E6_mu0_personal_1.875 (rl_f4_zero_shot) | personal | 0.6-0.8 | 2196 | 1890 | 3.7 | 0.8 | 747.52 |
+| E6_mu0_personal_1.875 (rl_f4_zero_shot) | personal | 0.8-1.0 | 3033 | 2718 | 12.7 | 0.16 | 736.23 |
+| E6_mu0_personal_1.875 (rl_f4_zero_shot) | commercial | 0.0-0.2 | 2826 | 2566 | 0.6 | 5.32 | 614.06 |
+| E6_mu0_personal_1.875 (rl_f4_zero_shot) | commercial | 0.2-0.4 | 8237 | 6898 | 1.2 | 3.59 | 608.54 |
+| E6_mu0_personal_1.875 (rl_f4_zero_shot) | commercial | 0.4-0.6 | 5816 | 4772 | 0.8 | 2.39 | 583.03 |
+| E6_mu0_personal_1.875 (rl_f4_zero_shot) | commercial | 0.6-0.8 | 1332 | 1108 | 0.5 | 2.13 | 577.2 |
+| E6_mu0_personal_1.875 (rl_f4_zero_shot) | commercial | 0.8-1.0 | 81 | 81 | 1.2 | 0.9 | 445.95 |
+| E6_mu0_personal_1.875 (rl_f4_retrained) | personal | 0.0-0.2 | 140 | 140 | 0.0 | 2.8 | 627.35 |
+| E6_mu0_personal_1.875 (rl_f4_retrained) | personal | 0.2-0.4 | 743 | 650 | 0.2 | 1.99 | 739.1 |
+| E6_mu0_personal_1.875 (rl_f4_retrained) | personal | 0.4-0.6 | 1642 | 1315 | 1.6 | 1.73 | 752.74 |
+| E6_mu0_personal_1.875 (rl_f4_retrained) | personal | 0.6-0.8 | 2192 | 1889 | 4.8 | 1.04 | 758.12 |
+| E6_mu0_personal_1.875 (rl_f4_retrained) | personal | 0.8-1.0 | 3023 | 2709 | 13.9 | 0.28 | 738.36 |
+| E6_mu0_personal_1.875 (rl_f4_retrained) | commercial | 0.0-0.2 | 2822 | 2563 | 0.4 | 4.86 | 611.36 |
+| E6_mu0_personal_1.875 (rl_f4_retrained) | commercial | 0.2-0.4 | 8212 | 6879 | 1.0 | 3.47 | 604.19 |
+| E6_mu0_personal_1.875 (rl_f4_retrained) | commercial | 0.4-0.6 | 5778 | 4737 | 0.8 | 2.23 | 580.62 |
+| E6_mu0_personal_1.875 (rl_f4_retrained) | commercial | 0.6-0.8 | 1327 | 1104 | 0.5 | 1.91 | 572.51 |
+| E6_mu0_personal_1.875 (rl_f4_retrained) | commercial | 0.8-1.0 | 81 | 81 | 0.0 | 0.23 | 432.97 |
+| E6_mu0_commercial_1.125 (rl_f4_zero_shot) | personal | 0.0-0.2 | 140 | 140 | 0.0 | 2.83 | 533.09 |
+| E6_mu0_commercial_1.125 (rl_f4_zero_shot) | personal | 0.2-0.4 | 743 | 650 | 0.0 | 1.7 | 647.25 |
+| E6_mu0_commercial_1.125 (rl_f4_zero_shot) | personal | 0.4-0.6 | 1642 | 1315 | 1.4 | 0.98 | 676.77 |
+| E6_mu0_commercial_1.125 (rl_f4_zero_shot) | personal | 0.6-0.8 | 2192 | 1889 | 4.8 | 0.86 | 711.77 |
+| E6_mu0_commercial_1.125 (rl_f4_zero_shot) | personal | 0.8-1.0 | 3023 | 2709 | 12.8 | 0.19 | 722.2 |
+| E6_mu0_commercial_1.125 (rl_f4_zero_shot) | commercial | 0.0-0.2 | 2822 | 2563 | 0.4 | 5.1 | 504.62 |
+| E6_mu0_commercial_1.125 (rl_f4_zero_shot) | commercial | 0.2-0.4 | 8212 | 6879 | 1.1 | 3.49 | 517.81 |
+| E6_mu0_commercial_1.125 (rl_f4_zero_shot) | commercial | 0.4-0.6 | 5778 | 4737 | 0.8 | 2.4 | 517.08 |
+| E6_mu0_commercial_1.125 (rl_f4_zero_shot) | commercial | 0.6-0.8 | 1327 | 1104 | 0.8 | 1.96 | 533.88 |
+| E6_mu0_commercial_1.125 (rl_f4_zero_shot) | commercial | 0.8-1.0 | 81 | 81 | 0.0 | 0.54 | 419.47 |
+| E6_mu0_commercial_1.125 (rl_f4_retrained) | personal | 0.0-0.2 | 141 | 141 | 0.0 | 2.95 | 533.73 |
+| E6_mu0_commercial_1.125 (rl_f4_retrained) | personal | 0.2-0.4 | 745 | 652 | 0.2 | 2.46 | 657.01 |
+| E6_mu0_commercial_1.125 (rl_f4_retrained) | personal | 0.4-0.6 | 1650 | 1322 | 2.0 | 1.61 | 689.83 |
+| E6_mu0_commercial_1.125 (rl_f4_retrained) | personal | 0.6-0.8 | 2201 | 1896 | 5.3 | 1.13 | 722.44 |
+| E6_mu0_commercial_1.125 (rl_f4_retrained) | personal | 0.8-1.0 | 3031 | 2716 | 12.9 | 0.26 | 727.16 |
+| E6_mu0_commercial_1.125 (rl_f4_retrained) | commercial | 0.0-0.2 | 2832 | 2572 | 0.3 | 4.85 | 501.61 |
+| E6_mu0_commercial_1.125 (rl_f4_retrained) | commercial | 0.2-0.4 | 8237 | 6901 | 1.0 | 3.56 | 516.34 |
+| E6_mu0_commercial_1.125 (rl_f4_retrained) | commercial | 0.4-0.6 | 5798 | 4754 | 0.8 | 2.35 | 516.98 |
+| E6_mu0_commercial_1.125 (rl_f4_retrained) | commercial | 0.6-0.8 | 1334 | 1110 | 0.7 | 1.76 | 532.99 |
+| E6_mu0_commercial_1.125 (rl_f4_retrained) | commercial | 0.8-1.0 | 81 | 81 | 0.0 | 0.23 | 414.69 |
+| E6_mu0_commercial_1.875 (rl_f4_zero_shot) | personal | 0.0-0.2 | 142 | 142 | 0.0 | 2.81 | 530.94 |
+| E6_mu0_commercial_1.875 (rl_f4_zero_shot) | personal | 0.2-0.4 | 744 | 652 | 0.0 | 1.58 | 645.59 |
+| E6_mu0_commercial_1.875 (rl_f4_zero_shot) | personal | 0.4-0.6 | 1653 | 1324 | 1.4 | 1.3 | 678.95 |
+| E6_mu0_commercial_1.875 (rl_f4_zero_shot) | personal | 0.6-0.8 | 2196 | 1890 | 4.8 | 0.81 | 709.65 |
+| E6_mu0_commercial_1.875 (rl_f4_zero_shot) | personal | 0.8-1.0 | 3033 | 2718 | 12.9 | 0.17 | 724.21 |
+| E6_mu0_commercial_1.875 (rl_f4_zero_shot) | commercial | 0.0-0.2 | 2826 | 2566 | 0.5 | 5.16 | 721.77 |
+| E6_mu0_commercial_1.875 (rl_f4_zero_shot) | commercial | 0.2-0.4 | 8237 | 6898 | 1.2 | 3.64 | 698.6 |
+| E6_mu0_commercial_1.875 (rl_f4_zero_shot) | commercial | 0.4-0.6 | 5816 | 4772 | 0.9 | 2.33 | 646.0 |
+| E6_mu0_commercial_1.875 (rl_f4_zero_shot) | commercial | 0.6-0.8 | 1332 | 1108 | 0.6 | 2.0 | 621.7 |
+| E6_mu0_commercial_1.875 (rl_f4_zero_shot) | commercial | 0.8-1.0 | 81 | 81 | 0.0 | 0.77 | 460.73 |
+| E6_mu0_commercial_1.875 (rl_f4_retrained) | personal | 0.0-0.2 | 141 | 141 | 0.7 | 4.89 | 547.15 |
+| E6_mu0_commercial_1.875 (rl_f4_retrained) | personal | 0.2-0.4 | 744 | 651 | 0.2 | 2.52 | 655.33 |
+| E6_mu0_commercial_1.875 (rl_f4_retrained) | personal | 0.4-0.6 | 1649 | 1321 | 1.7 | 1.84 | 692.75 |
+| E6_mu0_commercial_1.875 (rl_f4_retrained) | personal | 0.6-0.8 | 2201 | 1896 | 6.0 | 1.25 | 724.33 |
+| E6_mu0_commercial_1.875 (rl_f4_retrained) | personal | 0.8-1.0 | 3036 | 2721 | 14.1 | 0.22 | 729.15 |
+| E6_mu0_commercial_1.875 (rl_f4_retrained) | commercial | 0.0-0.2 | 2831 | 2571 | 0.5 | 4.83 | 722.2 |
+| E6_mu0_commercial_1.875 (rl_f4_retrained) | commercial | 0.2-0.4 | 8236 | 6897 | 0.8 | 3.48 | 694.74 |
+| E6_mu0_commercial_1.875 (rl_f4_retrained) | commercial | 0.4-0.6 | 5810 | 4766 | 0.7 | 2.16 | 643.94 |
+| E6_mu0_commercial_1.875 (rl_f4_retrained) | commercial | 0.6-0.8 | 1331 | 1107 | 0.5 | 1.63 | 614.3 |
+| E6_mu0_commercial_1.875 (rl_f4_retrained) | commercial | 0.8-1.0 | 81 | 81 | 0.0 | 0.0 | 437.51 |
+
+Full columns in comparison.csv and comparison_by_income.csv.
