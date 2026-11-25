@@ -1,0 +1,17 @@
+{
+ "run_id": "milp_300s",
+ "runs": 560,
+ "valid_plans": 475,
+ "status_counts": {
+  "optimal": 279,
+  "infeasible": 51,
+  "time_limit": 196,
+  "time_limit_no_plan": 34
+ },
+ "EVs_in_valid_plans": 23930,
+ "mean_Z_Rs": 47007.75,
+ "share_van_personal_%": 19.9,
+ "mean_customer_cost_personal_Rs": 663.25,
+ "share_van_commercial_%": 0.8,
+ "mean_customer_cost_commercial_Rs": 662.97
+}

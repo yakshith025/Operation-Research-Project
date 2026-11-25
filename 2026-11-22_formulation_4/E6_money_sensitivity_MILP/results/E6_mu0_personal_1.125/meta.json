@@ -1,0 +1,133 @@
+{
+ "milp_300s": {
+  "method": "MILP",
+  "argv": [
+   "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/baseline_MILP/code/solve_milp_f4.py",
+   "--out",
+   "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/E6_money_sensitivity_MILP/results/E6_mu0_personal_1.125",
+   "--variant",
+   "E6_mu0_personal_1.125",
+   "--set",
+   "personal.money_sensitivity_mu.theta0=1.125",
+   "--file-size",
+   "100",
+   "--sizes",
+   "10",
+   "20",
+   "30",
+   "40",
+   "50",
+   "60",
+   "70",
+   "80",
+   "90",
+   "100",
+   "--time-limit",
+   "300.0",
+   "--workers",
+   "8",
+   "--threads",
+   "4",
+   "--run-id",
+   "milp_300s",
+   "--resume"
+  ],
+  "variant": "E6_mu0_personal_1.125",
+  "overrides": {
+   "personal.money_sensitivity_mu.theta0": 1.125
+  },
+  "time_limit_s": 300.0,
+  "mip_gap": 0.0001,
+  "seed": 0,
+  "workers": 8,
+  "threads_per_instance": 4,
+  "cores": 32,
+  "warm_start": true,
+  "data": "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/data",
+  "params": "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/common/f4_params.json",
+  "f4_params": {
+   "segment_distribution": {
+    "pi_commercial": 0.7,
+    "seed_base": 2622
+   },
+   "personal": {
+    "theta_distribution": {
+     "a": 2.5,
+     "b": 1.0
+    },
+    "money_sensitivity_mu": {
+     "theta0": 1.125,
+     "theta1": 0.5
+    },
+    "value_of_time_Rs_per_min": {
+     "D": {
+      "theta0": 1.5,
+      "theta1": 15.0
+     },
+     "Q": {
+      "theta0": 2.5,
+      "theta1": 25.0
+     },
+     "V": {
+      "theta0": 0.5,
+      "theta1": 5.0
+     },
+     "C": {
+      "theta0": 1.0,
+      "theta1": 10.0
+     }
+    },
+    "queue_tolerance_W_min": {
+     "theta0": 60.0,
+     "theta1": 15.0
+    }
+   },
+   "commercial": {
+    "theta_distribution": {
+     "a": 3.0,
+     "b": 5.0
+    },
+    "money_sensitivity_mu": {
+     "theta0": 1.5,
+     "theta1": 0.5
+    },
+    "value_of_time_Rs_per_min": {
+     "D": {
+      "theta0": 1.5,
+      "theta1": 6.0
+     },
+     "Q": {
+      "theta0": 2.0,
+      "theta1": 7.5
+     },
+     "V": {
+      "theta0": 1.5,
+      "theta1": 6.0
+     },
+     "C": {
+      "theta0": 1.5,
+      "theta1": 6.0
+     }
+    },
+    "queue_tolerance_W_min": {
+     "theta0": 40.0,
+     "theta1": 15.0
+    }
+   },
+   "tariff_Rs_per_kWh": {
+    "p_F": 15.0,
+    "p_M": 25.0
+   },
+   "_overrides": {
+    "personal.money_sensitivity_mu.theta0": 1.125
+   }
+  },
+  "started": "2026-11-23 12:00:17",
+  "finished": "2026-11-23 14:51:09"
+ },
+ "greedy": {
+  "method": "greedy",
+  "variant": "E6_mu0_personal_1.125",
+  "rule": "cost rule, else earliest-finish rule (solve_milp_f4.greedy_f4); the plan that warm-starts the MILP"
+ }
+}
