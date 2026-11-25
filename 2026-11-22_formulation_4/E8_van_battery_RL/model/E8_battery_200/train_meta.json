@@ -1,0 +1,202 @@
+{
+ "started": "2026-11-25 05:24:39",
+ "argv": [
+  "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/baseline_RL/code/train_rl_f4.py",
+  "--model-dir",
+  "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/E8_van_battery_RL/model/E8_battery_200",
+  "--set",
+  "config.van_battery_kWh=200",
+  "--device",
+  "auto",
+  "--threads",
+  "0",
+  "--hours",
+  "8.0"
+ ],
+ "device": "cuda",
+ "threads": 24,
+ "torch": "2.14.1+cu126",
+ "rl_params": {
+  "generator": {
+   "file_sizes": [
+    100
+   ],
+   "clusters": [
+    5,
+    12
+   ],
+   "cluster_sigma_share": [
+    0.015,
+    0.05
+   ],
+   "request_zero_share": [
+    0.15,
+    0.3
+   ],
+   "request_beta": [
+    1.0,
+    2.5
+   ],
+   "request_max_share": [
+    0.83,
+    0.92
+   ],
+   "T_jitter": 0.15,
+   "kmeans_iters": 100
+  },
+  "model": {
+   "d": 128,
+   "heads": 8,
+   "layers": 3,
+   "ff": 512,
+   "clip": 10.0,
+   "dyn_hidden": 32
+  },
+  "training": {
+   "hours": 8.0,
+   "imitation_batches": 500,
+   "max_epochs": 500,
+   "min_epochs": 200,
+   "patience_epochs": 10,
+   "min_improvement": 0.0,
+   "iters_per_epoch": 50,
+   "batch_instances": 32,
+   "samples": 8,
+   "n_min": 10,
+   "n_max": 100,
+   "lr": 0.0001,
+   "lr_reinforce": 2e-05,
+   "lr_decay_per_epoch": 0.9998,
+   "max_grad_norm": 1.0,
+   "drop_penalty": 10.0,
+   "val_sizes": [
+    20,
+    50,
+    100
+   ],
+   "val_instances_per_size": 24,
+   "val_seed": 777
+  },
+  "inference": {
+   "samples": 64,
+   "augment": 8,
+   "chunk": 1040
+  }
+ },
+ "f4_params": {
+  "segment_distribution": {
+   "pi_commercial": 0.7,
+   "seed_base": 2622
+  },
+  "personal": {
+   "theta_distribution": {
+    "a": 2.5,
+    "b": 1.0
+   },
+   "money_sensitivity_mu": {
+    "theta0": 1.5,
+    "theta1": 0.5
+   },
+   "value_of_time_Rs_per_min": {
+    "D": {
+     "theta0": 1.5,
+     "theta1": 15.0
+    },
+    "Q": {
+     "theta0": 2.5,
+     "theta1": 25.0
+    },
+    "V": {
+     "theta0": 0.5,
+     "theta1": 5.0
+    },
+    "C": {
+     "theta0": 1.0,
+     "theta1": 10.0
+    }
+   },
+   "queue_tolerance_W_min": {
+    "theta0": 60.0,
+    "theta1": 15.0
+   }
+  },
+  "commercial": {
+   "theta_distribution": {
+    "a": 3.0,
+    "b": 5.0
+   },
+   "money_sensitivity_mu": {
+    "theta0": 1.5,
+    "theta1": 0.5
+   },
+   "value_of_time_Rs_per_min": {
+    "D": {
+     "theta0": 1.5,
+     "theta1": 6.0
+    },
+    "Q": {
+     "theta0": 2.0,
+     "theta1": 7.5
+    },
+    "V": {
+     "theta0": 1.5,
+     "theta1": 6.0
+    },
+    "C": {
+     "theta0": 1.5,
+     "theta1": 6.0
+    }
+   },
+   "queue_tolerance_W_min": {
+    "theta0": 40.0,
+    "theta1": 15.0
+   }
+  },
+  "tariff_Rs_per_kWh": {
+   "p_F": 15.0,
+   "p_M": 25.0
+  },
+  "_overrides": {
+   "config.van_battery_kWh": 200
+  }
+ },
+ "overrides": {
+  "config.van_battery_kWh": 200
+ },
+ "data": "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/data",
+ "templates": [
+  [
+   100,
+   "C1"
+  ],
+  [
+   100,
+   "C2"
+  ],
+  [
+   100,
+   "R1"
+  ],
+  [
+   100,
+   "R2"
+  ],
+  [
+   100,
+   "RC1"
+  ],
+  [
+   100,
+   "RC2"
+  ]
+ ],
+ "parameters": 765858,
+ "epoch": 210,
+ "iters": 10500,
+ "train_s": 2326.6597220897675,
+ "best_val": 0.968858295902996,
+ "best_epoch": 197,
+ "stale": 10,
+ "stop_reason": "early stop: no better validation in the last 10 REINFORCE epochs after epoch 200 (best at epoch 197)",
+ "finished": "2026-11-25 06:03:34"
+}

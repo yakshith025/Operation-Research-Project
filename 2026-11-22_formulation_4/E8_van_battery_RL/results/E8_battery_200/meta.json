@@ -1,0 +1,426 @@
+{
+ "rl_f4_zero_shot": {
+  "method": "RL-F4",
+  "argv": [
+   "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/baseline_RL/code/solve_rl_f4.py",
+   "--model",
+   "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/baseline_RL/model/model_best.pt",
+   "--out",
+   "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/E8_van_battery_RL/results/E8_battery_200",
+   "--variant",
+   "E8_battery_200",
+   "--run-id",
+   "rl_f4_zero_shot",
+   "--set",
+   "config.van_battery_kWh=200",
+   "--file-size",
+   "100",
+   "--sizes",
+   "10",
+   "20",
+   "30",
+   "40",
+   "50",
+   "60",
+   "70",
+   "80",
+   "90",
+   "100",
+   "--device",
+   "auto",
+   "--threads",
+   "0",
+   "--resume"
+  ],
+  "variant": "E8_battery_200",
+  "overrides": {
+   "config.van_battery_kWh": 200
+  },
+  "model": "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/baseline_RL/model/model_best.pt",
+  "model_id": "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/baseline_RL/model/model_best.pt|2026-11-24 19:39:32|epoch 180",
+  "model_cfg": {
+   "d": 128,
+   "heads": 8,
+   "layers": 3,
+   "ff": 512,
+   "clip": 10.0,
+   "dyn_hidden": 32
+  },
+  "training_state": {
+   "epoch": 180,
+   "iters": 9000,
+   "train_s": 1978.8643870353699,
+   "best_val": 0.9693634886941164,
+   "best_epoch": 180,
+   "stale": 0
+  },
+  "training_params": {
+   "generator": {
+    "file_sizes": [
+     100
+    ],
+    "clusters": [
+     5,
+     12
+    ],
+    "cluster_sigma_share": [
+     0.015,
+     0.05
+    ],
+    "request_zero_share": [
+     0.15,
+     0.3
+    ],
+    "request_beta": [
+     1.0,
+     2.5
+    ],
+    "request_max_share": [
+     0.83,
+     0.92
+    ],
+    "T_jitter": 0.15,
+    "kmeans_iters": 100
+   },
+   "model": {
+    "d": 128,
+    "heads": 8,
+    "layers": 3,
+    "ff": 512,
+    "clip": 10.0,
+    "dyn_hidden": 32
+   },
+   "training": {
+    "hours": 8.0,
+    "imitation_batches": 500,
+    "max_epochs": 500,
+    "min_epochs": 200,
+    "patience_epochs": 10,
+    "min_improvement": 0.0,
+    "iters_per_epoch": 50,
+    "batch_instances": 32,
+    "samples": 8,
+    "n_min": 10,
+    "n_max": 100,
+    "lr": 0.0001,
+    "lr_reinforce": 2e-05,
+    "lr_decay_per_epoch": 0.9998,
+    "max_grad_norm": 1.0,
+    "drop_penalty": 10.0,
+    "val_sizes": [
+     20,
+     50,
+     100
+    ],
+    "val_instances_per_size": 24,
+    "val_seed": 777
+   },
+   "inference": {
+    "samples": 64,
+    "augment": 8,
+    "chunk": 1040
+   }
+  },
+  "model_trained_with_overrides": {},
+  "train_s": 1978.9,
+  "samples": 64,
+  "augment": 8,
+  "seed": 0,
+  "device": "cuda",
+  "threads": 24,
+  "data": "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/data",
+  "f4_params": {
+   "segment_distribution": {
+    "pi_commercial": 0.7,
+    "seed_base": 2622
+   },
+   "personal": {
+    "theta_distribution": {
+     "a": 2.5,
+     "b": 1.0
+    },
+    "money_sensitivity_mu": {
+     "theta0": 1.5,
+     "theta1": 0.5
+    },
+    "value_of_time_Rs_per_min": {
+     "D": {
+      "theta0": 1.5,
+      "theta1": 15.0
+     },
+     "Q": {
+      "theta0": 2.5,
+      "theta1": 25.0
+     },
+     "V": {
+      "theta0": 0.5,
+      "theta1": 5.0
+     },
+     "C": {
+      "theta0": 1.0,
+      "theta1": 10.0
+     }
+    },
+    "queue_tolerance_W_min": {
+     "theta0": 60.0,
+     "theta1": 15.0
+    }
+   },
+   "commercial": {
+    "theta_distribution": {
+     "a": 3.0,
+     "b": 5.0
+    },
+    "money_sensitivity_mu": {
+     "theta0": 1.5,
+     "theta1": 0.5
+    },
+    "value_of_time_Rs_per_min": {
+     "D": {
+      "theta0": 1.5,
+      "theta1": 6.0
+     },
+     "Q": {
+      "theta0": 2.0,
+      "theta1": 7.5
+     },
+     "V": {
+      "theta0": 1.5,
+      "theta1": 6.0
+     },
+     "C": {
+      "theta0": 1.5,
+      "theta1": 6.0
+     }
+    },
+    "queue_tolerance_W_min": {
+     "theta0": 40.0,
+     "theta1": 15.0
+    }
+   },
+   "tariff_Rs_per_kWh": {
+    "p_F": 15.0,
+    "p_M": 25.0
+   },
+   "_overrides": {
+    "config.van_battery_kWh": 200
+   }
+  },
+  "selection": "fewest unplaced EVs, then lowest Z; scored by check_plan_f4 (results_io_f4.evaluate)",
+  "started": "2026-11-25 05:23:32",
+  "finished": "2026-11-25 05:24:37"
+ },
+ "rl_f4_retrained": {
+  "method": "RL-F4",
+  "argv": [
+   "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/baseline_RL/code/solve_rl_f4.py",
+   "--model",
+   "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/E8_van_battery_RL/model/E8_battery_200/model_best.pt",
+   "--out",
+   "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/E8_van_battery_RL/results/E8_battery_200",
+   "--variant",
+   "E8_battery_200",
+   "--run-id",
+   "rl_f4_retrained",
+   "--set",
+   "config.van_battery_kWh=200",
+   "--file-size",
+   "100",
+   "--sizes",
+   "10",
+   "20",
+   "30",
+   "40",
+   "50",
+   "60",
+   "70",
+   "80",
+   "90",
+   "100",
+   "--device",
+   "auto",
+   "--threads",
+   "0",
+   "--resume"
+  ],
+  "variant": "E8_battery_200",
+  "overrides": {
+   "config.van_battery_kWh": 200
+  },
+  "model": "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/E8_van_battery_RL/model/E8_battery_200/model_best.pt",
+  "model_id": "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/E8_van_battery_RL/model/E8_battery_200/model_best.pt|2026-11-25 06:01:04|epoch 197",
+  "model_cfg": {
+   "d": 128,
+   "heads": 8,
+   "layers": 3,
+   "ff": 512,
+   "clip": 10.0,
+   "dyn_hidden": 32
+  },
+  "training_state": {
+   "epoch": 197,
+   "iters": 9850,
+   "train_s": 2177.5936155319214,
+   "best_val": 0.968858295902996,
+   "best_epoch": 197,
+   "stale": 0
+  },
+  "training_params": {
+   "generator": {
+    "file_sizes": [
+     100
+    ],
+    "clusters": [
+     5,
+     12
+    ],
+    "cluster_sigma_share": [
+     0.015,
+     0.05
+    ],
+    "request_zero_share": [
+     0.15,
+     0.3
+    ],
+    "request_beta": [
+     1.0,
+     2.5
+    ],
+    "request_max_share": [
+     0.83,
+     0.92
+    ],
+    "T_jitter": 0.15,
+    "kmeans_iters": 100
+   },
+   "model": {
+    "d": 128,
+    "heads": 8,
+    "layers": 3,
+    "ff": 512,
+    "clip": 10.0,
+    "dyn_hidden": 32
+   },
+   "training": {
+    "hours": 8.0,
+    "imitation_batches": 500,
+    "max_epochs": 500,
+    "min_epochs": 200,
+    "patience_epochs": 10,
+    "min_improvement": 0.0,
+    "iters_per_epoch": 50,
+    "batch_instances": 32,
+    "samples": 8,
+    "n_min": 10,
+    "n_max": 100,
+    "lr": 0.0001,
+    "lr_reinforce": 2e-05,
+    "lr_decay_per_epoch": 0.9998,
+    "max_grad_norm": 1.0,
+    "drop_penalty": 10.0,
+    "val_sizes": [
+     20,
+     50,
+     100
+    ],
+    "val_instances_per_size": 24,
+    "val_seed": 777
+   },
+   "inference": {
+    "samples": 64,
+    "augment": 8,
+    "chunk": 1040
+   }
+  },
+  "model_trained_with_overrides": {
+   "config.van_battery_kWh": 200
+  },
+  "train_s": 2177.6,
+  "samples": 64,
+  "augment": 8,
+  "seed": 0,
+  "device": "cuda",
+  "threads": 24,
+  "data": "/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/data",
+  "f4_params": {
+   "segment_distribution": {
+    "pi_commercial": 0.7,
+    "seed_base": 2622
+   },
+   "personal": {
+    "theta_distribution": {
+     "a": 2.5,
+     "b": 1.0
+    },
+    "money_sensitivity_mu": {
+     "theta0": 1.5,
+     "theta1": 0.5
+    },
+    "value_of_time_Rs_per_min": {
+     "D": {
+      "theta0": 1.5,
+      "theta1": 15.0
+     },
+     "Q": {
+      "theta0": 2.5,
+      "theta1": 25.0
+     },
+     "V": {
+      "theta0": 0.5,
+      "theta1": 5.0
+     },
+     "C": {
+      "theta0": 1.0,
+      "theta1": 10.0
+     }
+    },
+    "queue_tolerance_W_min": {
+     "theta0": 60.0,
+     "theta1": 15.0
+    }
+   },
+   "commercial": {
+    "theta_distribution": {
+     "a": 3.0,
+     "b": 5.0
+    },
+    "money_sensitivity_mu": {
+     "theta0": 1.5,
+     "theta1": 0.5
+    },
+    "value_of_time_Rs_per_min": {
+     "D": {
+      "theta0": 1.5,
+      "theta1": 6.0
+     },
+     "Q": {
+      "theta0": 2.0,
+      "theta1": 7.5
+     },
+     "V": {
+      "theta0": 1.5,
+      "theta1": 6.0
+     },
+     "C": {
+      "theta0": 1.5,
+      "theta1": 6.0
+     }
+    },
+    "queue_tolerance_W_min": {
+     "theta0": 40.0,
+     "theta1": 15.0
+    }
+   },
+   "tariff_Rs_per_kWh": {
+    "p_F": 15.0,
+    "p_M": 25.0
+   },
+   "_overrides": {
+    "config.van_battery_kWh": 200
+   }
+  },
+  "selection": "fewest unplaced EVs, then lowest Z; scored by check_plan_f4 (results_io_f4.evaluate)",
+  "started": "2026-11-25 06:03:35",
+  "finished": "2026-11-25 06:04:42"
+ }
+}
