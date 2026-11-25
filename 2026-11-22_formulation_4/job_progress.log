@@ -1,0 +1,57 @@
+2026-11-22 21:45:32  JOB START  (/mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4)
+2026-11-22 21:45:32  settings: TL=300 WORKERS=8 THREADS=4 RL_THREADS=0 RL_DEVICE=auto RL_HOURS=8 EXPERIMENTS='E5 E6 E1 E2 E8' SIZES='' ONLY='' SKIP_MILP=0 SKIP_RL=0
+2026-11-22 21:45:34  preflight OK
+2026-11-22 21:45:34  ===== PHASE 1: MILP (8 instances at a time x 4 threads, 300 s each)
+2026-11-22 21:45:34  START  MILP baseline   (in baseline_MILP/code: python solve_milp_f4.py --time-limit 300 --workers 8 --threads 4 --run-id milp_300s --resume; log baseline_MILP/job.log)
+2026-11-23 00:34:20  END    MILP baseline   exit code 0, 168 min
+2026-11-23 00:34:20  START  MILP E5   (in E5_value_of_charging_time_MILP/code: python run_E5_MILP.py --time-limit 300 --workers 8 --threads 4; log E5_value_of_charging_time_MILP/job.log)
+2026-11-23 12:00:17  END    MILP E5   exit code 0, 685 min
+2026-11-23 12:00:17  START  MILP E6   (in E6_money_sensitivity_MILP/code: python run_E6_MILP.py --time-limit 300 --workers 8 --threads 4; log E6_money_sensitivity_MILP/job.log)
+2026-11-23 23:16:07  END    MILP E6   exit code 0, 675 min
+2026-11-23 23:16:07  START  MILP E1   (in E1_van_tariff_MILP/code: python run_E1_MILP.py --time-limit 300 --workers 8 --threads 4; log E1_van_tariff_MILP/job.log)
+2026-11-24 05:14:46  END    MILP E1   exit code 0, 358 min
+2026-11-24 05:14:46  START  MILP E2   (in E2_van_fleet_and_seats_MILP/code: python run_E2_MILP.py --time-limit 300 --workers 8 --threads 4; log E2_van_fleet_and_seats_MILP/job.log)
+2026-11-24 16:19:44  END    MILP E2   exit code 0, 664 min
+2026-11-24 16:19:44  START  MILP E8   (in E8_van_battery_MILP/code: python run_E8_MILP.py --time-limit 300 --workers 8 --threads 4; log E8_van_battery_MILP/job.log)
+2026-11-24 19:06:20  END    MILP E8   exit code 0, 166 min
+2026-11-24 19:06:20  ===== PHASE 1 finished
+2026-11-24 19:06:20  ===== PHASE 2: RL (device auto, torch threads 0)
+2026-11-24 19:06:20  START  RL self-checks   (in baseline_RL/code: python test_rl_f4.py --quick --device auto; log baseline_RL/job.log)
+2026-11-24 19:06:25  END    RL self-checks   exit code 0, 0 min
+2026-11-24 19:06:25  START  RL baseline training   (in baseline_RL/code: python train_rl_f4.py --threads 0 --device auto --hours 8; log baseline_RL/job.log)
+2026-11-24 19:45:11  END    RL baseline training   exit code 0, 38 min
+2026-11-24 19:45:11  START  RL baseline solve   (in baseline_RL/code: python solve_rl_f4.py --threads 0 --device auto --resume; log baseline_RL/job.log)
+2026-11-24 19:46:21  END    RL baseline solve   exit code 0, 1 min
+2026-11-24 19:46:21  START  RL E5   (in E5_value_of_charging_time_RL/code: python run_E5_RL.py --rl-threads 0 --device auto --hours 8 --rl-train-extra= --rl-solve-extra=; log E5_value_of_charging_time_RL/job.log)
+2026-11-24 22:31:35  END    RL E5   exit code 0, 165 min
+2026-11-24 22:31:35  START  RL E6   (in E6_money_sensitivity_RL/code: python run_E6_RL.py --rl-threads 0 --device auto --hours 8 --rl-train-extra= --rl-solve-extra=; log E6_money_sensitivity_RL/job.log)
+2026-11-25 01:16:48  END    RL E6   exit code 0, 165 min
+2026-11-25 01:16:48  START  RL E1   (in E1_van_tariff_RL/code: python run_E1_RL.py --rl-threads 0 --device auto --hours 8 --rl-train-extra= --rl-solve-extra=; log E1_van_tariff_RL/job.log)
+2026-11-25 02:39:46  END    RL E1   exit code 0, 82 min
+2026-11-25 02:39:46  START  RL E2   (in E2_van_fleet_and_seats_RL/code: python run_E2_RL.py --rl-threads 0 --device auto --hours 8 --rl-train-extra= --rl-solve-extra=; log E2_van_fleet_and_seats_RL/job.log)
+2026-11-25 05:23:31  END    RL E2   exit code 0, 163 min
+2026-11-25 05:23:31  START  RL E8   (in E8_van_battery_RL/code: python run_E8_RL.py --rl-threads 0 --device auto --hours 8 --rl-train-extra= --rl-solve-extra=; log E8_van_battery_RL/job.log)
+2026-11-25 06:04:43  END    RL E8   exit code 0, 41 min
+2026-11-25 06:04:43  ===== PHASE 2 finished
+2026-11-25 06:04:43  ===== PHASE 3: comparisons and summary
+2026-11-25 06:04:43  START  compare E5 MILP   (in E5_value_of_charging_time_MILP/code: python analyze_E5_MILP.py; log E5_value_of_charging_time_MILP/job.log)
+2026-11-25 06:04:44  END    compare E5 MILP   exit code 0, 0 min
+2026-11-25 06:04:44  START  compare E5 RL   (in E5_value_of_charging_time_RL/code: python analyze_E5_RL.py; log E5_value_of_charging_time_RL/job.log)
+2026-11-25 06:04:47  END    compare E5 RL   exit code 0, 0 min
+2026-11-25 06:04:47  START  compare E6 MILP   (in E6_money_sensitivity_MILP/code: python analyze_E6_MILP.py; log E6_money_sensitivity_MILP/job.log)
+2026-11-25 06:04:48  END    compare E6 MILP   exit code 0, 0 min
+2026-11-25 06:04:48  START  compare E6 RL   (in E6_money_sensitivity_RL/code: python analyze_E6_RL.py; log E6_money_sensitivity_RL/job.log)
+2026-11-25 06:04:50  END    compare E6 RL   exit code 0, 0 min
+2026-11-25 06:04:50  START  compare E1 MILP   (in E1_van_tariff_MILP/code: python analyze_E1_MILP.py; log E1_van_tariff_MILP/job.log)
+2026-11-25 06:04:51  END    compare E1 MILP   exit code 0, 0 min
+2026-11-25 06:04:51  START  compare E1 RL   (in E1_van_tariff_RL/code: python analyze_E1_RL.py; log E1_van_tariff_RL/job.log)
+2026-11-25 06:04:52  END    compare E1 RL   exit code 0, 0 min
+2026-11-25 06:04:52  START  compare E2 MILP   (in E2_van_fleet_and_seats_MILP/code: python analyze_E2_MILP.py; log E2_van_fleet_and_seats_MILP/job.log)
+2026-11-25 06:04:53  END    compare E2 MILP   exit code 0, 0 min
+2026-11-25 06:04:53  START  compare E2 RL   (in E2_van_fleet_and_seats_RL/code: python analyze_E2_RL.py; log E2_van_fleet_and_seats_RL/job.log)
+2026-11-25 06:04:56  END    compare E2 RL   exit code 0, 0 min
+2026-11-25 06:04:56  START  compare E8 MILP   (in E8_van_battery_MILP/code: python analyze_E8_MILP.py; log E8_van_battery_MILP/job.log)
+2026-11-25 06:04:56  END    compare E8 MILP   exit code 0, 0 min
+2026-11-25 06:04:56  START  compare E8 RL   (in E8_van_battery_RL/code: python analyze_E8_RL.py; log E8_van_battery_RL/job.log)
+2026-11-25 06:04:57  END    compare E8 RL   exit code 0, 0 min
+2026-11-25 06:04:57  JOB FINISHED: 0 step(s) with a non-zero exit code (see job_progress.log); summary in job_summary.txt

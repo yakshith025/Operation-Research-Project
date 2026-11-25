@@ -1,0 +1,805 @@
+==================================================================================================
+2026-11-24 19:06:20  START  RL self-checks
+folder: baseline_RL/code
+command: python test_rl_f4.py --quick --device auto
+==================================================================================================
+device: cuda (NVIDIA GeForce RTX 4090)
+
+PASS  1 per-EV coefficients: 350 EVs checked
+PASS  2 simulator = greedy_f4 and checker: 2 identical greedy plans, 2 where the cost rule fails in both
+PASS  3 policy plans pass the checker: 16 complete random-policy plans valid, 16 with unplaced EVs flagged, 4 teacher-forced rollouts = greedy rule
+PASS  4 generator instances: 24 random instances (12 templates), commercial share 0.724 (pi_C = 0.7)
+PASS  5 overrides reach instance, simulator, generator: 4 overrides on EV-C101
+PASS  6 training step: imitation loss 3.895; REINFORCE: unplaced 1.7 %, spread 4.77 %
+2026-11-24 19:06:25  END    RL self-checks   exit code 0, 0 min
+==================================================================================================
+2026-11-24 19:06:25  START  RL baseline training
+folder: baseline_RL/code
+command: python train_rl_f4.py --threads 0 --device auto --hours 8
+==================================================================================================
+RL (formulation 4) training on cuda (24 threads), 765,858 parameters, templates [(100, 'C1'), (100, 'C2'), (100, 'R1'), (100, 'R2'), (100, 'RC1'), (100, 'RC2')]; stops at 500 epochs, after 10 REINFORCE epochs without improvement (counted after epoch 200), or after 8.0 h (0.00 h used)
+validation: 72 fixed instances, n = [20, 50, 100] (greedy cost rule as reference, built in 0 s)
+untrained policy: RL / greedy rule = 3.5731
+epoch 1 [imitation]: 50 batches (0 failed), imitation loss 5.0808, validation RL / greedy rule 1.1674 {20: 1.1856, 50: 1.0915, 100: 1.2251} (best 1.1674 at epoch 1, early stop counted after epoch 200), unplaced RL 4.58 % vs greedy 2.99 %, epoch 1 of 500, 0 min
+epoch 2 [imitation]: 50 batches (0 failed), imitation loss 2.7935, validation RL / greedy rule 1.0384 {20: 1.0548, 50: 1.0211, 100: 1.0393} (best 1.0384 at epoch 2, early stop counted after epoch 200), unplaced RL 3.33 % vs greedy 2.99 %, epoch 2 of 500, 0 min
+epoch 3 [imitation]: 50 batches (0 failed), imitation loss 2.0235, validation RL / greedy rule 1.0318 {20: 1.0483, 50: 1.0115, 100: 1.0355} (best 1.0318 at epoch 3, early stop counted after epoch 200), unplaced RL 3.14 % vs greedy 2.99 %, epoch 3 of 500, 1 min
+epoch 4 [imitation]: 50 batches (0 failed), imitation loss 1.6228, validation RL / greedy rule 1.0386 {20: 1.0621, 50: 1.0214, 100: 1.0324} (best 1.0318 at epoch 3, early stop counted after epoch 200), unplaced RL 3.16 % vs greedy 2.99 %, epoch 4 of 500, 1 min
+epoch 5 [imitation]: 50 batches (0 failed), imitation loss 1.7177, validation RL / greedy rule 1.0221 {20: 1.0517, 50: 1.0042, 100: 1.0102} (best 1.0221 at epoch 5, early stop counted after epoch 200), unplaced RL 2.94 % vs greedy 2.99 %, epoch 5 of 500, 1 min
+epoch 6 [imitation]: 50 batches (0 failed), imitation loss 1.4138, validation RL / greedy rule 1.0215 {20: 1.041, 50: 1.0068, 100: 1.0166} (best 1.0215 at epoch 6, early stop counted after epoch 200), unplaced RL 2.99 % vs greedy 2.99 %, epoch 6 of 500, 1 min
+epoch 7 [imitation]: 50 batches (0 failed), imitation loss 1.3734, validation RL / greedy rule 1.0249 {20: 1.0554, 50: 1.0056, 100: 1.0138} (best 1.0215 at epoch 6, early stop counted after epoch 200), unplaced RL 2.97 % vs greedy 2.99 %, epoch 7 of 500, 1 min
+epoch 8 [imitation]: 50 batches (0 failed), imitation loss 1.329, validation RL / greedy rule 1.0128 {20: 1.0207, 50: 1.0079, 100: 1.0099} (best 1.0128 at epoch 8, early stop counted after epoch 200), unplaced RL 2.99 % vs greedy 2.99 %, epoch 8 of 500, 1 min
+epoch 9 [imitation]: 50 batches (0 failed), imitation loss 1.3011, validation RL / greedy rule 1.0195 {20: 1.0335, 50: 1.0097, 100: 1.0152} (best 1.0128 at epoch 8, early stop counted after epoch 200), unplaced RL 3.04 % vs greedy 2.99 %, epoch 9 of 500, 2 min
+epoch 10 [imitation]: 50 batches (0 failed), imitation loss 1.3579, validation RL / greedy rule 1.0230 {20: 1.0255, 50: 1.0107, 100: 1.0328} (best 1.0128 at epoch 8, early stop counted after epoch 200), unplaced RL 3.06 % vs greedy 2.99 %, epoch 10 of 500, 2 min
+epoch 11 [reinforce]: 50 batches (0 failed), unplaced in training 1.906 %, validation RL / greedy rule 1.0070 {20: 1.0094, 50: 1.0084, 100: 1.0031} (best 1.0070 at epoch 11, early stop counted after epoch 200), unplaced RL 2.99 % vs greedy 2.99 %, epoch 11 of 500, 2 min
+epoch 12 [reinforce]: 50 batches (0 failed), unplaced in training 1.697 %, validation RL / greedy rule 0.9947 {20: 1.0092, 50: 1.0006, 100: 0.9742} (best 0.9947 at epoch 12, early stop counted after epoch 200), unplaced RL 2.84 % vs greedy 2.99 %, epoch 12 of 500, 2 min
+epoch 13 [reinforce]: 50 batches (0 failed), unplaced in training 2.001 %, validation RL / greedy rule 0.9969 {20: 1.005, 50: 0.9988, 100: 0.9868} (best 0.9947 at epoch 12, early stop counted after epoch 200), unplaced RL 3.01 % vs greedy 2.99 %, epoch 13 of 500, 2 min
+epoch 14 [reinforce]: 50 batches (0 failed), unplaced in training 2.154 %, validation RL / greedy rule 0.9952 {20: 1.0034, 50: 0.9947, 100: 0.9875} (best 0.9947 at epoch 12, early stop counted after epoch 200), unplaced RL 3.04 % vs greedy 2.99 %, epoch 14 of 500, 2 min
+epoch 15 [reinforce]: 50 batches (0 failed), unplaced in training 2.396 %, validation RL / greedy rule 0.9940 {20: 1.0053, 50: 1.0012, 100: 0.9754} (best 0.9940 at epoch 15, early stop counted after epoch 200), unplaced RL 2.92 % vs greedy 2.99 %, epoch 15 of 500, 3 min
+epoch 16 [reinforce]: 50 batches (0 failed), unplaced in training 2.433 %, validation RL / greedy rule 0.9912 {20: 1.0042, 50: 0.9936, 100: 0.9757} (best 0.9912 at epoch 16, early stop counted after epoch 200), unplaced RL 2.94 % vs greedy 2.99 %, epoch 16 of 500, 3 min
+epoch 17 [reinforce]: 50 batches (0 failed), unplaced in training 2.215 %, validation RL / greedy rule 0.9873 {20: 1.0011, 50: 0.9884, 100: 0.9724} (best 0.9873 at epoch 17, early stop counted after epoch 200), unplaced RL 2.89 % vs greedy 2.99 %, epoch 17 of 500, 3 min
+epoch 18 [reinforce]: 50 batches (0 failed), unplaced in training 1.949 %, validation RL / greedy rule 0.9972 {20: 1.0028, 50: 0.9964, 100: 0.9925} (best 0.9873 at epoch 17, early stop counted after epoch 200), unplaced RL 3.09 % vs greedy 2.99 %, epoch 18 of 500, 3 min
+epoch 19 [reinforce]: 50 batches (0 failed), unplaced in training 1.792 %, validation RL / greedy rule 0.9926 {20: 1.0009, 50: 0.9994, 100: 0.9776} (best 0.9873 at epoch 17, early stop counted after epoch 200), unplaced RL 2.92 % vs greedy 2.99 %, epoch 19 of 500, 3 min
+epoch 20 [reinforce]: 50 batches (0 failed), unplaced in training 2.298 %, validation RL / greedy rule 0.9885 {20: 1.0047, 50: 0.995, 100: 0.9657} (best 0.9873 at epoch 17, early stop counted after epoch 200), unplaced RL 2.77 % vs greedy 2.99 %, epoch 20 of 500, 3 min
+epoch 21 [reinforce]: 50 batches (0 failed), unplaced in training 1.908 %, validation RL / greedy rule 0.9912 {20: 1.0102, 50: 0.9892, 100: 0.9743} (best 0.9873 at epoch 17, early stop counted after epoch 200), unplaced RL 2.82 % vs greedy 2.99 %, epoch 21 of 500, 4 min
+epoch 22 [reinforce]: 50 batches (0 failed), unplaced in training 2.203 %, validation RL / greedy rule 0.9880 {20: 1.0065, 50: 0.9888, 100: 0.9688} (best 0.9873 at epoch 17, early stop counted after epoch 200), unplaced RL 2.84 % vs greedy 2.99 %, epoch 22 of 500, 4 min
+epoch 23 [reinforce]: 50 batches (0 failed), unplaced in training 2.167 %, validation RL / greedy rule 0.9916 {20: 1.0047, 50: 0.9885, 100: 0.9817} (best 0.9873 at epoch 17, early stop counted after epoch 200), unplaced RL 3.01 % vs greedy 2.99 %, epoch 23 of 500, 4 min
+epoch 24 [reinforce]: 50 batches (0 failed), unplaced in training 2.034 %, validation RL / greedy rule 0.9867 {20: 1.0023, 50: 0.9894, 100: 0.9683} (best 0.9867 at epoch 24, early stop counted after epoch 200), unplaced RL 2.79 % vs greedy 2.99 %, epoch 24 of 500, 4 min
+epoch 25 [reinforce]: 50 batches (0 failed), unplaced in training 1.861 %, validation RL / greedy rule 0.9902 {20: 1.0032, 50: 0.9864, 100: 0.981} (best 0.9867 at epoch 24, early stop counted after epoch 200), unplaced RL 2.92 % vs greedy 2.99 %, epoch 25 of 500, 4 min
+epoch 26 [reinforce]: 50 batches (0 failed), unplaced in training 1.791 %, validation RL / greedy rule 0.9942 {20: 1.0019, 50: 0.9877, 100: 0.993} (best 0.9867 at epoch 24, early stop counted after epoch 200), unplaced RL 3.09 % vs greedy 2.99 %, epoch 26 of 500, 5 min
+epoch 27 [reinforce]: 50 batches (0 failed), unplaced in training 1.969 %, validation RL / greedy rule 0.9905 {20: 1.0014, 50: 0.9873, 100: 0.9829} (best 0.9867 at epoch 24, early stop counted after epoch 200), unplaced RL 2.99 % vs greedy 2.99 %, epoch 27 of 500, 5 min
+epoch 28 [reinforce]: 50 batches (0 failed), unplaced in training 2.201 %, validation RL / greedy rule 0.9946 {20: 1.0057, 50: 0.9971, 100: 0.981} (best 0.9867 at epoch 24, early stop counted after epoch 200), unplaced RL 2.97 % vs greedy 2.99 %, epoch 28 of 500, 5 min
+epoch 29 [reinforce]: 50 batches (0 failed), unplaced in training 2.071 %, validation RL / greedy rule 0.9918 {20: 1.0049, 50: 0.9872, 100: 0.9833} (best 0.9867 at epoch 24, early stop counted after epoch 200), unplaced RL 3.01 % vs greedy 2.99 %, epoch 29 of 500, 5 min
+epoch 30 [reinforce]: 50 batches (0 failed), unplaced in training 1.956 %, validation RL / greedy rule 0.9935 {20: 1.0038, 50: 0.994, 100: 0.9827} (best 0.9867 at epoch 24, early stop counted after epoch 200), unplaced RL 2.89 % vs greedy 2.99 %, epoch 30 of 500, 5 min
+epoch 31 [reinforce]: 50 batches (0 failed), unplaced in training 2.052 %, validation RL / greedy rule 0.9944 {20: 1.0033, 50: 0.9922, 100: 0.9878} (best 0.9867 at epoch 24, early stop counted after epoch 200), unplaced RL 3.04 % vs greedy 2.99 %, epoch 31 of 500, 5 min
+epoch 32 [reinforce]: 50 batches (0 failed), unplaced in training 2.166 %, validation RL / greedy rule 1.0011 {20: 1.0054, 50: 0.996, 100: 1.002} (best 0.9867 at epoch 24, early stop counted after epoch 200), unplaced RL 3.19 % vs greedy 2.99 %, epoch 32 of 500, 6 min
+epoch 33 [reinforce]: 50 batches (0 failed), unplaced in training 1.963 %, validation RL / greedy rule 0.9893 {20: 1.0035, 50: 0.9864, 100: 0.9779} (best 0.9867 at epoch 24, early stop counted after epoch 200), unplaced RL 2.99 % vs greedy 2.99 %, epoch 33 of 500, 6 min
+epoch 34 [reinforce]: 50 batches (0 failed), unplaced in training 2.256 %, validation RL / greedy rule 0.9989 {20: 1.0045, 50: 0.9935, 100: 0.9988} (best 0.9867 at epoch 24, early stop counted after epoch 200), unplaced RL 3.14 % vs greedy 2.99 %, epoch 34 of 500, 6 min
+epoch 35 [reinforce]: 50 batches (0 failed), unplaced in training 1.899 %, validation RL / greedy rule 0.9912 {20: 1.0045, 50: 0.9914, 100: 0.9777} (best 0.9867 at epoch 24, early stop counted after epoch 200), unplaced RL 2.97 % vs greedy 2.99 %, epoch 35 of 500, 6 min
+epoch 36 [reinforce]: 50 batches (0 failed), unplaced in training 1.952 %, validation RL / greedy rule 0.9961 {20: 1.0022, 50: 0.9912, 100: 0.9948} (best 0.9867 at epoch 24, early stop counted after epoch 200), unplaced RL 3.06 % vs greedy 2.99 %, epoch 36 of 500, 6 min
+epoch 37 [reinforce]: 50 batches (0 failed), unplaced in training 1.973 %, validation RL / greedy rule 0.9963 {20: 1.003, 50: 0.9865, 100: 0.9994} (best 0.9867 at epoch 24, early stop counted after epoch 200), unplaced RL 3.16 % vs greedy 2.99 %, epoch 37 of 500, 7 min
+epoch 38 [reinforce]: 50 batches (0 failed), unplaced in training 2.149 %, validation RL / greedy rule 0.9942 {20: 1.0072, 50: 0.9897, 100: 0.9856} (best 0.9867 at epoch 24, early stop counted after epoch 200), unplaced RL 2.99 % vs greedy 2.99 %, epoch 38 of 500, 7 min
+epoch 39 [reinforce]: 50 batches (0 failed), unplaced in training 2.216 %, validation RL / greedy rule 0.9885 {20: 1.0045, 50: 0.9888, 100: 0.9722} (best 0.9867 at epoch 24, early stop counted after epoch 200), unplaced RL 2.92 % vs greedy 2.99 %, epoch 39 of 500, 7 min
+epoch 40 [reinforce]: 50 batches (0 failed), unplaced in training 1.833 %, validation RL / greedy rule 0.9861 {20: 1.0065, 50: 0.9906, 100: 0.9611} (best 0.9861 at epoch 40, early stop counted after epoch 200), unplaced RL 2.75 % vs greedy 2.99 %, epoch 40 of 500, 7 min
+epoch 41 [reinforce]: 50 batches (0 failed), unplaced in training 1.873 %, validation RL / greedy rule 0.9866 {20: 1.0061, 50: 0.9877, 100: 0.9659} (best 0.9861 at epoch 40, early stop counted after epoch 200), unplaced RL 2.77 % vs greedy 2.99 %, epoch 41 of 500, 7 min
+epoch 42 [reinforce]: 50 batches (0 failed), unplaced in training 1.887 %, validation RL / greedy rule 0.9857 {20: 1.0064, 50: 0.9878, 100: 0.9629} (best 0.9857 at epoch 42, early stop counted after epoch 200), unplaced RL 2.77 % vs greedy 2.99 %, epoch 42 of 500, 7 min
+epoch 43 [reinforce]: 50 batches (0 failed), unplaced in training 2.079 %, validation RL / greedy rule 0.9874 {20: 1.0081, 50: 0.9904, 100: 0.9638} (best 0.9857 at epoch 42, early stop counted after epoch 200), unplaced RL 2.72 % vs greedy 2.99 %, epoch 43 of 500, 8 min
+epoch 44 [reinforce]: 50 batches (0 failed), unplaced in training 2.184 %, validation RL / greedy rule 0.9912 {20: 1.0026, 50: 0.9907, 100: 0.9802} (best 0.9857 at epoch 42, early stop counted after epoch 200), unplaced RL 2.89 % vs greedy 2.99 %, epoch 44 of 500, 8 min
+epoch 45 [reinforce]: 50 batches (0 failed), unplaced in training 2.26 %, validation RL / greedy rule 0.9917 {20: 1.0046, 50: 0.9871, 100: 0.9835} (best 0.9857 at epoch 42, early stop counted after epoch 200), unplaced RL 2.99 % vs greedy 2.99 %, epoch 45 of 500, 8 min
+epoch 46 [reinforce]: 50 batches (0 failed), unplaced in training 1.697 %, validation RL / greedy rule 0.9870 {20: 1.0051, 50: 0.9908, 100: 0.9649} (best 0.9857 at epoch 42, early stop counted after epoch 200), unplaced RL 2.82 % vs greedy 2.99 %, epoch 46 of 500, 8 min
+epoch 47 [reinforce]: 50 batches (0 failed), unplaced in training 1.935 %, validation RL / greedy rule 0.9885 {20: 1.0043, 50: 0.9893, 100: 0.9719} (best 0.9857 at epoch 42, early stop counted after epoch 200), unplaced RL 2.84 % vs greedy 2.99 %, epoch 47 of 500, 8 min
+epoch 48 [reinforce]: 50 batches (0 failed), unplaced in training 2.024 %, validation RL / greedy rule 0.9821 {20: 1.0039, 50: 0.9862, 100: 0.9564} (best 0.9821 at epoch 48, early stop counted after epoch 200), unplaced RL 2.65 % vs greedy 2.99 %, epoch 48 of 500, 9 min
+epoch 49 [reinforce]: 50 batches (0 failed), unplaced in training 2.07 %, validation RL / greedy rule 0.9891 {20: 1.0021, 50: 0.9888, 100: 0.9763} (best 0.9821 at epoch 48, early stop counted after epoch 200), unplaced RL 2.87 % vs greedy 2.99 %, epoch 49 of 500, 9 min
+epoch 50 [reinforce]: 50 batches (0 failed), unplaced in training 2.174 %, validation RL / greedy rule 0.9827 {20: 1.0021, 50: 0.9834, 100: 0.9627} (best 0.9821 at epoch 48, early stop counted after epoch 200), unplaced RL 2.77 % vs greedy 2.99 %, epoch 50 of 500, 9 min
+epoch 51 [reinforce]: 50 batches (0 failed), unplaced in training 2.314 %, validation RL / greedy rule 0.9898 {20: 1.0025, 50: 0.9896, 100: 0.9774} (best 0.9821 at epoch 48, early stop counted after epoch 200), unplaced RL 2.89 % vs greedy 2.99 %, epoch 51 of 500, 9 min
+epoch 52 [reinforce]: 50 batches (0 failed), unplaced in training 1.828 %, validation RL / greedy rule 0.9815 {20: 1.002, 50: 0.9869, 100: 0.9556} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 2.72 % vs greedy 2.99 %, epoch 52 of 500, 9 min
+epoch 53 [reinforce]: 50 batches (0 failed), unplaced in training 1.902 %, validation RL / greedy rule 0.9855 {20: 1.0026, 50: 0.9885, 100: 0.9654} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 2.77 % vs greedy 2.99 %, epoch 53 of 500, 9 min
+epoch 54 [reinforce]: 50 batches (0 failed), unplaced in training 1.948 %, validation RL / greedy rule 0.9907 {20: 1.0045, 50: 0.9908, 100: 0.9766} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 2.97 % vs greedy 2.99 %, epoch 54 of 500, 10 min
+epoch 55 [reinforce]: 50 batches (0 failed), unplaced in training 1.946 %, validation RL / greedy rule 0.9885 {20: 1.0043, 50: 0.991, 100: 0.9701} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 2.87 % vs greedy 2.99 %, epoch 55 of 500, 10 min
+epoch 56 [reinforce]: 50 batches (0 failed), unplaced in training 1.929 %, validation RL / greedy rule 0.9832 {20: 1.0019, 50: 0.9859, 100: 0.9617} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 2.75 % vs greedy 2.99 %, epoch 56 of 500, 10 min
+epoch 57 [reinforce]: 50 batches (0 failed), unplaced in training 1.813 %, validation RL / greedy rule 0.9941 {20: 1.0054, 50: 0.9933, 100: 0.9835} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 3.01 % vs greedy 2.99 %, epoch 57 of 500, 10 min
+epoch 58 [reinforce]: 50 batches (0 failed), unplaced in training 1.79 %, validation RL / greedy rule 0.9905 {20: 1.0055, 50: 0.9889, 100: 0.9773} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 2.97 % vs greedy 2.99 %, epoch 58 of 500, 10 min
+epoch 59 [reinforce]: 50 batches (0 failed), unplaced in training 2.195 %, validation RL / greedy rule 0.9912 {20: 1.0047, 50: 0.9886, 100: 0.9803} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 3.01 % vs greedy 2.99 %, epoch 59 of 500, 11 min
+epoch 60 [reinforce]: 50 batches (0 failed), unplaced in training 2.142 %, validation RL / greedy rule 0.9859 {20: 1.0032, 50: 0.989, 100: 0.9654} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 2.84 % vs greedy 2.99 %, epoch 60 of 500, 11 min
+epoch 61 [reinforce]: 50 batches (0 failed), unplaced in training 2.08 %, validation RL / greedy rule 0.9864 {20: 1.0023, 50: 0.9911, 100: 0.9659} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 2.84 % vs greedy 2.99 %, epoch 61 of 500, 11 min
+epoch 62 [reinforce]: 50 batches (0 failed), unplaced in training 1.765 %, validation RL / greedy rule 0.9845 {20: 1.0019, 50: 0.9842, 100: 0.9675} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 2.87 % vs greedy 2.99 %, epoch 62 of 500, 11 min
+epoch 63 [reinforce]: 50 batches (0 failed), unplaced in training 1.968 %, validation RL / greedy rule 0.9862 {20: 1.0048, 50: 0.9872, 100: 0.9666} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 2.87 % vs greedy 2.99 %, epoch 63 of 500, 11 min
+epoch 64 [reinforce]: 50 batches (0 failed), unplaced in training 1.97 %, validation RL / greedy rule 0.9899 {20: 1.0037, 50: 0.9878, 100: 0.978} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 2.94 % vs greedy 2.99 %, epoch 64 of 500, 12 min
+epoch 65 [reinforce]: 50 batches (0 failed), unplaced in training 1.505 %, validation RL / greedy rule 0.9864 {20: 1.002, 50: 0.9861, 100: 0.971} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 2.94 % vs greedy 2.99 %, epoch 65 of 500, 12 min
+epoch 66 [reinforce]: 50 batches (0 failed), unplaced in training 1.535 %, validation RL / greedy rule 0.9859 {20: 1.0002, 50: 0.9877, 100: 0.9699} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 2.87 % vs greedy 2.99 %, epoch 66 of 500, 12 min
+epoch 67 [reinforce]: 50 batches (0 failed), unplaced in training 1.806 %, validation RL / greedy rule 0.9870 {20: 1.0034, 50: 0.9893, 100: 0.9681} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 2.84 % vs greedy 2.99 %, epoch 67 of 500, 12 min
+epoch 68 [reinforce]: 50 batches (0 failed), unplaced in training 1.62 %, validation RL / greedy rule 0.9885 {20: 1.0052, 50: 0.9902, 100: 0.9702} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 2.79 % vs greedy 2.99 %, epoch 68 of 500, 12 min
+epoch 69 [reinforce]: 50 batches (0 failed), unplaced in training 2.252 %, validation RL / greedy rule 0.9947 {20: 1.0036, 50: 0.9875, 100: 0.9931} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 3.11 % vs greedy 2.99 %, epoch 69 of 500, 12 min
+epoch 70 [reinforce]: 50 batches (0 failed), unplaced in training 2.174 %, validation RL / greedy rule 0.9859 {20: 1.0041, 50: 0.9879, 100: 0.9657} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 2.82 % vs greedy 2.99 %, epoch 70 of 500, 13 min
+epoch 71 [reinforce]: 50 batches (0 failed), unplaced in training 2.152 %, validation RL / greedy rule 0.9852 {20: 1.0033, 50: 0.9861, 100: 0.966} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 2.84 % vs greedy 2.99 %, epoch 71 of 500, 13 min
+epoch 72 [reinforce]: 50 batches (0 failed), unplaced in training 2.171 %, validation RL / greedy rule 0.9829 {20: 1.0029, 50: 0.9857, 100: 0.9601} (best 0.9815 at epoch 52, early stop counted after epoch 200), unplaced RL 2.70 % vs greedy 2.99 %, epoch 72 of 500, 13 min
+epoch 73 [reinforce]: 50 batches (0 failed), unplaced in training 1.963 %, validation RL / greedy rule 0.9804 {20: 1.0038, 50: 0.9841, 100: 0.9532} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.67 % vs greedy 2.99 %, epoch 73 of 500, 13 min
+epoch 74 [reinforce]: 50 batches (0 failed), unplaced in training 2.233 %, validation RL / greedy rule 0.9837 {20: 1.0053, 50: 0.9858, 100: 0.9601} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.70 % vs greedy 2.99 %, epoch 74 of 500, 13 min
+epoch 75 [reinforce]: 50 batches (0 failed), unplaced in training 1.526 %, validation RL / greedy rule 0.9847 {20: 1.0067, 50: 0.9858, 100: 0.9616} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.77 % vs greedy 2.99 %, epoch 75 of 500, 14 min
+epoch 76 [reinforce]: 50 batches (0 failed), unplaced in training 1.971 %, validation RL / greedy rule 0.9854 {20: 1.0054, 50: 0.9863, 100: 0.9645} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.79 % vs greedy 2.99 %, epoch 76 of 500, 14 min
+epoch 77 [reinforce]: 50 batches (0 failed), unplaced in training 1.892 %, validation RL / greedy rule 0.9867 {20: 1.0058, 50: 0.9867, 100: 0.9677} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.84 % vs greedy 2.99 %, epoch 77 of 500, 14 min
+epoch 78 [reinforce]: 50 batches (0 failed), unplaced in training 2.268 %, validation RL / greedy rule 0.9808 {20: 1.0025, 50: 0.9838, 100: 0.9561} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.72 % vs greedy 2.99 %, epoch 78 of 500, 14 min
+epoch 79 [reinforce]: 50 batches (0 failed), unplaced in training 1.84 %, validation RL / greedy rule 0.9856 {20: 1.0023, 50: 0.9888, 100: 0.9655} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.77 % vs greedy 2.99 %, epoch 79 of 500, 14 min
+epoch 80 [reinforce]: 50 batches (0 failed), unplaced in training 1.535 %, validation RL / greedy rule 0.9847 {20: 1.0031, 50: 0.9867, 100: 0.9642} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.82 % vs greedy 2.99 %, epoch 80 of 500, 14 min
+epoch 81 [reinforce]: 50 batches (0 failed), unplaced in training 1.516 %, validation RL / greedy rule 0.9904 {20: 1.0013, 50: 0.9874, 100: 0.9826} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 3.04 % vs greedy 2.99 %, epoch 81 of 500, 15 min
+epoch 82 [reinforce]: 50 batches (0 failed), unplaced in training 1.815 %, validation RL / greedy rule 0.9886 {20: 1.0007, 50: 0.9873, 100: 0.9778} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.97 % vs greedy 2.99 %, epoch 82 of 500, 15 min
+epoch 83 [reinforce]: 50 batches (0 failed), unplaced in training 1.452 %, validation RL / greedy rule 0.9808 {20: 1.0017, 50: 0.9849, 100: 0.9559} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.65 % vs greedy 2.99 %, epoch 83 of 500, 15 min
+epoch 84 [reinforce]: 50 batches (0 failed), unplaced in training 2.136 %, validation RL / greedy rule 0.9825 {20: 1.0031, 50: 0.9847, 100: 0.9599} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.70 % vs greedy 2.99 %, epoch 84 of 500, 15 min
+epoch 85 [reinforce]: 50 batches (0 failed), unplaced in training 2.064 %, validation RL / greedy rule 0.9822 {20: 1.0025, 50: 0.9844, 100: 0.9597} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.75 % vs greedy 2.99 %, epoch 85 of 500, 15 min
+epoch 86 [reinforce]: 50 batches (0 failed), unplaced in training 1.955 %, validation RL / greedy rule 0.9868 {20: 1.0025, 50: 0.9853, 100: 0.9725} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.94 % vs greedy 2.99 %, epoch 86 of 500, 16 min
+epoch 87 [reinforce]: 50 batches (0 failed), unplaced in training 2.506 %, validation RL / greedy rule 0.9892 {20: 1.0021, 50: 0.9832, 100: 0.9822} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 3.04 % vs greedy 2.99 %, epoch 87 of 500, 16 min
+epoch 88 [reinforce]: 50 batches (0 failed), unplaced in training 1.8 %, validation RL / greedy rule 0.9858 {20: 1.0004, 50: 0.9837, 100: 0.9732} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.87 % vs greedy 2.99 %, epoch 88 of 500, 16 min
+epoch 89 [reinforce]: 50 batches (0 failed), unplaced in training 2.365 %, validation RL / greedy rule 0.9863 {20: 1.0019, 50: 0.9837, 100: 0.9732} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.84 % vs greedy 2.99 %, epoch 89 of 500, 16 min
+epoch 90 [reinforce]: 50 batches (0 failed), unplaced in training 1.846 %, validation RL / greedy rule 0.9830 {20: 1.0032, 50: 0.9862, 100: 0.9596} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.77 % vs greedy 2.99 %, epoch 90 of 500, 16 min
+epoch 91 [reinforce]: 50 batches (0 failed), unplaced in training 1.831 %, validation RL / greedy rule 0.9856 {20: 1.0008, 50: 0.9828, 100: 0.9732} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.84 % vs greedy 2.99 %, epoch 91 of 500, 16 min
+epoch 92 [reinforce]: 50 batches (0 failed), unplaced in training 1.487 %, validation RL / greedy rule 0.9875 {20: 1.002, 50: 0.989, 100: 0.9715} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.87 % vs greedy 2.99 %, epoch 92 of 500, 17 min
+epoch 93 [reinforce]: 50 batches (0 failed), unplaced in training 1.809 %, validation RL / greedy rule 0.9805 {20: 1.0016, 50: 0.9851, 100: 0.955} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.70 % vs greedy 2.99 %, epoch 93 of 500, 17 min
+epoch 94 [reinforce]: 50 batches (0 failed), unplaced in training 1.656 %, validation RL / greedy rule 0.9847 {20: 1.0006, 50: 0.987, 100: 0.9665} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.75 % vs greedy 2.99 %, epoch 94 of 500, 17 min
+epoch 95 [reinforce]: 50 batches (0 failed), unplaced in training 2.407 %, validation RL / greedy rule 0.9846 {20: 1.0011, 50: 0.9873, 100: 0.9654} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.77 % vs greedy 2.99 %, epoch 95 of 500, 17 min
+epoch 96 [reinforce]: 50 batches (0 failed), unplaced in training 1.966 %, validation RL / greedy rule 0.9848 {20: 1.0004, 50: 0.9913, 100: 0.9626} (best 0.9804 at epoch 73, early stop counted after epoch 200), unplaced RL 2.79 % vs greedy 2.99 %, epoch 96 of 500, 17 min
+epoch 97 [reinforce]: 50 batches (0 failed), unplaced in training 2.245 %, validation RL / greedy rule 0.9791 {20: 1.0017, 50: 0.9839, 100: 0.9518} (best 0.9791 at epoch 97, early stop counted after epoch 200), unplaced RL 2.62 % vs greedy 2.99 %, epoch 97 of 500, 18 min
+epoch 98 [reinforce]: 50 batches (0 failed), unplaced in training 1.936 %, validation RL / greedy rule 0.9793 {20: 1.0011, 50: 0.9856, 100: 0.9511} (best 0.9791 at epoch 97, early stop counted after epoch 200), unplaced RL 2.62 % vs greedy 2.99 %, epoch 98 of 500, 18 min
+epoch 99 [reinforce]: 50 batches (0 failed), unplaced in training 1.959 %, validation RL / greedy rule 0.9764 {20: 1.0022, 50: 0.9844, 100: 0.9424} (best 0.9764 at epoch 99, early stop counted after epoch 200), unplaced RL 2.48 % vs greedy 2.99 %, epoch 99 of 500, 18 min
+epoch 100 [reinforce]: 50 batches (0 failed), unplaced in training 1.767 %, validation RL / greedy rule 0.9830 {20: 1.0049, 50: 0.986, 100: 0.9582} (best 0.9764 at epoch 99, early stop counted after epoch 200), unplaced RL 2.67 % vs greedy 2.99 %, epoch 100 of 500, 18 min
+epoch 101 [reinforce]: 50 batches (0 failed), unplaced in training 1.761 %, validation RL / greedy rule 0.9775 {20: 1.0045, 50: 0.9865, 100: 0.9416} (best 0.9764 at epoch 99, early stop counted after epoch 200), unplaced RL 2.40 % vs greedy 2.99 %, epoch 101 of 500, 18 min
+epoch 102 [reinforce]: 50 batches (0 failed), unplaced in training 1.768 %, validation RL / greedy rule 0.9774 {20: 1.0031, 50: 0.9839, 100: 0.9452} (best 0.9764 at epoch 99, early stop counted after epoch 200), unplaced RL 2.55 % vs greedy 2.99 %, epoch 102 of 500, 19 min
+epoch 103 [reinforce]: 50 batches (0 failed), unplaced in training 1.834 %, validation RL / greedy rule 0.9797 {20: 1.0049, 50: 0.9829, 100: 0.9514} (best 0.9764 at epoch 99, early stop counted after epoch 200), unplaced RL 2.65 % vs greedy 2.99 %, epoch 103 of 500, 19 min
+epoch 104 [reinforce]: 50 batches (0 failed), unplaced in training 1.681 %, validation RL / greedy rule 0.9789 {20: 1.0028, 50: 0.9824, 100: 0.9515} (best 0.9764 at epoch 99, early stop counted after epoch 200), unplaced RL 2.57 % vs greedy 2.99 %, epoch 104 of 500, 19 min
+epoch 105 [reinforce]: 50 batches (0 failed), unplaced in training 1.601 %, validation RL / greedy rule 0.9786 {20: 1.0032, 50: 0.9833, 100: 0.9492} (best 0.9764 at epoch 99, early stop counted after epoch 200), unplaced RL 2.60 % vs greedy 2.99 %, epoch 105 of 500, 19 min
+epoch 106 [reinforce]: 50 batches (0 failed), unplaced in training 2.086 %, validation RL / greedy rule 0.9750 {20: 1.0024, 50: 0.9808, 100: 0.9417} (best 0.9750 at epoch 106, early stop counted after epoch 200), unplaced RL 2.45 % vs greedy 2.99 %, epoch 106 of 500, 19 min
+epoch 107 [reinforce]: 50 batches (0 failed), unplaced in training 1.812 %, validation RL / greedy rule 0.9789 {20: 1.0016, 50: 0.9835, 100: 0.9515} (best 0.9750 at epoch 106, early stop counted after epoch 200), unplaced RL 2.65 % vs greedy 2.99 %, epoch 107 of 500, 19 min
+epoch 108 [reinforce]: 50 batches (0 failed), unplaced in training 1.777 %, validation RL / greedy rule 0.9762 {20: 1.0014, 50: 0.9834, 100: 0.9436} (best 0.9750 at epoch 106, early stop counted after epoch 200), unplaced RL 2.52 % vs greedy 2.99 %, epoch 108 of 500, 20 min
+epoch 109 [reinforce]: 50 batches (0 failed), unplaced in training 1.746 %, validation RL / greedy rule 0.9790 {20: 0.9994, 50: 0.9866, 100: 0.9509} (best 0.9750 at epoch 106, early stop counted after epoch 200), unplaced RL 2.60 % vs greedy 2.99 %, epoch 109 of 500, 20 min
+epoch 110 [reinforce]: 50 batches (0 failed), unplaced in training 2.085 %, validation RL / greedy rule 0.9819 {20: 1.0059, 50: 0.9839, 100: 0.9559} (best 0.9750 at epoch 106, early stop counted after epoch 200), unplaced RL 2.67 % vs greedy 2.99 %, epoch 110 of 500, 20 min
+epoch 111 [reinforce]: 50 batches (0 failed), unplaced in training 1.516 %, validation RL / greedy rule 0.9815 {20: 1.0019, 50: 0.9854, 100: 0.9571} (best 0.9750 at epoch 106, early stop counted after epoch 200), unplaced RL 2.72 % vs greedy 2.99 %, epoch 111 of 500, 20 min
+epoch 112 [reinforce]: 50 batches (0 failed), unplaced in training 2.032 %, validation RL / greedy rule 0.9792 {20: 1.0046, 50: 0.9837, 100: 0.9493} (best 0.9750 at epoch 106, early stop counted after epoch 200), unplaced RL 2.62 % vs greedy 2.99 %, epoch 112 of 500, 20 min
+epoch 113 [reinforce]: 50 batches (0 failed), unplaced in training 2.052 %, validation RL / greedy rule 0.9793 {20: 1.0007, 50: 0.9846, 100: 0.9526} (best 0.9750 at epoch 106, early stop counted after epoch 200), unplaced RL 2.62 % vs greedy 2.99 %, epoch 113 of 500, 21 min
+epoch 114 [reinforce]: 50 batches (0 failed), unplaced in training 2.382 %, validation RL / greedy rule 0.9766 {20: 1.0, 50: 0.9844, 100: 0.9453} (best 0.9750 at epoch 106, early stop counted after epoch 200), unplaced RL 2.62 % vs greedy 2.99 %, epoch 114 of 500, 21 min
+epoch 115 [reinforce]: 50 batches (0 failed), unplaced in training 2.086 %, validation RL / greedy rule 0.9749 {20: 1.0009, 50: 0.9814, 100: 0.9425} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.50 % vs greedy 2.99 %, epoch 115 of 500, 21 min
+epoch 116 [reinforce]: 50 batches (0 failed), unplaced in training 2.382 %, validation RL / greedy rule 0.9801 {20: 1.0024, 50: 0.9933, 100: 0.9446} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.55 % vs greedy 2.99 %, epoch 116 of 500, 21 min
+epoch 117 [reinforce]: 50 batches (0 failed), unplaced in training 1.528 %, validation RL / greedy rule 0.9790 {20: 1.0013, 50: 0.9817, 100: 0.9541} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.65 % vs greedy 2.99 %, epoch 117 of 500, 21 min
+epoch 118 [reinforce]: 50 batches (0 failed), unplaced in training 1.733 %, validation RL / greedy rule 0.9801 {20: 1.001, 50: 0.9835, 100: 0.9557} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.70 % vs greedy 2.99 %, epoch 118 of 500, 22 min
+epoch 119 [reinforce]: 50 batches (0 failed), unplaced in training 1.749 %, validation RL / greedy rule 0.9824 {20: 1.0014, 50: 0.9869, 100: 0.959} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.70 % vs greedy 2.99 %, epoch 119 of 500, 22 min
+epoch 120 [reinforce]: 50 batches (0 failed), unplaced in training 1.708 %, validation RL / greedy rule 0.9751 {20: 0.9996, 50: 0.9833, 100: 0.9423} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.50 % vs greedy 2.99 %, epoch 120 of 500, 22 min
+epoch 121 [reinforce]: 50 batches (0 failed), unplaced in training 1.938 %, validation RL / greedy rule 0.9797 {20: 1.0037, 50: 0.9844, 100: 0.951} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.55 % vs greedy 2.99 %, epoch 121 of 500, 22 min
+epoch 122 [reinforce]: 50 batches (0 failed), unplaced in training 1.747 %, validation RL / greedy rule 0.9799 {20: 1.0013, 50: 0.9849, 100: 0.9535} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.62 % vs greedy 2.99 %, epoch 122 of 500, 22 min
+epoch 123 [reinforce]: 50 batches (0 failed), unplaced in training 1.742 %, validation RL / greedy rule 0.9784 {20: 1.0019, 50: 0.9844, 100: 0.9488} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.60 % vs greedy 2.99 %, epoch 123 of 500, 22 min
+epoch 124 [reinforce]: 50 batches (0 failed), unplaced in training 1.892 %, validation RL / greedy rule 0.9759 {20: 1.0, 50: 0.9834, 100: 0.9444} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.55 % vs greedy 2.99 %, epoch 124 of 500, 23 min
+epoch 125 [reinforce]: 50 batches (0 failed), unplaced in training 2.082 %, validation RL / greedy rule 0.9768 {20: 0.9988, 50: 0.9844, 100: 0.9473} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.57 % vs greedy 2.99 %, epoch 125 of 500, 23 min
+epoch 126 [reinforce]: 50 batches (0 failed), unplaced in training 1.67 %, validation RL / greedy rule 0.9832 {20: 1.0011, 50: 0.9897, 100: 0.9589} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.67 % vs greedy 2.99 %, epoch 126 of 500, 23 min
+epoch 127 [reinforce]: 50 batches (0 failed), unplaced in training 1.746 %, validation RL / greedy rule 0.9773 {20: 1.001, 50: 0.982, 100: 0.9487} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.60 % vs greedy 2.99 %, epoch 127 of 500, 23 min
+epoch 128 [reinforce]: 50 batches (0 failed), unplaced in training 2.218 %, validation RL / greedy rule 0.9783 {20: 1.0004, 50: 0.9827, 100: 0.9519} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.57 % vs greedy 2.99 %, epoch 128 of 500, 23 min
+epoch 129 [reinforce]: 50 batches (0 failed), unplaced in training 1.669 %, validation RL / greedy rule 0.9775 {20: 0.9992, 50: 0.9858, 100: 0.9476} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.60 % vs greedy 2.99 %, epoch 129 of 500, 24 min
+epoch 130 [reinforce]: 50 batches (0 failed), unplaced in training 1.976 %, validation RL / greedy rule 0.9751 {20: 0.9998, 50: 0.9829, 100: 0.9427} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.50 % vs greedy 2.99 %, epoch 130 of 500, 24 min
+epoch 131 [reinforce]: 50 batches (0 failed), unplaced in training 2.099 %, validation RL / greedy rule 0.9793 {20: 1.0006, 50: 0.9826, 100: 0.9548} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.65 % vs greedy 2.99 %, epoch 131 of 500, 24 min
+epoch 132 [reinforce]: 50 batches (0 failed), unplaced in training 1.495 %, validation RL / greedy rule 0.9776 {20: 1.0008, 50: 0.9812, 100: 0.951} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.62 % vs greedy 2.99 %, epoch 132 of 500, 24 min
+epoch 133 [reinforce]: 50 batches (0 failed), unplaced in training 1.557 %, validation RL / greedy rule 0.9776 {20: 0.9998, 50: 0.981, 100: 0.952} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.60 % vs greedy 2.99 %, epoch 133 of 500, 24 min
+epoch 134 [reinforce]: 50 batches (0 failed), unplaced in training 1.993 %, validation RL / greedy rule 0.9777 {20: 1.0032, 50: 0.9827, 100: 0.9472} (best 0.9749 at epoch 115, early stop counted after epoch 200), unplaced RL 2.50 % vs greedy 2.99 %, epoch 134 of 500, 25 min
+epoch 135 [reinforce]: 50 batches (0 failed), unplaced in training 1.777 %, validation RL / greedy rule 0.9743 {20: 1.0003, 50: 0.9838, 100: 0.9389} (best 0.9743 at epoch 135, early stop counted after epoch 200), unplaced RL 2.48 % vs greedy 2.99 %, epoch 135 of 500, 25 min
+epoch 136 [reinforce]: 50 batches (0 failed), unplaced in training 1.493 %, validation RL / greedy rule 0.9754 {20: 1.0014, 50: 0.981, 100: 0.9438} (best 0.9743 at epoch 135, early stop counted after epoch 200), unplaced RL 2.57 % vs greedy 2.99 %, epoch 136 of 500, 25 min
+epoch 137 [reinforce]: 50 batches (0 failed), unplaced in training 1.418 %, validation RL / greedy rule 0.9745 {20: 1.0002, 50: 0.981, 100: 0.9424} (best 0.9743 at epoch 135, early stop counted after epoch 200), unplaced RL 2.48 % vs greedy 2.99 %, epoch 137 of 500, 25 min
+epoch 138 [reinforce]: 50 batches (0 failed), unplaced in training 1.888 %, validation RL / greedy rule 0.9754 {20: 1.0013, 50: 0.9816, 100: 0.9433} (best 0.9743 at epoch 135, early stop counted after epoch 200), unplaced RL 2.55 % vs greedy 2.99 %, epoch 138 of 500, 25 min
+epoch 139 [reinforce]: 50 batches (0 failed), unplaced in training 2.105 %, validation RL / greedy rule 0.9736 {20: 1.0023, 50: 0.9791, 100: 0.9395} (best 0.9736 at epoch 139, early stop counted after epoch 200), unplaced RL 2.50 % vs greedy 2.99 %, epoch 139 of 500, 25 min
+epoch 140 [reinforce]: 50 batches (0 failed), unplaced in training 1.621 %, validation RL / greedy rule 0.9740 {20: 1.0017, 50: 0.9788, 100: 0.9413} (best 0.9736 at epoch 139, early stop counted after epoch 200), unplaced RL 2.52 % vs greedy 2.99 %, epoch 140 of 500, 26 min
+epoch 141 [reinforce]: 50 batches (0 failed), unplaced in training 1.488 %, validation RL / greedy rule 0.9722 {20: 1.0019, 50: 0.9804, 100: 0.9344} (best 0.9722 at epoch 141, early stop counted after epoch 200), unplaced RL 2.38 % vs greedy 2.99 %, epoch 141 of 500, 26 min
+epoch 142 [reinforce]: 50 batches (0 failed), unplaced in training 1.647 %, validation RL / greedy rule 0.9729 {20: 1.001, 50: 0.9802, 100: 0.9375} (best 0.9722 at epoch 141, early stop counted after epoch 200), unplaced RL 2.48 % vs greedy 2.99 %, epoch 142 of 500, 26 min
+epoch 143 [reinforce]: 50 batches (0 failed), unplaced in training 1.418 %, validation RL / greedy rule 0.9741 {20: 1.0002, 50: 0.9823, 100: 0.9398} (best 0.9722 at epoch 141, early stop counted after epoch 200), unplaced RL 2.45 % vs greedy 2.99 %, epoch 143 of 500, 26 min
+epoch 144 [reinforce]: 50 batches (0 failed), unplaced in training 1.259 %, validation RL / greedy rule 0.9726 {20: 1.0011, 50: 0.9798, 100: 0.9368} (best 0.9722 at epoch 141, early stop counted after epoch 200), unplaced RL 2.38 % vs greedy 2.99 %, epoch 144 of 500, 26 min
+epoch 145 [reinforce]: 50 batches (0 failed), unplaced in training 1.757 %, validation RL / greedy rule 0.9742 {20: 0.9998, 50: 0.9815, 100: 0.9414} (best 0.9722 at epoch 141, early stop counted after epoch 200), unplaced RL 2.48 % vs greedy 2.99 %, epoch 145 of 500, 27 min
+epoch 146 [reinforce]: 50 batches (0 failed), unplaced in training 2.206 %, validation RL / greedy rule 0.9729 {20: 0.9989, 50: 0.9814, 100: 0.9385} (best 0.9722 at epoch 141, early stop counted after epoch 200), unplaced RL 2.43 % vs greedy 2.99 %, epoch 146 of 500, 27 min
+epoch 147 [reinforce]: 50 batches (0 failed), unplaced in training 1.658 %, validation RL / greedy rule 0.9732 {20: 1.002, 50: 0.9816, 100: 0.9362} (best 0.9722 at epoch 141, early stop counted after epoch 200), unplaced RL 2.45 % vs greedy 2.99 %, epoch 147 of 500, 27 min
+epoch 148 [reinforce]: 50 batches (0 failed), unplaced in training 1.801 %, validation RL / greedy rule 0.9762 {20: 1.0, 50: 0.9824, 100: 0.9463} (best 0.9722 at epoch 141, early stop counted after epoch 200), unplaced RL 2.52 % vs greedy 2.99 %, epoch 148 of 500, 27 min
+epoch 149 [reinforce]: 50 batches (0 failed), unplaced in training 1.462 %, validation RL / greedy rule 0.9750 {20: 1.0, 50: 0.9819, 100: 0.943} (best 0.9722 at epoch 141, early stop counted after epoch 200), unplaced RL 2.50 % vs greedy 2.99 %, epoch 149 of 500, 27 min
+epoch 150 [reinforce]: 50 batches (0 failed), unplaced in training 1.566 %, validation RL / greedy rule 0.9758 {20: 1.0004, 50: 0.9796, 100: 0.9475} (best 0.9722 at epoch 141, early stop counted after epoch 200), unplaced RL 2.60 % vs greedy 2.99 %, epoch 150 of 500, 27 min
+epoch 151 [reinforce]: 50 batches (0 failed), unplaced in training 1.869 %, validation RL / greedy rule 0.9753 {20: 0.9988, 50: 0.9841, 100: 0.9429} (best 0.9722 at epoch 141, early stop counted after epoch 200), unplaced RL 2.50 % vs greedy 2.99 %, epoch 151 of 500, 28 min
+epoch 152 [reinforce]: 50 batches (0 failed), unplaced in training 1.531 %, validation RL / greedy rule 0.9790 {20: 0.9998, 50: 0.9839, 100: 0.9533} (best 0.9722 at epoch 141, early stop counted after epoch 200), unplaced RL 2.62 % vs greedy 2.99 %, epoch 152 of 500, 28 min
+epoch 153 [reinforce]: 50 batches (0 failed), unplaced in training 1.48 %, validation RL / greedy rule 0.9733 {20: 0.9997, 50: 0.9845, 100: 0.9357} (best 0.9722 at epoch 141, early stop counted after epoch 200), unplaced RL 2.43 % vs greedy 2.99 %, epoch 153 of 500, 28 min
+epoch 154 [reinforce]: 50 batches (0 failed), unplaced in training 2.112 %, validation RL / greedy rule 0.9709 {20: 1.0002, 50: 0.9786, 100: 0.9339} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.38 % vs greedy 2.99 %, epoch 154 of 500, 28 min
+epoch 155 [reinforce]: 50 batches (0 failed), unplaced in training 1.493 %, validation RL / greedy rule 0.9730 {20: 1.0009, 50: 0.9799, 100: 0.9382} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.38 % vs greedy 2.99 %, epoch 155 of 500, 28 min
+epoch 156 [reinforce]: 50 batches (0 failed), unplaced in training 1.404 %, validation RL / greedy rule 0.9711 {20: 1.0, 50: 0.9805, 100: 0.9329} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.38 % vs greedy 2.99 %, epoch 156 of 500, 29 min
+epoch 157 [reinforce]: 50 batches (0 failed), unplaced in training 1.689 %, validation RL / greedy rule 0.9753 {20: 1.0021, 50: 0.9811, 100: 0.9427} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.50 % vs greedy 2.99 %, epoch 157 of 500, 29 min
+epoch 158 [reinforce]: 50 batches (0 failed), unplaced in training 1.734 %, validation RL / greedy rule 0.9758 {20: 1.0019, 50: 0.9824, 100: 0.9431} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.48 % vs greedy 2.99 %, epoch 158 of 500, 29 min
+epoch 159 [reinforce]: 50 batches (0 failed), unplaced in training 1.491 %, validation RL / greedy rule 0.9745 {20: 1.0001, 50: 0.9782, 100: 0.9451} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.55 % vs greedy 2.99 %, epoch 159 of 500, 29 min
+epoch 160 [reinforce]: 50 batches (0 failed), unplaced in training 2.035 %, validation RL / greedy rule 0.9752 {20: 0.9988, 50: 0.9826, 100: 0.9442} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.50 % vs greedy 2.99 %, epoch 160 of 500, 29 min
+epoch 161 [reinforce]: 50 batches (0 failed), unplaced in training 1.516 %, validation RL / greedy rule 0.9756 {20: 1.0015, 50: 0.9841, 100: 0.9412} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.52 % vs greedy 2.99 %, epoch 161 of 500, 29 min
+epoch 162 [reinforce]: 50 batches (0 failed), unplaced in training 1.938 %, validation RL / greedy rule 0.9754 {20: 1.0043, 50: 0.9814, 100: 0.9406} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.52 % vs greedy 2.99 %, epoch 162 of 500, 30 min
+epoch 163 [reinforce]: 50 batches (0 failed), unplaced in training 1.791 %, validation RL / greedy rule 0.9759 {20: 1.001, 50: 0.9806, 100: 0.946} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.62 % vs greedy 2.99 %, epoch 163 of 500, 30 min
+epoch 164 [reinforce]: 50 batches (0 failed), unplaced in training 1.515 %, validation RL / greedy rule 0.9739 {20: 1.0004, 50: 0.9796, 100: 0.9417} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.52 % vs greedy 2.99 %, epoch 164 of 500, 30 min
+epoch 165 [reinforce]: 50 batches (0 failed), unplaced in training 2.066 %, validation RL / greedy rule 0.9720 {20: 0.9991, 50: 0.981, 100: 0.9358} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.40 % vs greedy 2.99 %, epoch 165 of 500, 30 min
+epoch 166 [reinforce]: 50 batches (0 failed), unplaced in training 1.731 %, validation RL / greedy rule 0.9712 {20: 1.0, 50: 0.9816, 100: 0.932} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.35 % vs greedy 2.99 %, epoch 166 of 500, 30 min
+epoch 167 [reinforce]: 50 batches (0 failed), unplaced in training 1.875 %, validation RL / greedy rule 0.9741 {20: 1.0011, 50: 0.9801, 100: 0.9411} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.50 % vs greedy 2.99 %, epoch 167 of 500, 31 min
+epoch 168 [reinforce]: 50 batches (0 failed), unplaced in training 1.736 %, validation RL / greedy rule 0.9751 {20: 1.0025, 50: 0.9849, 100: 0.9377} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.43 % vs greedy 2.99 %, epoch 168 of 500, 31 min
+epoch 169 [reinforce]: 50 batches (0 failed), unplaced in training 1.533 %, validation RL / greedy rule 0.9736 {20: 1.0025, 50: 0.9806, 100: 0.9376} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.45 % vs greedy 2.99 %, epoch 169 of 500, 31 min
+epoch 170 [reinforce]: 50 batches (0 failed), unplaced in training 1.709 %, validation RL / greedy rule 0.9763 {20: 1.0018, 50: 0.9824, 100: 0.9447} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.55 % vs greedy 2.99 %, epoch 170 of 500, 31 min
+epoch 171 [reinforce]: 50 batches (0 failed), unplaced in training 1.369 %, validation RL / greedy rule 0.9785 {20: 1.0007, 50: 0.9818, 100: 0.953} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.67 % vs greedy 2.99 %, epoch 171 of 500, 31 min
+epoch 172 [reinforce]: 50 batches (0 failed), unplaced in training 1.786 %, validation RL / greedy rule 0.9778 {20: 1.0017, 50: 0.9839, 100: 0.9477} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.57 % vs greedy 2.99 %, epoch 172 of 500, 32 min
+epoch 173 [reinforce]: 50 batches (0 failed), unplaced in training 1.929 %, validation RL / greedy rule 0.9762 {20: 1.0011, 50: 0.9814, 100: 0.9459} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.60 % vs greedy 2.99 %, epoch 173 of 500, 32 min
+epoch 174 [reinforce]: 50 batches (0 failed), unplaced in training 1.976 %, validation RL / greedy rule 0.9746 {20: 1.0023, 50: 0.9805, 100: 0.9409} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.50 % vs greedy 2.99 %, epoch 174 of 500, 32 min
+epoch 175 [reinforce]: 50 batches (0 failed), unplaced in training 1.381 %, validation RL / greedy rule 0.9758 {20: 1.003, 50: 0.9839, 100: 0.9403} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.50 % vs greedy 2.99 %, epoch 175 of 500, 32 min
+epoch 176 [reinforce]: 50 batches (0 failed), unplaced in training 1.68 %, validation RL / greedy rule 0.9759 {20: 1.0011, 50: 0.9834, 100: 0.9432} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.55 % vs greedy 2.99 %, epoch 176 of 500, 32 min
+epoch 177 [reinforce]: 50 batches (0 failed), unplaced in training 2.261 %, validation RL / greedy rule 0.9750 {20: 0.9999, 50: 0.9819, 100: 0.9433} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.55 % vs greedy 2.99 %, epoch 177 of 500, 32 min
+epoch 178 [reinforce]: 50 batches (0 failed), unplaced in training 1.417 %, validation RL / greedy rule 0.9754 {20: 1.0023, 50: 0.9835, 100: 0.9404} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.48 % vs greedy 2.99 %, epoch 178 of 500, 33 min
+epoch 179 [reinforce]: 50 batches (0 failed), unplaced in training 1.435 %, validation RL / greedy rule 0.9720 {20: 1.0015, 50: 0.9824, 100: 0.9322} (best 0.9709 at epoch 154, early stop counted after epoch 200), unplaced RL 2.40 % vs greedy 2.99 %, epoch 179 of 500, 33 min
+epoch 180 [reinforce]: 50 batches (0 failed), unplaced in training 1.868 %, validation RL / greedy rule 0.9694 {20: 1.0014, 50: 0.98, 100: 0.9267} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.30 % vs greedy 2.99 %, epoch 180 of 500, 33 min
+epoch 181 [reinforce]: 50 batches (0 failed), unplaced in training 1.422 %, validation RL / greedy rule 0.9744 {20: 1.0009, 50: 0.9798, 100: 0.9425} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.52 % vs greedy 2.99 %, epoch 181 of 500, 33 min
+epoch 182 [reinforce]: 50 batches (0 failed), unplaced in training 1.788 %, validation RL / greedy rule 0.9804 {20: 1.0018, 50: 0.9836, 100: 0.9557} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.70 % vs greedy 2.99 %, epoch 182 of 500, 33 min
+epoch 183 [reinforce]: 50 batches (0 failed), unplaced in training 1.922 %, validation RL / greedy rule 0.9736 {20: 1.003, 50: 0.9822, 100: 0.9355} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.43 % vs greedy 2.99 %, epoch 183 of 500, 34 min
+epoch 184 [reinforce]: 50 batches (0 failed), unplaced in training 1.705 %, validation RL / greedy rule 0.9732 {20: 1.0001, 50: 0.9831, 100: 0.9363} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.43 % vs greedy 2.99 %, epoch 184 of 500, 34 min
+epoch 185 [reinforce]: 50 batches (0 failed), unplaced in training 1.027 %, validation RL / greedy rule 0.9738 {20: 1.001, 50: 0.9821, 100: 0.9383} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.48 % vs greedy 2.99 %, epoch 185 of 500, 34 min
+epoch 186 [reinforce]: 50 batches (0 failed), unplaced in training 1.765 %, validation RL / greedy rule 0.9767 {20: 1.0027, 50: 0.9841, 100: 0.9432} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.52 % vs greedy 2.99 %, epoch 186 of 500, 34 min
+epoch 187 [reinforce]: 50 batches (0 failed), unplaced in training 1.892 %, validation RL / greedy rule 0.9765 {20: 1.0017, 50: 0.9813, 100: 0.9463} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.60 % vs greedy 2.99 %, epoch 187 of 500, 34 min
+epoch 188 [reinforce]: 50 batches (0 failed), unplaced in training 1.822 %, validation RL / greedy rule 0.9767 {20: 1.0013, 50: 0.9827, 100: 0.9459} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.55 % vs greedy 2.99 %, epoch 188 of 500, 34 min
+epoch 189 [reinforce]: 50 batches (0 failed), unplaced in training 1.521 %, validation RL / greedy rule 0.9765 {20: 1.0014, 50: 0.9829, 100: 0.9453} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.55 % vs greedy 2.99 %, epoch 189 of 500, 35 min
+epoch 190 [reinforce]: 50 batches (0 failed), unplaced in training 1.39 %, validation RL / greedy rule 0.9784 {20: 1.0033, 50: 0.9817, 100: 0.9503} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.65 % vs greedy 2.99 %, epoch 190 of 500, 35 min
+epoch 191 [reinforce]: 50 batches (0 failed), unplaced in training 1.804 %, validation RL / greedy rule 0.9737 {20: 1.0027, 50: 0.9808, 100: 0.9376} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.50 % vs greedy 2.99 %, epoch 191 of 500, 35 min
+epoch 192 [reinforce]: 50 batches (0 failed), unplaced in training 2.209 %, validation RL / greedy rule 0.9756 {20: 1.0009, 50: 0.9834, 100: 0.9424} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.48 % vs greedy 2.99 %, epoch 192 of 500, 35 min
+epoch 193 [reinforce]: 50 batches (0 failed), unplaced in training 1.826 %, validation RL / greedy rule 0.9761 {20: 1.0009, 50: 0.9796, 100: 0.9479} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.60 % vs greedy 2.99 %, epoch 193 of 500, 35 min
+epoch 194 [reinforce]: 50 batches (0 failed), unplaced in training 1.968 %, validation RL / greedy rule 0.9723 {20: 1.0004, 50: 0.9816, 100: 0.935} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.43 % vs greedy 2.99 %, epoch 194 of 500, 36 min
+epoch 195 [reinforce]: 50 batches (0 failed), unplaced in training 1.955 %, validation RL / greedy rule 0.9738 {20: 0.999, 50: 0.9802, 100: 0.9421} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.52 % vs greedy 2.99 %, epoch 195 of 500, 36 min
+epoch 196 [reinforce]: 50 batches (0 failed), unplaced in training 1.574 %, validation RL / greedy rule 0.9728 {20: 0.9991, 50: 0.9828, 100: 0.9365} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.43 % vs greedy 2.99 %, epoch 196 of 500, 36 min
+epoch 197 [reinforce]: 50 batches (0 failed), unplaced in training 1.65 %, validation RL / greedy rule 0.9753 {20: 1.0027, 50: 0.9839, 100: 0.9392} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.43 % vs greedy 2.99 %, epoch 197 of 500, 36 min
+epoch 198 [reinforce]: 50 batches (0 failed), unplaced in training 1.781 %, validation RL / greedy rule 0.9707 {20: 1.0, 50: 0.9809, 100: 0.9312} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.35 % vs greedy 2.99 %, epoch 198 of 500, 36 min
+epoch 199 [reinforce]: 50 batches (0 failed), unplaced in training 1.977 %, validation RL / greedy rule 0.9748 {20: 1.0008, 50: 0.9819, 100: 0.9416} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.52 % vs greedy 2.99 %, epoch 199 of 500, 37 min
+epoch 200 [reinforce]: 50 batches (0 failed), unplaced in training 1.652 %, validation RL / greedy rule 0.9741 {20: 0.9999, 50: 0.9807, 100: 0.9417} (best 0.9694 at epoch 180, early stop counted after epoch 200), unplaced RL 2.55 % vs greedy 2.99 %, epoch 200 of 500, 37 min
+epoch 201 [reinforce]: 50 batches (0 failed), unplaced in training 2.06 %, validation RL / greedy rule 0.9740 {20: 0.9985, 50: 0.9801, 100: 0.9434} (best 0.9694 at epoch 180, no improvement for 1/10 epochs), unplaced RL 2.57 % vs greedy 2.99 %, epoch 201 of 500, 37 min
+epoch 202 [reinforce]: 50 batches (0 failed), unplaced in training 1.812 %, validation RL / greedy rule 0.9721 {20: 0.9997, 50: 0.9832, 100: 0.9335} (best 0.9694 at epoch 180, no improvement for 2/10 epochs), unplaced RL 2.40 % vs greedy 2.99 %, epoch 202 of 500, 37 min
+epoch 203 [reinforce]: 50 batches (0 failed), unplaced in training 1.44 %, validation RL / greedy rule 0.9735 {20: 1.0003, 50: 0.9815, 100: 0.9386} (best 0.9694 at epoch 180, no improvement for 3/10 epochs), unplaced RL 2.45 % vs greedy 2.99 %, epoch 203 of 500, 37 min
+epoch 204 [reinforce]: 50 batches (0 failed), unplaced in training 2.065 %, validation RL / greedy rule 0.9748 {20: 1.0007, 50: 0.9802, 100: 0.9437} (best 0.9694 at epoch 180, no improvement for 4/10 epochs), unplaced RL 2.55 % vs greedy 2.99 %, epoch 204 of 500, 37 min
+epoch 205 [reinforce]: 50 batches (0 failed), unplaced in training 2.129 %, validation RL / greedy rule 0.9733 {20: 1.0018, 50: 0.9855, 100: 0.9327} (best 0.9694 at epoch 180, no improvement for 5/10 epochs), unplaced RL 2.40 % vs greedy 2.99 %, epoch 205 of 500, 38 min
+epoch 206 [reinforce]: 50 batches (0 failed), unplaced in training 1.52 %, validation RL / greedy rule 0.9737 {20: 1.0004, 50: 0.9811, 100: 0.9397} (best 0.9694 at epoch 180, no improvement for 6/10 epochs), unplaced RL 2.45 % vs greedy 2.99 %, epoch 206 of 500, 38 min
+epoch 207 [reinforce]: 50 batches (0 failed), unplaced in training 1.741 %, validation RL / greedy rule 0.9725 {20: 1.0002, 50: 0.9797, 100: 0.9377} (best 0.9694 at epoch 180, no improvement for 7/10 epochs), unplaced RL 2.48 % vs greedy 2.99 %, epoch 207 of 500, 38 min
+epoch 208 [reinforce]: 50 batches (0 failed), unplaced in training 1.735 %, validation RL / greedy rule 0.9723 {20: 0.9999, 50: 0.9819, 100: 0.9351} (best 0.9694 at epoch 180, no improvement for 8/10 epochs), unplaced RL 2.45 % vs greedy 2.99 %, epoch 208 of 500, 38 min
+epoch 209 [reinforce]: 50 batches (0 failed), unplaced in training 1.488 %, validation RL / greedy rule 0.9741 {20: 1.0023, 50: 0.9815, 100: 0.9385} (best 0.9694 at epoch 180, no improvement for 9/10 epochs), unplaced RL 2.48 % vs greedy 2.99 %, epoch 209 of 500, 38 min
+epoch 210 [reinforce]: 50 batches (0 failed), unplaced in training 1.279 %, validation RL / greedy rule 0.9736 {20: 0.9998, 50: 0.9818, 100: 0.9392} (best 0.9694 at epoch 180, no improvement for 10/10 epochs), unplaced RL 2.52 % vs greedy 2.99 %, epoch 210 of 500, 39 min
+training finished (early stop: no better validation in the last 10 REINFORCE epochs after epoch 200 (best at epoch 180)): 210 epochs, 10500 batches, 0.64 h; best validation RL / greedy rule 0.9694 (epoch 180); models in /mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/baseline_RL/model
+2026-11-24 19:45:11  END    RL baseline training   exit code 0, 38 min
+==================================================================================================
+2026-11-24 19:45:11  START  RL baseline solve
+folder: baseline_RL/code
+command: python solve_rl_f4.py --threads 0 --device auto --resume
+==================================================================================================
+RL (formulation 4), variant baseline: 560 instance(s), 0 already in runs.csv, 560 to solve; model /mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/baseline_RL/model/model_best.pt (epoch 180, 0.55 h training); 8 x (1 + 64) rollouts each on cuda (24 threads); output /mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/baseline_RL/results
+[1/560] EV-C101_n10: plan, Z = 8,323.64 Rs, valid: yes, 0.389 s (0.0 min so far)
+[2/560] EV-C102_n10: plan, Z = 8,533.86 Rs, valid: yes, 0.025 s (0.0 min so far)
+[3/560] EV-C103_n10: plan, Z = 8,533.86 Rs, valid: yes, 0.023 s (0.0 min so far)
+[4/560] EV-C104_n10: plan, Z = 8,638.40 Rs, valid: yes, 0.023 s (0.0 min so far)
+[5/560] EV-C105_n10: plan, Z = 8,323.64 Rs, valid: yes, 0.024 s (0.0 min so far)
+[6/560] EV-C106_n10: plan, Z = 8,323.64 Rs, valid: yes, 0.025 s (0.0 min so far)
+[7/560] EV-C107_n10: plan, Z = 8,323.98 Rs, valid: yes, 0.025 s (0.0 min so far)
+[8/560] EV-C108_n10: plan, Z = 8,323.98 Rs, valid: yes, 0.024 s (0.0 min so far)
+[9/560] EV-C109_n10: plan, Z = 8,454.37 Rs, valid: yes, 0.023 s (0.0 min so far)
+[10/560] EV-C201_n10: plan, Z = 9,177.33 Rs, valid: yes, 0.023 s (0.0 min so far)
+[11/560] EV-C202_n10: plan, Z = 9,244.80 Rs, valid: yes, 0.024 s (0.0 min so far)
+[12/560] EV-C203_n10: plan, Z = 9,244.80 Rs, valid: yes, 0.024 s (0.0 min so far)
+[13/560] EV-C204_n10: plan, Z = 9,429.21 Rs, valid: yes, 0.025 s (0.0 min so far)
+[14/560] EV-C205_n10: plan, Z = 9,177.33 Rs, valid: yes, 0.023 s (0.0 min so far)
+[15/560] EV-C206_n10: plan, Z = 9,217.39 Rs, valid: yes, 0.023 s (0.0 min so far)
+[16/560] EV-C207_n10: plan, Z = 9,205.98 Rs, valid: yes, 0.023 s (0.0 min so far)
+[17/560] EV-C208_n10: plan, Z = 9,177.33 Rs, valid: yes, 0.023 s (0.0 min so far)
+[18/560] EV-R101_n10: plan, Z = 10,776.64 Rs, valid: yes, 0.025 s (0.0 min so far)
+[19/560] EV-R102_n10: plan, Z = 9,508.59 Rs, valid: yes, 0.024 s (0.0 min so far)
+[20/560] EV-R103_n10: plan, Z = 9,508.59 Rs, valid: yes, 0.023 s (0.0 min so far)
+[21/560] EV-R104_n10: plan, Z = 9,851.68 Rs, valid: yes, 0.023 s (0.0 min so far)
+[22/560] EV-R105_n10: plan, Z = 10,776.64 Rs, valid: yes, 0.025 s (0.0 min so far)
+[23/560] EV-R106_n10: plan, Z = 9,549.53 Rs, valid: yes, 0.023 s (0.0 min so far)
+[24/560] EV-R107_n10: plan, Z = 9,549.53 Rs, valid: yes, 0.023 s (0.0 min so far)
+[25/560] EV-R108_n10: plan, Z = 9,851.68 Rs, valid: yes, 0.023 s (0.0 min so far)
+[26/560] EV-R109_n10: plan, Z = 9,518.72 Rs, valid: yes, 0.023 s (0.0 min so far)
+[27/560] EV-R110_n10: plan, Z = 9,529.76 Rs, valid: yes, 0.023 s (0.0 min so far)
+[28/560] EV-R111_n10: plan, Z = 9,491.68 Rs, valid: yes, 0.023 s (0.0 min so far)
+[29/560] EV-R112_n10: plan, Z = 9,581.74 Rs, valid: yes, 0.023 s (0.0 min so far)
+[30/560] EV-R201_n10: plan, Z = 8,463.48 Rs, valid: yes, 0.023 s (0.0 min so far)
+[31/560] EV-R202_n10: plan, Z = 8,547.88 Rs, valid: yes, 0.023 s (0.0 min so far)
+[32/560] EV-R203_n10: plan, Z = 8,547.88 Rs, valid: yes, 0.023 s (0.0 min so far)
+[33/560] EV-R204_n10: plan, Z = 8,754.11 Rs, valid: yes, 0.023 s (0.0 min so far)
+[34/560] EV-R205_n10: plan, Z = 8,463.48 Rs, valid: yes, 0.023 s (0.0 min so far)
+[35/560] EV-R206_n10: plan, Z = 8,547.88 Rs, valid: yes, 0.023 s (0.0 min so far)
+[36/560] EV-R207_n10: plan, Z = 8,547.88 Rs, valid: yes, 0.023 s (0.0 min so far)
+[37/560] EV-R208_n10: plan, Z = 8,754.11 Rs, valid: yes, 0.023 s (0.0 min so far)
+[38/560] EV-R209_n10: plan, Z = 8,463.48 Rs, valid: yes, 0.023 s (0.0 min so far)
+[39/560] EV-R210_n10: plan, Z = 8,470.93 Rs, valid: yes, 0.023 s (0.0 min so far)
+[40/560] EV-R211_n10: plan, Z = 8,463.48 Rs, valid: yes, 0.023 s (0.0 min so far)
+[41/560] EV-RC101_n10: plan, Z = 10,091.10 Rs, valid: yes, 0.023 s (0.0 min so far)
+[42/560] EV-RC102_n10: plan, Z = 9,973.23 Rs, valid: yes, 0.024 s (0.0 min so far)
+[43/560] EV-RC103_n10: plan, Z = 9,973.23 Rs, valid: yes, 0.024 s (0.0 min so far)
+[44/560] EV-RC104_n10: plan, Z = 10,264.41 Rs, valid: yes, 0.024 s (0.0 min so far)
+[45/560] EV-RC105_n10: invalid_plan, Z = 12,408.41 Rs, valid: no, 0.023 s (0.0 min so far)
+[46/560] EV-RC106_n10: plan, Z = 10,044.94 Rs, valid: yes, 0.024 s (0.0 min so far)
+[47/560] EV-RC107_n10: plan, Z = 10,067.62 Rs, valid: yes, 0.024 s (0.0 min so far)
+[48/560] EV-RC108_n10: plan, Z = 10,521.60 Rs, valid: yes, 0.023 s (0.0 min so far)
+[49/560] EV-RC201_n10: plan, Z = 10,115.59 Rs, valid: yes, 0.023 s (0.0 min so far)
+[50/560] EV-RC202_n10: plan, Z = 10,238.26 Rs, valid: yes, 0.023 s (0.0 min so far)
+[51/560] EV-RC203_n10: plan, Z = 10,238.26 Rs, valid: yes, 0.023 s (0.0 min so far)
+[52/560] EV-RC204_n10: plan, Z = 10,287.37 Rs, valid: yes, 0.023 s (0.0 min so far)
+[53/560] EV-RC205_n10: plan, Z = 10,115.59 Rs, valid: yes, 0.023 s (0.0 min so far)
+[54/560] EV-RC206_n10: plan, Z = 10,115.59 Rs, valid: yes, 0.023 s (0.0 min so far)
+[55/560] EV-RC207_n10: plan, Z = 10,119.69 Rs, valid: yes, 0.023 s (0.0 min so far)
+[56/560] EV-RC208_n10: plan, Z = 10,115.59 Rs, valid: yes, 0.023 s (0.0 min so far)
+[57/560] EV-C101_n20: plan, Z = 17,387.97 Rs, valid: yes, 0.045 s (0.0 min so far)
+[58/560] EV-C102_n20: plan, Z = 17,494.52 Rs, valid: yes, 0.044 s (0.0 min so far)
+[59/560] EV-C103_n20: plan, Z = 17,959.19 Rs, valid: yes, 0.043 s (0.0 min so far)
+[60/560] EV-C104_n20: plan, Z = 18,395.41 Rs, valid: yes, 0.043 s (0.0 min so far)
+[61/560] EV-C105_n20: plan, Z = 17,333.84 Rs, valid: yes, 0.044 s (0.0 min so far)
+[62/560] EV-C106_n20: plan, Z = 17,333.84 Rs, valid: yes, 0.043 s (0.0 min so far)
+[63/560] EV-C107_n20: plan, Z = 17,442.86 Rs, valid: yes, 0.043 s (0.0 min so far)
+[64/560] EV-C108_n20: plan, Z = 17,446.24 Rs, valid: yes, 0.044 s (0.0 min so far)
+[65/560] EV-C109_n20: plan, Z = 17,446.24 Rs, valid: yes, 0.044 s (0.0 min so far)
+[66/560] EV-C201_n20: plan, Z = 18,292.07 Rs, valid: yes, 0.044 s (0.0 min so far)
+[67/560] EV-C202_n20: plan, Z = 18,296.39 Rs, valid: yes, 0.044 s (0.0 min so far)
+[68/560] EV-C203_n20: plan, Z = 18,535.24 Rs, valid: yes, 0.044 s (0.0 min so far)
+[69/560] EV-C204_n20: plan, Z = 18,891.68 Rs, valid: yes, 0.044 s (0.0 min so far)
+[70/560] EV-C205_n20: plan, Z = 18,292.07 Rs, valid: yes, 0.044 s (0.0 min so far)
+[71/560] EV-C206_n20: plan, Z = 18,288.42 Rs, valid: yes, 0.045 s (0.0 min so far)
+[72/560] EV-C207_n20: plan, Z = 18,288.42 Rs, valid: yes, 0.046 s (0.0 min so far)
+[73/560] EV-C208_n20: plan, Z = 18,288.42 Rs, valid: yes, 0.044 s (0.0 min so far)
+[74/560] EV-R101_n20: plan, Z = 18,104.28 Rs, valid: yes, 0.043 s (0.0 min so far)
+[75/560] EV-R102_n20: plan, Z = 18,207.70 Rs, valid: yes, 0.042 s (0.0 min so far)
+[76/560] EV-R103_n20: plan, Z = 18,318.75 Rs, valid: yes, 0.043 s (0.0 min so far)
+[77/560] EV-R104_n20: plan, Z = 18,668.24 Rs, valid: yes, 0.044 s (0.0 min so far)
+[78/560] EV-R105_n20: plan, Z = 18,092.59 Rs, valid: yes, 0.044 s (0.0 min so far)
+[79/560] EV-R106_n20: plan, Z = 18,207.70 Rs, valid: yes, 0.043 s (0.0 min so far)
+[80/560] EV-R107_n20: plan, Z = 18,318.75 Rs, valid: yes, 0.043 s (0.0 min so far)
+[81/560] EV-R108_n20: plan, Z = 18,646.06 Rs, valid: yes, 0.043 s (0.0 min so far)
+[82/560] EV-R109_n20: plan, Z = 18,108.63 Rs, valid: yes, 0.042 s (0.0 min so far)
+[83/560] EV-R110_n20: plan, Z = 18,392.27 Rs, valid: yes, 0.043 s (0.0 min so far)
+[84/560] EV-R111_n20: plan, Z = 18,098.88 Rs, valid: yes, 0.042 s (0.0 min so far)
+[85/560] EV-R112_n20: plan, Z = 18,343.43 Rs, valid: yes, 0.042 s (0.1 min so far)
+[86/560] EV-R201_n20: plan, Z = 16,564.00 Rs, valid: yes, 0.046 s (0.1 min so far)
+[87/560] EV-R202_n20: plan, Z = 16,544.55 Rs, valid: yes, 0.044 s (0.1 min so far)
+[88/560] EV-R203_n20: plan, Z = 16,544.55 Rs, valid: yes, 0.044 s (0.1 min so far)
+[89/560] EV-R204_n20: plan, Z = 17,333.54 Rs, valid: yes, 0.042 s (0.1 min so far)
+[90/560] EV-R205_n20: plan, Z = 16,573.89 Rs, valid: yes, 0.043 s (0.1 min so far)
+[91/560] EV-R206_n20: plan, Z = 16,554.44 Rs, valid: yes, 0.044 s (0.1 min so far)
+[92/560] EV-R207_n20: plan, Z = 16,554.44 Rs, valid: yes, 0.044 s (0.1 min so far)
+[93/560] EV-R208_n20: plan, Z = 17,745.24 Rs, valid: yes, 0.044 s (0.1 min so far)
+[94/560] EV-R209_n20: plan, Z = 16,575.04 Rs, valid: yes, 0.044 s (0.1 min so far)
+[95/560] EV-R210_n20: plan, Z = 16,824.59 Rs, valid: yes, 0.043 s (0.1 min so far)
+[96/560] EV-R211_n20: plan, Z = 16,726.04 Rs, valid: yes, 0.042 s (0.1 min so far)
+[97/560] EV-RC101_n20: plan, Z = 20,385.91 Rs, valid: yes, 0.044 s (0.1 min so far)
+[98/560] EV-RC102_n20: plan, Z = 20,172.70 Rs, valid: yes, 0.044 s (0.1 min so far)
+[99/560] EV-RC103_n20: plan, Z = 20,169.43 Rs, valid: yes, 0.044 s (0.1 min so far)
+[100/560] EV-RC104_n20: plan, Z = 20,740.41 Rs, valid: yes, 0.047 s (0.1 min so far)
+[101/560] EV-RC105_n20: invalid_plan, Z = 22,514.10 Rs, valid: no, 0.043 s (0.1 min so far)
+[102/560] EV-RC106_n20: plan, Z = 20,394.04 Rs, valid: yes, 0.045 s (0.1 min so far)
+[103/560] EV-RC107_n20: plan, Z = 20,577.09 Rs, valid: yes, 0.045 s (0.1 min so far)
+[104/560] EV-RC108_n20: plan, Z = 20,998.03 Rs, valid: yes, 0.045 s (0.1 min so far)
+[105/560] EV-RC201_n20: plan, Z = 18,626.04 Rs, valid: yes, 0.043 s (0.1 min so far)
+[106/560] EV-RC202_n20: plan, Z = 18,937.91 Rs, valid: yes, 0.043 s (0.1 min so far)
+[107/560] EV-RC203_n20: plan, Z = 19,180.75 Rs, valid: yes, 0.043 s (0.1 min so far)
+[108/560] EV-RC204_n20: plan, Z = 19,297.63 Rs, valid: yes, 0.042 s (0.1 min so far)
+[109/560] EV-RC205_n20: plan, Z = 18,613.85 Rs, valid: yes, 0.042 s (0.1 min so far)
+[110/560] EV-RC206_n20: plan, Z = 18,630.15 Rs, valid: yes, 0.042 s (0.1 min so far)
+[111/560] EV-RC207_n20: plan, Z = 18,726.15 Rs, valid: yes, 0.042 s (0.1 min so far)
+[112/560] EV-RC208_n20: plan, Z = 18,789.83 Rs, valid: yes, 0.042 s (0.1 min so far)
+[113/560] EV-C101_n30: plan, Z = 24,859.58 Rs, valid: yes, 0.062 s (0.1 min so far)
+[114/560] EV-C102_n30: plan, Z = 24,892.86 Rs, valid: yes, 0.062 s (0.1 min so far)
+[115/560] EV-C103_n30: plan, Z = 25,679.43 Rs, valid: yes, 0.064 s (0.1 min so far)
+[116/560] EV-C104_n30: plan, Z = 26,419.93 Rs, valid: yes, 0.065 s (0.1 min so far)
+[117/560] EV-C105_n30: plan, Z = 24,788.04 Rs, valid: yes, 0.062 s (0.1 min so far)
+[118/560] EV-C106_n30: plan, Z = 24,813.44 Rs, valid: yes, 0.062 s (0.1 min so far)
+[119/560] EV-C107_n30: plan, Z = 24,897.06 Rs, valid: yes, 0.064 s (0.1 min so far)
+[120/560] EV-C108_n30: plan, Z = 24,900.44 Rs, valid: yes, 0.063 s (0.1 min so far)
+[121/560] EV-C109_n30: plan, Z = 24,961.37 Rs, valid: yes, 0.062 s (0.1 min so far)
+[122/560] EV-C201_n30: plan, Z = 25,712.06 Rs, valid: yes, 0.064 s (0.1 min so far)
+[123/560] EV-C202_n30: plan, Z = 25,832.77 Rs, valid: yes, 0.064 s (0.1 min so far)
+[124/560] EV-C203_n30: plan, Z = 26,317.41 Rs, valid: yes, 0.066 s (0.1 min so far)
+[125/560] EV-C204_n30: plan, Z = 27,066.20 Rs, valid: yes, 0.064 s (0.1 min so far)
+[126/560] EV-C205_n30: plan, Z = 25,792.46 Rs, valid: yes, 0.063 s (0.1 min so far)
+[127/560] EV-C206_n30: plan, Z = 25,856.26 Rs, valid: yes, 0.064 s (0.1 min so far)
+[128/560] EV-C207_n30: plan, Z = 25,877.16 Rs, valid: yes, 0.064 s (0.1 min so far)
+[129/560] EV-C208_n30: plan, Z = 25,823.81 Rs, valid: yes, 0.064 s (0.1 min so far)
+[130/560] EV-R101_n30: plan, Z = 25,497.59 Rs, valid: yes, 0.064 s (0.1 min so far)
+[131/560] EV-R102_n30: plan, Z = 25,671.86 Rs, valid: yes, 0.063 s (0.1 min so far)
+[132/560] EV-R103_n30: plan, Z = 25,862.79 Rs, valid: yes, 0.063 s (0.1 min so far)
+[133/560] EV-R104_n30: plan, Z = 26,258.59 Rs, valid: yes, 0.065 s (0.1 min so far)
+[134/560] EV-R105_n30: plan, Z = 25,490.84 Rs, valid: yes, 0.062 s (0.1 min so far)
+[135/560] EV-R106_n30: plan, Z = 25,724.79 Rs, valid: yes, 0.062 s (0.1 min so far)
+[136/560] EV-R107_n30: plan, Z = 25,876.50 Rs, valid: yes, 0.062 s (0.1 min so far)
+[137/560] EV-R108_n30: plan, Z = 26,243.52 Rs, valid: yes, 0.064 s (0.1 min so far)
+[138/560] EV-R109_n30: plan, Z = 25,559.57 Rs, valid: yes, 0.065 s (0.1 min so far)
+[139/560] EV-R110_n30: plan, Z = 25,796.51 Rs, valid: yes, 0.065 s (0.1 min so far)
+[140/560] EV-R111_n30: plan, Z = 25,570.88 Rs, valid: yes, 0.062 s (0.1 min so far)
+[141/560] EV-R112_n30: plan, Z = 25,830.23 Rs, valid: yes, 0.063 s (0.1 min so far)
+[142/560] EV-R201_n30: plan, Z = 24,060.37 Rs, valid: yes, 0.063 s (0.1 min so far)
+[143/560] EV-R202_n30: plan, Z = 24,244.14 Rs, valid: yes, 0.068 s (0.1 min so far)
+[144/560] EV-R203_n30: plan, Z = 24,266.41 Rs, valid: yes, 0.068 s (0.1 min so far)
+[145/560] EV-R204_n30: plan, Z = 25,725.22 Rs, valid: yes, 0.065 s (0.1 min so far)
+[146/560] EV-R205_n30: plan, Z = 24,059.17 Rs, valid: yes, 0.063 s (0.1 min so far)
+[147/560] EV-R206_n30: plan, Z = 24,480.77 Rs, valid: yes, 0.065 s (0.1 min so far)
+[148/560] EV-R207_n30: plan, Z = 24,507.02 Rs, valid: yes, 0.067 s (0.1 min so far)
+[149/560] EV-R208_n30: plan, Z = 25,740.12 Rs, valid: yes, 0.063 s (0.1 min so far)
+[150/560] EV-R209_n30: plan, Z = 24,090.13 Rs, valid: yes, 0.062 s (0.1 min so far)
+[151/560] EV-R210_n30: plan, Z = 24,703.13 Rs, valid: yes, 0.064 s (0.1 min so far)
+[152/560] EV-R211_n30: plan, Z = 24,394.16 Rs, valid: yes, 0.062 s (0.1 min so far)
+[153/560] EV-RC101_n30: plan, Z = 32,830.83 Rs, valid: yes, 0.067 s (0.1 min so far)
+[154/560] EV-RC102_n30: plan, Z = 31,753.41 Rs, valid: yes, 0.065 s (0.1 min so far)
+[155/560] EV-RC103_n30: plan, Z = 31,657.75 Rs, valid: yes, 0.063 s (0.1 min so far)
+[156/560] EV-RC104_n30: plan, Z = 32,321.10 Rs, valid: yes, 0.065 s (0.1 min so far)
+[157/560] EV-RC105_n30: invalid_plan, Z = 34,275.66 Rs, valid: no, 0.062 s (0.1 min so far)
+[158/560] EV-RC106_n30: plan, Z = 31,953.30 Rs, valid: yes, 0.065 s (0.1 min so far)
+[159/560] EV-RC107_n30: plan, Z = 31,748.02 Rs, valid: yes, 0.065 s (0.1 min so far)
+[160/560] EV-RC108_n30: plan, Z = 32,553.59 Rs, valid: yes, 0.066 s (0.1 min so far)
+[161/560] EV-RC201_n30: plan, Z = 27,104.45 Rs, valid: yes, 0.063 s (0.1 min so far)
+[162/560] EV-RC202_n30: plan, Z = 27,336.64 Rs, valid: yes, 0.064 s (0.1 min so far)
+[163/560] EV-RC203_n30: plan, Z = 27,803.33 Rs, valid: yes, 0.064 s (0.1 min so far)
+[164/560] EV-RC204_n30: plan, Z = 28,240.44 Rs, valid: yes, 0.062 s (0.1 min so far)
+[165/560] EV-RC205_n30: plan, Z = 27,491.98 Rs, valid: yes, 0.062 s (0.1 min so far)
+[166/560] EV-RC206_n30: plan, Z = 27,069.73 Rs, valid: yes, 0.061 s (0.1 min so far)
+[167/560] EV-RC207_n30: plan, Z = 27,456.55 Rs, valid: yes, 0.064 s (0.1 min so far)
+[168/560] EV-RC208_n30: plan, Z = 27,675.11 Rs, valid: yes, 0.063 s (0.1 min so far)
+[169/560] EV-C101_n40: plan, Z = 34,386.18 Rs, valid: yes, 0.084 s (0.1 min so far)
+[170/560] EV-C102_n40: plan, Z = 34,524.60 Rs, valid: yes, 0.105 s (0.1 min so far)
+[171/560] EV-C103_n40: plan, Z = 35,498.69 Rs, valid: yes, 0.084 s (0.1 min so far)
+[172/560] EV-C104_n40: plan, Z = 37,751.18 Rs, valid: yes, 0.086 s (0.1 min so far)
+[173/560] EV-C105_n40: plan, Z = 34,386.25 Rs, valid: yes, 0.083 s (0.1 min so far)
+[174/560] EV-C106_n40: plan, Z = 34,452.83 Rs, valid: yes, 0.085 s (0.1 min so far)
+[175/560] EV-C107_n40: plan, Z = 34,423.30 Rs, valid: yes, 0.085 s (0.1 min so far)
+[176/560] EV-C108_n40: plan, Z = 34,484.69 Rs, valid: yes, 0.084 s (0.1 min so far)
+[177/560] EV-C109_n40: plan, Z = 34,489.19 Rs, valid: yes, 0.084 s (0.1 min so far)
+[178/560] EV-C201_n40: plan, Z = 34,775.10 Rs, valid: yes, 0.085 s (0.1 min so far)
+[179/560] EV-C202_n40: plan, Z = 34,947.81 Rs, valid: yes, 0.086 s (0.1 min so far)
+[180/560] EV-C203_n40: plan, Z = 36,176.52 Rs, valid: yes, 0.085 s (0.1 min so far)
+[181/560] EV-C204_n40: plan, Z = 38,289.72 Rs, valid: yes, 0.086 s (0.2 min so far)
+[182/560] EV-C205_n40: plan, Z = 34,851.28 Rs, valid: yes, 0.085 s (0.2 min so far)
+[183/560] EV-C206_n40: plan, Z = 34,902.32 Rs, valid: yes, 0.085 s (0.2 min so far)
+[184/560] EV-C207_n40: plan, Z = 35,016.24 Rs, valid: yes, 0.084 s (0.2 min so far)
+[185/560] EV-C208_n40: plan, Z = 34,877.64 Rs, valid: yes, 0.086 s (0.2 min so far)
+[186/560] EV-R101_n40: plan, Z = 32,742.69 Rs, valid: yes, 0.087 s (0.2 min so far)
+[187/560] EV-R102_n40: plan, Z = 32,859.53 Rs, valid: yes, 0.083 s (0.2 min so far)
+[188/560] EV-R103_n40: plan, Z = 33,013.75 Rs, valid: yes, 0.084 s (0.2 min so far)
+[189/560] EV-R104_n40: plan, Z = 33,846.55 Rs, valid: yes, 0.086 s (0.2 min so far)
+[190/560] EV-R105_n40: plan, Z = 32,756.40 Rs, valid: yes, 0.086 s (0.2 min so far)
+[191/560] EV-R106_n40: plan, Z = 32,935.15 Rs, valid: yes, 0.083 s (0.2 min so far)
+[192/560] EV-R107_n40: plan, Z = 33,046.72 Rs, valid: yes, 0.086 s (0.2 min so far)
+[193/560] EV-R108_n40: plan, Z = 33,856.81 Rs, valid: yes, 0.088 s (0.2 min so far)
+[194/560] EV-R109_n40: plan, Z = 32,808.11 Rs, valid: yes, 0.084 s (0.2 min so far)
+[195/560] EV-R110_n40: plan, Z = 33,161.90 Rs, valid: yes, 0.084 s (0.2 min so far)
+[196/560] EV-R111_n40: plan, Z = 32,759.26 Rs, valid: yes, 0.082 s (0.2 min so far)
+[197/560] EV-R112_n40: plan, Z = 33,308.13 Rs, valid: yes, 0.085 s (0.2 min so far)
+[198/560] EV-R201_n40: plan, Z = 32,575.72 Rs, valid: yes, 0.085 s (0.2 min so far)
+[199/560] EV-R202_n40: plan, Z = 32,659.03 Rs, valid: yes, 0.084 s (0.2 min so far)
+[200/560] EV-R203_n40: plan, Z = 32,687.15 Rs, valid: yes, 0.088 s (0.2 min so far)
+[201/560] EV-R204_n40: plan, Z = 33,776.42 Rs, valid: yes, 0.085 s (0.2 min so far)
+[202/560] EV-R205_n40: plan, Z = 32,576.35 Rs, valid: yes, 0.082 s (0.2 min so far)
+[203/560] EV-R206_n40: plan, Z = 32,661.53 Rs, valid: yes, 0.083 s (0.2 min so far)
+[204/560] EV-R207_n40: plan, Z = 32,713.46 Rs, valid: yes, 0.088 s (0.2 min so far)
+[205/560] EV-R208_n40: plan, Z = 33,993.08 Rs, valid: yes, 0.084 s (0.2 min so far)
+[206/560] EV-R209_n40: plan, Z = 32,409.61 Rs, valid: yes, 0.082 s (0.2 min so far)
+[207/560] EV-R210_n40: plan, Z = 32,630.81 Rs, valid: yes, 0.083 s (0.2 min so far)
+[208/560] EV-R211_n40: plan, Z = 32,776.42 Rs, valid: yes, 0.083 s (0.2 min so far)
+[209/560] EV-RC101_n40: plan, Z = 42,339.22 Rs, valid: yes, 0.086 s (0.2 min so far)
+[210/560] EV-RC102_n40: plan, Z = 41,206.93 Rs, valid: yes, 0.083 s (0.2 min so far)
+[211/560] EV-RC103_n40: plan, Z = 41,122.74 Rs, valid: yes, 0.084 s (0.2 min so far)
+[212/560] EV-RC104_n40: plan, Z = 43,173.45 Rs, valid: yes, 0.087 s (0.2 min so far)
+[213/560] EV-RC105_n40: invalid_plan, Z = 44,250.64 Rs, valid: no, 0.083 s (0.2 min so far)
+[214/560] EV-RC106_n40: plan, Z = 41,830.48 Rs, valid: yes, 0.086 s (0.2 min so far)
+[215/560] EV-RC107_n40: plan, Z = 42,008.21 Rs, valid: yes, 0.088 s (0.2 min so far)
+[216/560] EV-RC108_n40: plan, Z = 43,158.70 Rs, valid: yes, 0.086 s (0.2 min so far)
+[217/560] EV-RC201_n40: plan, Z = 38,517.63 Rs, valid: yes, 0.085 s (0.2 min so far)
+[218/560] EV-RC202_n40: plan, Z = 39,200.97 Rs, valid: yes, 0.084 s (0.2 min so far)
+[219/560] EV-RC203_n40: plan, Z = 40,122.51 Rs, valid: yes, 0.087 s (0.2 min so far)
+[220/560] EV-RC204_n40: plan, Z = 41,508.77 Rs, valid: yes, 0.088 s (0.2 min so far)
+[221/560] EV-RC205_n40: plan, Z = 38,729.69 Rs, valid: yes, 0.085 s (0.2 min so far)
+[222/560] EV-RC206_n40: plan, Z = 38,598.51 Rs, valid: yes, 0.085 s (0.2 min so far)
+[223/560] EV-RC207_n40: plan, Z = 39,251.66 Rs, valid: yes, 0.086 s (0.2 min so far)
+[224/560] EV-RC208_n40: plan, Z = 39,683.57 Rs, valid: yes, 0.085 s (0.2 min so far)
+[225/560] EV-C101_n50: plan, Z = 42,916.91 Rs, valid: yes, 0.106 s (0.2 min so far)
+[226/560] EV-C102_n50: plan, Z = 43,481.88 Rs, valid: yes, 0.11 s (0.2 min so far)
+[227/560] EV-C103_n50: plan, Z = 45,563.37 Rs, valid: yes, 0.106 s (0.2 min so far)
+[228/560] EV-C104_n50: plan, Z = 48,939.02 Rs, valid: yes, 0.108 s (0.2 min so far)
+[229/560] EV-C105_n50: plan, Z = 42,898.66 Rs, valid: yes, 0.108 s (0.2 min so far)
+[230/560] EV-C106_n50: plan, Z = 42,873.19 Rs, valid: yes, 0.105 s (0.2 min so far)
+[231/560] EV-C107_n50: plan, Z = 42,966.42 Rs, valid: yes, 0.106 s (0.2 min so far)
+[232/560] EV-C108_n50: plan, Z = 42,953.36 Rs, valid: yes, 0.107 s (0.2 min so far)
+[233/560] EV-C109_n50: plan, Z = 43,017.48 Rs, valid: yes, 0.104 s (0.2 min so far)
+[234/560] EV-C201_n50: plan, Z = 41,553.24 Rs, valid: yes, 0.107 s (0.2 min so far)
+[235/560] EV-C202_n50: plan, Z = 41,583.26 Rs, valid: yes, 0.105 s (0.2 min so far)
+[236/560] EV-C203_n50: plan, Z = 43,311.48 Rs, valid: yes, 0.107 s (0.2 min so far)
+[237/560] EV-C204_n50: plan, Z = 47,075.01 Rs, valid: yes, 0.109 s (0.2 min so far)
+[238/560] EV-C205_n50: plan, Z = 41,673.52 Rs, valid: yes, 0.108 s (0.2 min so far)
+[239/560] EV-C206_n50: plan, Z = 41,696.19 Rs, valid: yes, 0.107 s (0.2 min so far)
+[240/560] EV-C207_n50: plan, Z = 41,711.10 Rs, valid: yes, 0.108 s (0.2 min so far)
+[241/560] EV-C208_n50: plan, Z = 41,637.14 Rs, valid: yes, 0.108 s (0.2 min so far)
+[242/560] EV-R101_n50: invalid_plan, Z = 42,490.89 Rs, valid: no, 0.103 s (0.2 min so far)
+[243/560] EV-R102_n50: plan, Z = 41,109.47 Rs, valid: yes, 0.105 s (0.2 min so far)
+[244/560] EV-R103_n50: plan, Z = 41,322.54 Rs, valid: yes, 0.104 s (0.2 min so far)
+[245/560] EV-R104_n50: plan, Z = 42,952.89 Rs, valid: yes, 0.106 s (0.3 min so far)
+[246/560] EV-R105_n50: invalid_plan, Z = 42,620.03 Rs, valid: no, 0.102 s (0.3 min so far)
+[247/560] EV-R106_n50: plan, Z = 41,279.97 Rs, valid: yes, 0.106 s (0.3 min so far)
+[248/560] EV-R107_n50: plan, Z = 41,524.15 Rs, valid: yes, 0.106 s (0.3 min so far)
+[249/560] EV-R108_n50: plan, Z = 43,082.09 Rs, valid: yes, 0.106 s (0.3 min so far)
+[250/560] EV-R109_n50: plan, Z = 42,330.10 Rs, valid: yes, 0.1 s (0.3 min so far)
+[251/560] EV-R110_n50: plan, Z = 42,577.78 Rs, valid: yes, 0.103 s (0.3 min so far)
+[252/560] EV-R111_n50: plan, Z = 41,568.60 Rs, valid: yes, 0.109 s (0.3 min so far)
+[253/560] EV-R112_n50: plan, Z = 42,389.13 Rs, valid: yes, 0.105 s (0.3 min so far)
+[254/560] EV-R201_n50: plan, Z = 40,348.87 Rs, valid: yes, 0.104 s (0.3 min so far)
+[255/560] EV-R202_n50: plan, Z = 40,695.70 Rs, valid: yes, 0.108 s (0.3 min so far)
+[256/560] EV-R203_n50: plan, Z = 41,213.15 Rs, valid: yes, 0.107 s (0.3 min so far)
+[257/560] EV-R204_n50: plan, Z = 43,356.07 Rs, valid: yes, 0.106 s (0.3 min so far)
+[258/560] EV-R205_n50: plan, Z = 40,335.52 Rs, valid: yes, 0.105 s (0.3 min so far)
+[259/560] EV-R206_n50: plan, Z = 40,752.39 Rs, valid: yes, 0.106 s (0.3 min so far)
+[260/560] EV-R207_n50: plan, Z = 41,329.07 Rs, valid: yes, 0.106 s (0.3 min so far)
+[261/560] EV-R208_n50: plan, Z = 43,731.61 Rs, valid: yes, 0.108 s (0.3 min so far)
+[262/560] EV-R209_n50: plan, Z = 40,223.99 Rs, valid: yes, 0.104 s (0.3 min so far)
+[263/560] EV-R210_n50: plan, Z = 40,619.49 Rs, valid: yes, 0.105 s (0.3 min so far)
+[264/560] EV-R211_n50: plan, Z = 40,704.43 Rs, valid: yes, 0.104 s (0.3 min so far)
+[265/560] EV-RC101_n50: plan, Z = 52,084.97 Rs, valid: yes, 0.107 s (0.3 min so far)
+[266/560] EV-RC102_n50: plan, Z = 51,702.28 Rs, valid: yes, 0.106 s (0.3 min so far)
+[267/560] EV-RC103_n50: plan, Z = 52,200.70 Rs, valid: yes, 0.11 s (0.3 min so far)
+[268/560] EV-RC104_n50: plan, Z = 54,089.92 Rs, valid: yes, 0.11 s (0.3 min so far)
+[269/560] EV-RC105_n50: invalid_plan, Z = 55,028.19 Rs, valid: no, 0.108 s (0.3 min so far)
+[270/560] EV-RC106_n50: plan, Z = 52,446.79 Rs, valid: yes, 0.11 s (0.3 min so far)
+[271/560] EV-RC107_n50: plan, Z = 52,049.41 Rs, valid: yes, 0.107 s (0.3 min so far)
+[272/560] EV-RC108_n50: plan, Z = 53,789.63 Rs, valid: yes, 0.107 s (0.3 min so far)
+[273/560] EV-RC201_n50: plan, Z = 46,498.32 Rs, valid: yes, 0.108 s (0.3 min so far)
+[274/560] EV-RC202_n50: plan, Z = 47,752.38 Rs, valid: yes, 0.105 s (0.3 min so far)
+[275/560] EV-RC203_n50: plan, Z = 49,442.10 Rs, valid: yes, 0.104 s (0.3 min so far)
+[276/560] EV-RC204_n50: plan, Z = 52,157.69 Rs, valid: yes, 0.11 s (0.3 min so far)
+[277/560] EV-RC205_n50: plan, Z = 46,802.08 Rs, valid: yes, 0.106 s (0.3 min so far)
+[278/560] EV-RC206_n50: plan, Z = 46,720.38 Rs, valid: yes, 0.106 s (0.3 min so far)
+[279/560] EV-RC207_n50: plan, Z = 47,536.09 Rs, valid: yes, 0.107 s (0.3 min so far)
+[280/560] EV-RC208_n50: plan, Z = 48,136.23 Rs, valid: yes, 0.106 s (0.3 min so far)
+[281/560] EV-C101_n60: plan, Z = 53,719.98 Rs, valid: yes, 0.126 s (0.3 min so far)
+[282/560] EV-C102_n60: plan, Z = 54,424.83 Rs, valid: yes, 0.128 s (0.3 min so far)
+[283/560] EV-C103_n60: plan, Z = 56,355.66 Rs, valid: yes, 0.127 s (0.3 min so far)
+[284/560] EV-C104_n60: plan, Z = 60,854.01 Rs, valid: yes, 0.129 s (0.3 min so far)
+[285/560] EV-C105_n60: plan, Z = 53,792.24 Rs, valid: yes, 0.128 s (0.3 min so far)
+[286/560] EV-C106_n60: plan, Z = 53,842.64 Rs, valid: yes, 0.128 s (0.3 min so far)
+[287/560] EV-C107_n60: plan, Z = 53,759.75 Rs, valid: yes, 0.129 s (0.3 min so far)
+[288/560] EV-C108_n60: plan, Z = 53,772.07 Rs, valid: yes, 0.125 s (0.3 min so far)
+[289/560] EV-C109_n60: plan, Z = 53,881.81 Rs, valid: yes, 0.128 s (0.3 min so far)
+[290/560] EV-C201_n60: plan, Z = 52,556.01 Rs, valid: yes, 0.125 s (0.3 min so far)
+[291/560] EV-C202_n60: plan, Z = 52,978.49 Rs, valid: yes, 0.129 s (0.3 min so far)
+[292/560] EV-C203_n60: plan, Z = 55,593.87 Rs, valid: yes, 0.129 s (0.3 min so far)
+[293/560] EV-C204_n60: plan, Z = 62,545.20 Rs, valid: yes, 0.131 s (0.3 min so far)
+[294/560] EV-C205_n60: plan, Z = 52,598.71 Rs, valid: yes, 0.126 s (0.3 min so far)
+[295/560] EV-C206_n60: plan, Z = 52,708.84 Rs, valid: yes, 0.125 s (0.3 min so far)
+[296/560] EV-C207_n60: plan, Z = 52,752.31 Rs, valid: yes, 0.125 s (0.3 min so far)
+[297/560] EV-C208_n60: plan, Z = 52,685.06 Rs, valid: yes, 0.124 s (0.4 min so far)
+[298/560] EV-R101_n60: invalid_plan, Z = 52,146.60 Rs, valid: no, 0.118 s (0.4 min so far)
+[299/560] EV-R102_n60: invalid_plan, Z = 50,689.80 Rs, valid: no, 0.121 s (0.4 min so far)
+[300/560] EV-R103_n60: invalid_plan, Z = 49,821.55 Rs, valid: no, 0.124 s (0.4 min so far)
+[301/560] EV-R104_n60: invalid_plan, Z = 52,146.63 Rs, valid: no, 0.125 s (0.4 min so far)
+[302/560] EV-R105_n60: invalid_plan, Z = 51,837.33 Rs, valid: no, 0.122 s (0.4 min so far)
+[303/560] EV-R106_n60: plan, Z = 50,883.60 Rs, valid: yes, 0.124 s (0.4 min so far)
+[304/560] EV-R107_n60: plan, Z = 50,201.03 Rs, valid: yes, 0.129 s (0.4 min so far)
+[305/560] EV-R108_n60: plan, Z = 52,490.95 Rs, valid: yes, 0.13 s (0.4 min so far)
+[306/560] EV-R109_n60: plan, Z = 49,326.74 Rs, valid: yes, 0.125 s (0.4 min so far)
+[307/560] EV-R110_n60: plan, Z = 50,252.65 Rs, valid: yes, 0.127 s (0.4 min so far)
+[308/560] EV-R111_n60: plan, Z = 50,113.51 Rs, valid: yes, 0.128 s (0.4 min so far)
+[309/560] EV-R112_n60: plan, Z = 51,173.76 Rs, valid: yes, 0.128 s (0.4 min so far)
+[310/560] EV-R201_n60: plan, Z = 46,855.76 Rs, valid: yes, 0.125 s (0.4 min so far)
+[311/560] EV-R202_n60: plan, Z = 47,278.73 Rs, valid: yes, 0.131 s (0.4 min so far)
+[312/560] EV-R203_n60: plan, Z = 48,368.88 Rs, valid: yes, 0.128 s (0.4 min so far)
+[313/560] EV-R204_n60: plan, Z = 51,213.35 Rs, valid: yes, 0.127 s (0.4 min so far)
+[314/560] EV-R205_n60: plan, Z = 46,854.19 Rs, valid: yes, 0.126 s (0.4 min so far)
+[315/560] EV-R206_n60: plan, Z = 47,265.21 Rs, valid: yes, 0.127 s (0.4 min so far)
+[316/560] EV-R207_n60: plan, Z = 48,462.56 Rs, valid: yes, 0.13 s (0.4 min so far)
+[317/560] EV-R208_n60: plan, Z = 51,578.45 Rs, valid: yes, 0.127 s (0.4 min so far)
+[318/560] EV-R209_n60: plan, Z = 46,953.10 Rs, valid: yes, 0.126 s (0.4 min so far)
+[319/560] EV-R210_n60: plan, Z = 47,115.88 Rs, valid: yes, 0.126 s (0.4 min so far)
+[320/560] EV-R211_n60: plan, Z = 47,341.80 Rs, valid: yes, 0.122 s (0.4 min so far)
+[321/560] EV-RC101_n60: plan, Z = 60,301.36 Rs, valid: yes, 0.131 s (0.4 min so far)
+[322/560] EV-RC102_n60: plan, Z = 59,294.92 Rs, valid: yes, 0.127 s (0.4 min so far)
+[323/560] EV-RC103_n60: plan, Z = 60,363.82 Rs, valid: yes, 0.131 s (0.4 min so far)
+[324/560] EV-RC104_n60: plan, Z = 62,997.45 Rs, valid: yes, 0.13 s (0.4 min so far)
+[325/560] EV-RC105_n60: invalid_plan, Z = 63,162.24 Rs, valid: no, 0.126 s (0.4 min so far)
+[326/560] EV-RC106_n60: plan, Z = 60,575.19 Rs, valid: yes, 0.129 s (0.4 min so far)
+[327/560] EV-RC107_n60: plan, Z = 61,069.00 Rs, valid: yes, 0.128 s (0.4 min so far)
+[328/560] EV-RC108_n60: plan, Z = 64,021.66 Rs, valid: yes, 0.129 s (0.4 min so far)
+[329/560] EV-RC201_n60: plan, Z = 54,212.16 Rs, valid: yes, 0.127 s (0.4 min so far)
+[330/560] EV-RC202_n60: plan, Z = 54,846.13 Rs, valid: yes, 0.127 s (0.4 min so far)
+[331/560] EV-RC203_n60: plan, Z = 57,161.45 Rs, valid: yes, 0.13 s (0.4 min so far)
+[332/560] EV-RC204_n60: plan, Z = 60,681.83 Rs, valid: yes, 0.129 s (0.4 min so far)
+[333/560] EV-RC205_n60: plan, Z = 54,542.94 Rs, valid: yes, 0.127 s (0.4 min so far)
+[334/560] EV-RC206_n60: plan, Z = 54,533.78 Rs, valid: yes, 0.127 s (0.4 min so far)
+[335/560] EV-RC207_n60: plan, Z = 55,194.44 Rs, valid: yes, 0.126 s (0.4 min so far)
+[336/560] EV-RC208_n60: plan, Z = 55,840.55 Rs, valid: yes, 0.125 s (0.4 min so far)
+[337/560] EV-C101_n70: plan, Z = 61,086.87 Rs, valid: yes, 0.146 s (0.4 min so far)
+[338/560] EV-C102_n70: plan, Z = 61,756.67 Rs, valid: yes, 0.152 s (0.4 min so far)
+[339/560] EV-C103_n70: plan, Z = 64,165.14 Rs, valid: yes, 0.15 s (0.4 min so far)
+[340/560] EV-C104_n70: plan, Z = 72,225.03 Rs, valid: yes, 0.154 s (0.4 min so far)
+[341/560] EV-C105_n70: plan, Z = 60,988.68 Rs, valid: yes, 0.145 s (0.4 min so far)
+[342/560] EV-C106_n70: plan, Z = 61,129.61 Rs, valid: yes, 0.146 s (0.5 min so far)
+[343/560] EV-C107_n70: plan, Z = 61,078.56 Rs, valid: yes, 0.145 s (0.5 min so far)
+[344/560] EV-C108_n70: plan, Z = 61,016.97 Rs, valid: yes, 0.148 s (0.5 min so far)
+[345/560] EV-C109_n70: plan, Z = 61,199.32 Rs, valid: yes, 0.144 s (0.5 min so far)
+[346/560] EV-C201_n70: plan, Z = 60,615.48 Rs, valid: yes, 0.149 s (0.5 min so far)
+[347/560] EV-C202_n70: plan, Z = 60,986.86 Rs, valid: yes, 0.148 s (0.5 min so far)
+[348/560] EV-C203_n70: plan, Z = 63,893.69 Rs, valid: yes, 0.148 s (0.5 min so far)
+[349/560] EV-C204_n70: plan, Z = 73,541.05 Rs, valid: yes, 0.151 s (0.5 min so far)
+[350/560] EV-C205_n70: plan, Z = 60,633.17 Rs, valid: yes, 0.148 s (0.5 min so far)
+[351/560] EV-C206_n70: plan, Z = 60,703.61 Rs, valid: yes, 0.148 s (0.5 min so far)
+[352/560] EV-C207_n70: plan, Z = 60,727.24 Rs, valid: yes, 0.149 s (0.5 min so far)
+[353/560] EV-C208_n70: plan, Z = 60,604.30 Rs, valid: yes, 0.148 s (0.5 min so far)
+[354/560] EV-R101_n70: invalid_plan, Z = 61,542.05 Rs, valid: no, 0.146 s (0.5 min so far)
+[355/560] EV-R102_n70: invalid_plan, Z = 61,804.26 Rs, valid: no, 0.148 s (0.5 min so far)
+[356/560] EV-R103_n70: invalid_plan, Z = 62,242.48 Rs, valid: no, 0.147 s (0.5 min so far)
+[357/560] EV-R104_n70: invalid_plan, Z = 64,168.58 Rs, valid: no, 0.152 s (0.5 min so far)
+[358/560] EV-R105_n70: invalid_plan, Z = 61,095.66 Rs, valid: no, 0.15 s (0.5 min so far)
+[359/560] EV-R106_n70: plan, Z = 59,594.13 Rs, valid: yes, 0.152 s (0.5 min so far)
+[360/560] EV-R107_n70: plan, Z = 60,378.65 Rs, valid: yes, 0.149 s (0.5 min so far)
+[361/560] EV-R108_n70: plan, Z = 64,491.98 Rs, valid: yes, 0.151 s (0.5 min so far)
+[362/560] EV-R109_n70: plan, Z = 60,247.33 Rs, valid: yes, 0.146 s (0.5 min so far)
+[363/560] EV-R110_n70: plan, Z = 61,172.18 Rs, valid: yes, 0.152 s (0.5 min so far)
+[364/560] EV-R111_n70: plan, Z = 61,350.43 Rs, valid: yes, 0.153 s (0.5 min so far)
+[365/560] EV-R112_n70: plan, Z = 62,584.06 Rs, valid: yes, 0.152 s (0.5 min so far)
+[366/560] EV-R201_n70: plan, Z = 54,633.33 Rs, valid: yes, 0.147 s (0.5 min so far)
+[367/560] EV-R202_n70: plan, Z = 55,029.63 Rs, valid: yes, 0.154 s (0.5 min so far)
+[368/560] EV-R203_n70: plan, Z = 56,429.57 Rs, valid: yes, 0.15 s (0.5 min so far)
+[369/560] EV-R204_n70: plan, Z = 61,656.08 Rs, valid: yes, 0.15 s (0.5 min so far)
+[370/560] EV-R205_n70: plan, Z = 54,684.98 Rs, valid: yes, 0.147 s (0.5 min so far)
+[371/560] EV-R206_n70: plan, Z = 55,228.04 Rs, valid: yes, 0.153 s (0.5 min so far)
+[372/560] EV-R207_n70: plan, Z = 56,666.85 Rs, valid: yes, 0.15 s (0.5 min so far)
+[373/560] EV-R208_n70: plan, Z = 62,124.27 Rs, valid: yes, 0.148 s (0.5 min so far)
+[374/560] EV-R209_n70: plan, Z = 54,795.62 Rs, valid: yes, 0.146 s (0.5 min so far)
+[375/560] EV-R210_n70: plan, Z = 54,843.40 Rs, valid: yes, 0.149 s (0.5 min so far)
+[376/560] EV-R211_n70: plan, Z = 55,194.35 Rs, valid: yes, 0.144 s (0.5 min so far)
+[377/560] EV-RC101_n70: invalid_plan, Z = 70,552.15 Rs, valid: no, 0.149 s (0.5 min so far)
+[378/560] EV-RC102_n70: invalid_plan, Z = 67,826.58 Rs, valid: no, 0.149 s (0.5 min so far)
+[379/560] EV-RC103_n70: invalid_plan, Z = 68,690.91 Rs, valid: no, 0.148 s (0.5 min so far)
+[380/560] EV-RC104_n70: plan, Z = 75,088.56 Rs, valid: yes, 0.153 s (0.5 min so far)
+[381/560] EV-RC105_n70: invalid_plan, Z = 73,461.78 Rs, valid: no, 0.147 s (0.6 min so far)
+[382/560] EV-RC106_n70: plan, Z = 69,389.94 Rs, valid: yes, 0.152 s (0.6 min so far)
+[383/560] EV-RC107_n70: plan, Z = 70,658.82 Rs, valid: yes, 0.15 s (0.6 min so far)
+[384/560] EV-RC108_n70: plan, Z = 74,273.95 Rs, valid: yes, 0.153 s (0.6 min so far)
+[385/560] EV-RC201_n70: plan, Z = 61,823.01 Rs, valid: yes, 0.148 s (0.6 min so far)
+[386/560] EV-RC202_n70: plan, Z = 62,151.98 Rs, valid: yes, 0.153 s (0.6 min so far)
+[387/560] EV-RC203_n70: plan, Z = 64,927.08 Rs, valid: yes, 0.15 s (0.6 min so far)
+[388/560] EV-RC204_n70: plan, Z = 69,911.94 Rs, valid: yes, 0.155 s (0.6 min so far)
+[389/560] EV-RC205_n70: plan, Z = 61,645.67 Rs, valid: yes, 0.149 s (0.6 min so far)
+[390/560] EV-RC206_n70: plan, Z = 61,980.23 Rs, valid: yes, 0.15 s (0.6 min so far)
+[391/560] EV-RC207_n70: plan, Z = 62,565.93 Rs, valid: yes, 0.148 s (0.6 min so far)
+[392/560] EV-RC208_n70: plan, Z = 62,958.22 Rs, valid: yes, 0.148 s (0.6 min so far)
+[393/560] EV-C101_n80: plan, Z = 68,504.13 Rs, valid: yes, 0.166 s (0.6 min so far)
+[394/560] EV-C102_n80: plan, Z = 69,298.09 Rs, valid: yes, 0.173 s (0.6 min so far)
+[395/560] EV-C103_n80: plan, Z = 71,578.54 Rs, valid: yes, 0.172 s (0.6 min so far)
+[396/560] EV-C104_n80: plan, Z = 83,869.99 Rs, valid: yes, 0.176 s (0.6 min so far)
+[397/560] EV-C105_n80: plan, Z = 68,553.50 Rs, valid: yes, 0.166 s (0.6 min so far)
+[398/560] EV-C106_n80: plan, Z = 68,630.91 Rs, valid: yes, 0.168 s (0.6 min so far)
+[399/560] EV-C107_n80: plan, Z = 68,502.83 Rs, valid: yes, 0.167 s (0.6 min so far)
+[400/560] EV-C108_n80: plan, Z = 68,523.38 Rs, valid: yes, 0.169 s (0.6 min so far)
+[401/560] EV-C109_n80: plan, Z = 68,684.88 Rs, valid: yes, 0.169 s (0.6 min so far)
+[402/560] EV-C201_n80: plan, Z = 70,257.93 Rs, valid: yes, 0.174 s (0.6 min so far)
+[403/560] EV-C202_n80: plan, Z = 70,870.83 Rs, valid: yes, 0.175 s (0.6 min so far)
+[404/560] EV-C203_n80: plan, Z = 74,158.83 Rs, valid: yes, 0.171 s (0.6 min so far)
+[405/560] EV-C204_n80: plan, Z = 85,982.32 Rs, valid: yes, 0.175 s (0.6 min so far)
+[406/560] EV-C205_n80: plan, Z = 70,183.02 Rs, valid: yes, 0.171 s (0.6 min so far)
+[407/560] EV-C206_n80: plan, Z = 70,003.21 Rs, valid: yes, 0.173 s (0.6 min so far)
+[408/560] EV-C207_n80: plan, Z = 70,387.32 Rs, valid: yes, 0.173 s (0.6 min so far)
+[409/560] EV-C208_n80: plan, Z = 70,234.29 Rs, valid: yes, 0.173 s (0.6 min so far)
+[410/560] EV-R101_n80: invalid_plan, Z = 70,649.37 Rs, valid: no, 0.168 s (0.6 min so far)
+[411/560] EV-R102_n80: invalid_plan, Z = 68,681.54 Rs, valid: no, 0.169 s (0.6 min so far)
+[412/560] EV-R103_n80: invalid_plan, Z = 70,218.91 Rs, valid: no, 0.17 s (0.6 min so far)
+[413/560] EV-R104_n80: invalid_plan, Z = 75,223.13 Rs, valid: no, 0.17 s (0.6 min so far)
+[414/560] EV-R105_n80: invalid_plan, Z = 69,971.93 Rs, valid: no, 0.174 s (0.6 min so far)
+[415/560] EV-R106_n80: plan, Z = 68,333.67 Rs, valid: yes, 0.174 s (0.6 min so far)
+[416/560] EV-R107_n80: plan, Z = 68,721.74 Rs, valid: yes, 0.176 s (0.6 min so far)
+[417/560] EV-R108_n80: plan, Z = 74,823.82 Rs, valid: yes, 0.174 s (0.7 min so far)
+[418/560] EV-R109_n80: plan, Z = 69,783.77 Rs, valid: yes, 0.182 s (0.7 min so far)
+[419/560] EV-R110_n80: plan, Z = 72,626.45 Rs, valid: yes, 0.181 s (0.7 min so far)
+[420/560] EV-R111_n80: plan, Z = 69,854.82 Rs, valid: yes, 0.177 s (0.7 min so far)
+[421/560] EV-R112_n80: plan, Z = 73,728.28 Rs, valid: yes, 0.177 s (0.7 min so far)
+[422/560] EV-R201_n80: plan, Z = 62,132.45 Rs, valid: yes, 0.168 s (0.7 min so far)
+[423/560] EV-R202_n80: plan, Z = 62,808.27 Rs, valid: yes, 0.173 s (0.7 min so far)
+[424/560] EV-R203_n80: plan, Z = 64,556.96 Rs, valid: yes, 0.172 s (0.7 min so far)
+[425/560] EV-R204_n80: plan, Z = 73,415.66 Rs, valid: yes, 0.176 s (0.7 min so far)
+[426/560] EV-R205_n80: plan, Z = 62,048.89 Rs, valid: yes, 0.166 s (0.7 min so far)
+[427/560] EV-R206_n80: plan, Z = 63,245.77 Rs, valid: yes, 0.171 s (0.7 min so far)
+[428/560] EV-R207_n80: plan, Z = 65,140.74 Rs, valid: yes, 0.173 s (0.7 min so far)
+[429/560] EV-R208_n80: plan, Z = 73,245.15 Rs, valid: yes, 0.172 s (0.7 min so far)
+[430/560] EV-R209_n80: plan, Z = 62,420.48 Rs, valid: yes, 0.166 s (0.7 min so far)
+[431/560] EV-R210_n80: plan, Z = 62,133.07 Rs, valid: yes, 0.167 s (0.7 min so far)
+[432/560] EV-R211_n80: plan, Z = 62,847.94 Rs, valid: yes, 0.168 s (0.7 min so far)
+[433/560] EV-RC101_n80: invalid_plan, Z = 81,753.49 Rs, valid: no, 0.168 s (0.7 min so far)
+[434/560] EV-RC102_n80: invalid_plan, Z = 79,582.02 Rs, valid: no, 0.172 s (0.7 min so far)
+[435/560] EV-RC103_n80: invalid_plan, Z = 81,674.31 Rs, valid: no, 0.169 s (0.7 min so far)
+[436/560] EV-RC104_n80: plan, Z = 87,271.12 Rs, valid: yes, 0.179 s (0.7 min so far)
+[437/560] EV-RC105_n80: invalid_plan, Z = 83,231.60 Rs, valid: no, 0.17 s (0.7 min so far)
+[438/560] EV-RC106_n80: plan, Z = 81,635.95 Rs, valid: yes, 0.176 s (0.7 min so far)
+[439/560] EV-RC107_n80: plan, Z = 85,574.08 Rs, valid: yes, 0.172 s (0.7 min so far)
+[440/560] EV-RC108_n80: plan, Z = 88,046.77 Rs, valid: yes, 0.173 s (0.7 min so far)
+[441/560] EV-RC201_n80: plan, Z = 69,975.36 Rs, valid: yes, 0.175 s (0.7 min so far)
+[442/560] EV-RC202_n80: plan, Z = 70,314.96 Rs, valid: yes, 0.173 s (0.7 min so far)
+[443/560] EV-RC203_n80: plan, Z = 73,078.90 Rs, valid: yes, 0.174 s (0.7 min so far)
+[444/560] EV-RC204_n80: plan, Z = 79,874.05 Rs, valid: yes, 0.173 s (0.7 min so far)
+[445/560] EV-RC205_n80: plan, Z = 70,034.57 Rs, valid: yes, 0.173 s (0.7 min so far)
+[446/560] EV-RC206_n80: plan, Z = 70,047.36 Rs, valid: yes, 0.169 s (0.7 min so far)
+[447/560] EV-RC207_n80: plan, Z = 70,884.23 Rs, valid: yes, 0.169 s (0.7 min so far)
+[448/560] EV-RC208_n80: plan, Z = 71,333.75 Rs, valid: yes, 0.171 s (0.7 min so far)
+[449/560] EV-C101_n90: plan, Z = 76,211.76 Rs, valid: yes, 0.191 s (0.7 min so far)
+[450/560] EV-C102_n90: plan, Z = 77,029.48 Rs, valid: yes, 0.196 s (0.7 min so far)
+[451/560] EV-C103_n90: plan, Z = 81,437.72 Rs, valid: yes, 0.197 s (0.8 min so far)
+[452/560] EV-C104_n90: plan, Z = 97,407.00 Rs, valid: yes, 0.198 s (0.8 min so far)
+[453/560] EV-C105_n90: plan, Z = 76,134.83 Rs, valid: yes, 0.193 s (0.8 min so far)
+[454/560] EV-C106_n90: plan, Z = 76,246.77 Rs, valid: yes, 0.189 s (0.8 min so far)
+[455/560] EV-C107_n90: plan, Z = 76,172.48 Rs, valid: yes, 0.191 s (0.8 min so far)
+[456/560] EV-C108_n90: plan, Z = 76,162.97 Rs, valid: yes, 0.191 s (0.8 min so far)
+[457/560] EV-C109_n90: plan, Z = 76,472.80 Rs, valid: yes, 0.194 s (0.8 min so far)
+[458/560] EV-C201_n90: plan, Z = 78,505.81 Rs, valid: yes, 0.198 s (0.8 min so far)
+[459/560] EV-C202_n90: plan, Z = 79,497.71 Rs, valid: yes, 0.196 s (0.8 min so far)
+[460/560] EV-C203_n90: plan, Z = 83,747.25 Rs, valid: yes, 0.198 s (0.8 min so far)
+[461/560] EV-C204_n90: plan, Z = 101,920.23 Rs, valid: yes, 0.198 s (0.8 min so far)
+[462/560] EV-C205_n90: plan, Z = 78,466.72 Rs, valid: yes, 0.196 s (0.8 min so far)
+[463/560] EV-C206_n90: plan, Z = 79,126.68 Rs, valid: yes, 0.199 s (0.8 min so far)
+[464/560] EV-C207_n90: plan, Z = 79,327.63 Rs, valid: yes, 0.197 s (0.8 min so far)
+[465/560] EV-C208_n90: plan, Z = 78,729.20 Rs, valid: yes, 0.198 s (0.8 min so far)
+[466/560] EV-R101_n90: invalid_plan, Z = 81,096.42 Rs, valid: no, 0.192 s (0.8 min so far)
+[467/560] EV-R102_n90: invalid_plan, Z = 78,701.43 Rs, valid: no, 0.195 s (0.8 min so far)
+[468/560] EV-R103_n90: invalid_plan, Z = 81,783.35 Rs, valid: no, 0.196 s (0.8 min so far)
+[469/560] EV-R104_n90: invalid_plan, Z = 87,984.08 Rs, valid: no, 0.195 s (0.8 min so far)
+[470/560] EV-R105_n90: invalid_plan, Z = 80,610.88 Rs, valid: no, 0.195 s (0.8 min so far)
+[471/560] EV-R106_n90: plan, Z = 79,036.47 Rs, valid: yes, 0.2 s (0.8 min so far)
+[472/560] EV-R107_n90: plan, Z = 80,153.69 Rs, valid: yes, 0.2 s (0.8 min so far)
+[473/560] EV-R108_n90: plan, Z = 89,946.65 Rs, valid: yes, 0.201 s (0.8 min so far)
+[474/560] EV-R109_n90: plan, Z = 81,582.39 Rs, valid: yes, 0.199 s (0.8 min so far)
+[475/560] EV-R110_n90: plan, Z = 83,865.98 Rs, valid: yes, 0.198 s (0.8 min so far)
+[476/560] EV-R111_n90: plan, Z = 82,491.10 Rs, valid: yes, 0.196 s (0.8 min so far)
+[477/560] EV-R112_n90: plan, Z = 87,304.96 Rs, valid: yes, 0.198 s (0.8 min so far)
+[478/560] EV-R201_n90: plan, Z = 71,424.13 Rs, valid: yes, 0.193 s (0.8 min so far)
+[479/560] EV-R202_n90: plan, Z = 72,016.89 Rs, valid: yes, 0.197 s (0.8 min so far)
+[480/560] EV-R203_n90: plan, Z = 74,800.11 Rs, valid: yes, 0.199 s (0.8 min so far)
+[481/560] EV-R204_n90: plan, Z = 89,996.18 Rs, valid: yes, 0.198 s (0.9 min so far)
+[482/560] EV-R205_n90: plan, Z = 71,567.72 Rs, valid: yes, 0.195 s (0.9 min so far)
+[483/560] EV-R206_n90: plan, Z = 72,074.89 Rs, valid: yes, 0.194 s (0.9 min so far)
+[484/560] EV-R207_n90: plan, Z = 75,146.37 Rs, valid: yes, 0.2 s (0.9 min so far)
+[485/560] EV-R208_n90: plan, Z = 89,444.46 Rs, valid: yes, 0.198 s (0.9 min so far)
+[486/560] EV-R209_n90: plan, Z = 71,688.37 Rs, valid: yes, 0.19 s (0.9 min so far)
+[487/560] EV-R210_n90: plan, Z = 71,655.39 Rs, valid: yes, 0.196 s (0.9 min so far)
+[488/560] EV-R211_n90: plan, Z = 71,986.75 Rs, valid: yes, 0.192 s (0.9 min so far)
+[489/560] EV-RC101_n90: invalid_plan, Z = 93,905.63 Rs, valid: no, 0.182 s (0.9 min so far)
+[490/560] EV-RC102_n90: invalid_plan, Z = 88,361.10 Rs, valid: no, 0.194 s (0.9 min so far)
+[491/560] EV-RC103_n90: invalid_plan, Z = 91,419.82 Rs, valid: no, 0.194 s (0.9 min so far)
+[492/560] EV-RC104_n90: plan, Z = 99,831.63 Rs, valid: yes, 0.198 s (0.9 min so far)
+[493/560] EV-RC105_n90: invalid_plan, Z = 93,651.13 Rs, valid: no, 0.193 s (0.9 min so far)
+[494/560] EV-RC106_n90: invalid_plan, Z = 93,167.50 Rs, valid: no, 0.194 s (0.9 min so far)
+[495/560] EV-RC107_n90: plan, Z = 98,325.66 Rs, valid: yes, 0.198 s (0.9 min so far)
+[496/560] EV-RC108_n90: invalid_plan, Z = 99,999.18 Rs, valid: no, 0.189 s (0.9 min so far)
+[497/560] EV-RC201_n90: plan, Z = 78,402.49 Rs, valid: yes, 0.196 s (0.9 min so far)
+[498/560] EV-RC202_n90: plan, Z = 78,767.52 Rs, valid: yes, 0.198 s (0.9 min so far)
+[499/560] EV-RC203_n90: plan, Z = 84,183.01 Rs, valid: yes, 0.197 s (0.9 min so far)
+[500/560] EV-RC204_n90: plan, Z = 95,229.89 Rs, valid: yes, 0.198 s (0.9 min so far)
+[501/560] EV-RC205_n90: plan, Z = 78,358.08 Rs, valid: yes, 0.195 s (0.9 min so far)
+[502/560] EV-RC206_n90: plan, Z = 78,598.13 Rs, valid: yes, 0.194 s (0.9 min so far)
+[503/560] EV-RC207_n90: plan, Z = 79,243.40 Rs, valid: yes, 0.197 s (0.9 min so far)
+[504/560] EV-RC208_n90: plan, Z = 80,154.13 Rs, valid: yes, 0.192 s (0.9 min so far)
+[505/560] EV-C101_n100: plan, Z = 84,857.19 Rs, valid: yes, 0.221 s (0.9 min so far)
+[506/560] EV-C102_n100: plan, Z = 86,514.61 Rs, valid: yes, 0.223 s (0.9 min so far)
+[507/560] EV-C103_n100: plan, Z = 91,632.85 Rs, valid: yes, 0.225 s (0.9 min so far)
+[508/560] EV-C104_n100: plan, Z = 112,397.74 Rs, valid: yes, 0.224 s (0.9 min so far)
+[509/560] EV-C105_n100: plan, Z = 84,859.34 Rs, valid: yes, 0.223 s (0.9 min so far)
+[510/560] EV-C106_n100: plan, Z = 85,188.86 Rs, valid: yes, 0.221 s (1.0 min so far)
+[511/560] EV-C107_n100: plan, Z = 84,802.51 Rs, valid: yes, 0.221 s (1.0 min so far)
+[512/560] EV-C108_n100: plan, Z = 84,733.58 Rs, valid: yes, 0.22 s (1.0 min so far)
+[513/560] EV-C109_n100: plan, Z = 85,548.99 Rs, valid: yes, 0.22 s (1.0 min so far)
+[514/560] EV-C201_n100: plan, Z = 87,911.97 Rs, valid: yes, 0.223 s (1.0 min so far)
+[515/560] EV-C202_n100: plan, Z = 89,253.80 Rs, valid: yes, 0.223 s (1.0 min so far)
+[516/560] EV-C203_n100: plan, Z = 95,183.55 Rs, valid: yes, 0.226 s (1.0 min so far)
+[517/560] EV-C204_n100: invalid_plan, Z = 117,176.11 Rs, valid: no, 0.222 s (1.0 min so far)
+[518/560] EV-C205_n100: plan, Z = 87,928.31 Rs, valid: yes, 0.222 s (1.0 min so far)
+[519/560] EV-C206_n100: plan, Z = 88,108.90 Rs, valid: yes, 0.222 s (1.0 min so far)
+[520/560] EV-C207_n100: plan, Z = 88,287.77 Rs, valid: yes, 0.223 s (1.0 min so far)
+[521/560] EV-C208_n100: plan, Z = 87,923.75 Rs, valid: yes, 0.225 s (1.0 min so far)
+[522/560] EV-R101_n100: invalid_plan, Z = 89,807.37 Rs, valid: no, 0.208 s (1.0 min so far)
+[523/560] EV-R102_n100: invalid_plan, Z = 88,555.78 Rs, valid: no, 0.217 s (1.0 min so far)
+[524/560] EV-R103_n100: invalid_plan, Z = 90,631.22 Rs, valid: no, 0.218 s (1.0 min so far)
+[525/560] EV-R104_n100: invalid_plan, Z = 100,234.00 Rs, valid: no, 0.216 s (1.0 min so far)
+[526/560] EV-R105_n100: invalid_plan, Z = 90,228.54 Rs, valid: no, 0.219 s (1.0 min so far)
+[527/560] EV-R106_n100: invalid_plan, Z = 88,477.13 Rs, valid: no, 0.223 s (1.0 min so far)
+[528/560] EV-R107_n100: invalid_plan, Z = 92,260.65 Rs, valid: no, 0.223 s (1.0 min so far)
+[529/560] EV-R108_n100: invalid_plan, Z = 100,475.15 Rs, valid: no, 0.219 s (1.0 min so far)
+[530/560] EV-R109_n100: plan, Z = 91,062.42 Rs, valid: yes, 0.224 s (1.0 min so far)
+[531/560] EV-R110_n100: plan, Z = 95,591.60 Rs, valid: yes, 0.224 s (1.0 min so far)
+[532/560] EV-R111_n100: plan, Z = 94,331.05 Rs, valid: yes, 0.221 s (1.0 min so far)
+[533/560] EV-R112_n100: invalid_plan, Z = 100,049.80 Rs, valid: no, 0.213 s (1.0 min so far)
+[534/560] EV-R201_n100: plan, Z = 78,560.15 Rs, valid: yes, 0.219 s (1.0 min so far)
+[535/560] EV-R202_n100: plan, Z = 79,755.66 Rs, valid: yes, 0.221 s (1.0 min so far)
+[536/560] EV-R203_n100: plan, Z = 84,355.25 Rs, valid: yes, 0.225 s (1.0 min so far)
+[537/560] EV-R204_n100: plan, Z = 102,908.93 Rs, valid: yes, 0.223 s (1.1 min so far)
+[538/560] EV-R205_n100: plan, Z = 78,740.31 Rs, valid: yes, 0.218 s (1.1 min so far)
+[539/560] EV-R206_n100: plan, Z = 79,979.05 Rs, valid: yes, 0.222 s (1.1 min so far)
+[540/560] EV-R207_n100: plan, Z = 84,255.26 Rs, valid: yes, 0.227 s (1.1 min so far)
+[541/560] EV-R208_n100: plan, Z = 102,164.31 Rs, valid: yes, 0.223 s (1.1 min so far)
+[542/560] EV-R209_n100: plan, Z = 78,717.53 Rs, valid: yes, 0.218 s (1.1 min so far)
+[543/560] EV-R210_n100: plan, Z = 79,004.54 Rs, valid: yes, 0.222 s (1.1 min so far)
+[544/560] EV-R211_n100: plan, Z = 79,621.52 Rs, valid: yes, 0.218 s (1.1 min so far)
+[545/560] EV-RC101_n100: invalid_plan, Z = 107,471.73 Rs, valid: no, 0.195 s (1.1 min so far)
+[546/560] EV-RC102_n100: invalid_plan, Z = 100,394.48 Rs, valid: no, 0.218 s (1.1 min so far)
+[547/560] EV-RC103_n100: invalid_plan, Z = 102,487.30 Rs, valid: no, 0.222 s (1.1 min so far)
+[548/560] EV-RC104_n100: invalid_plan, Z = 114,277.52 Rs, valid: no, 0.215 s (1.1 min so far)
+[549/560] EV-RC105_n100: invalid_plan, Z = 106,370.23 Rs, valid: no, 0.205 s (1.1 min so far)
+[550/560] EV-RC106_n100: invalid_plan, Z = 105,534.74 Rs, valid: no, 0.214 s (1.1 min so far)
+[551/560] EV-RC107_n100: invalid_plan, Z = 110,279.28 Rs, valid: no, 0.208 s (1.1 min so far)
+[552/560] EV-RC108_n100: invalid_plan, Z = 114,054.58 Rs, valid: no, 0.206 s (1.1 min so far)
+[553/560] EV-RC201_n100: plan, Z = 85,769.70 Rs, valid: yes, 0.221 s (1.1 min so far)
+[554/560] EV-RC202_n100: plan, Z = 86,777.13 Rs, valid: yes, 0.224 s (1.1 min so far)
+[555/560] EV-RC203_n100: plan, Z = 93,543.66 Rs, valid: yes, 0.225 s (1.1 min so far)
+[556/560] EV-RC204_n100: plan, Z = 109,791.15 Rs, valid: yes, 0.227 s (1.1 min so far)
+[557/560] EV-RC205_n100: plan, Z = 85,969.38 Rs, valid: yes, 0.221 s (1.1 min so far)
+[558/560] EV-RC206_n100: plan, Z = 85,690.02 Rs, valid: yes, 0.22 s (1.1 min so far)
+[559/560] EV-RC207_n100: plan, Z = 86,803.58 Rs, valid: yes, 0.222 s (1.1 min so far)
+[560/560] EV-RC208_n100: plan, Z = 88,111.77 Rs, valid: yes, 0.219 s (1.1 min so far)
+
+status of the 560 run(s) of rl_f4 in runs.csv: {'plan': 500, 'invalid_plan': 60}
+Results written to /mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/baseline_RL/results
+analysis of rl_f4 written to /mnt/DataDrive_2/Yakshith/or_project/project/2026-11-22_formulation_4/baseline_RL/results/analysis/rl_f4
+2026-11-24 19:46:21  END    RL baseline solve   exit code 0, 1 min
