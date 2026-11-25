@@ -1,0 +1,51 @@
+%=====================================================================
+\section{How to read this report}
+
+The report has six parts.
+\begin{itemize}
+  \item \textbf{Part I} explains the problem, what is new in formulation 4, the cost that is minimised, and every assumption.
+  \item \textbf{Part II} describes the data: the city maps and requests (EV-Solomon), the two customer attributes (segment and income) and where their numbers come from, the customer parameters, and the five experiments with the exact data each one changes.
+  \item \textbf{Part III} explains the two methods: the MILP (an exact model solved by Gurobi) and the reinforcement-learning policy, including its architecture.
+  \item \textbf{Part IV} gives the MILP results: the baseline first, then each experiment.
+  \item \textbf{Part V} gives the RL results in the same order.
+  \item \textbf{Part VI} puts the two methods side by side and lists the conclusions and limits.
+\end{itemize}
+Every section ends with a green \emph{In short} box. Orange boxes give small worked examples. A word in \emph{italics} on first use is in the glossary below.
+
+\section{Glossary}
+
+{\small
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}p{12.6cm}@{}}
+\toprule
+\textbf{Word} & \textbf{Meaning} \\
+\midrule
+\endhead
+EV & Electric vehicle. Here: one charging request. \\
+FCS & Fixed charging station. 12 stations with 2 \emph{guns} (charging points) each, 22 kW. \\
+Van (MCS) & Mobile charging station: a van that drives to a parked EV and charges it (30 kW). 5 vans, each can serve at most 6 EVs and carries a 150 kWh battery. \\
+Segment & Personal (private car) or commercial (taxi, ride-hailing, fleet car). \\
+Income index $\theta$ & A number between 0 (poorest household) and 1 (richest) for each EV's owner or driver. \\
+Money sensitivity $\mu$ & How strongly a customer feels one rupee: $\mu=1.5$ means a rupee paid ``feels like'' Rs 1.5. Poorer customers have a larger $\mu$. \\
+Value of time $c$ & How many rupees a customer would pay to save one minute, separately for driving ($c^D$), queueing ($c^Q$), charging at a station ($c^C$), and waiting for / being charged by a van ($c^V$). \\
+Downtime rate $\omega$ & For a commercial car: the earnings lost per minute out of service. It prices all its minutes. \\
+Queue tolerance $W$ & The longest a customer will wait at a station for a free gun. \\
+Driver-free benefit & A personal car charged by a van stays parked; the driver can do other things. So a van minute costs less than a station minute ($c^V\le c^C$). A taxi earns nothing while parked, so it has no such benefit. \\
+Free-choice EV & An EV with at least one station within its range. It could use a station or a van. The others are \emph{stranded} and must get a van. \\
+Van share & The share of free-choice EVs that are served by a van. \\
+$Z$ & The total cost that is minimised: operator's cost plus the cost customers feel (Section~\ref{sec:Z}). \\
+Instance & One problem to solve: one data file and its first $n$ EVs ($n=10,20,\dots,100$). 56 files $\times$ 10 sizes = 560 instances. \\
+MILP & Mixed-integer linear program: an exact mathematical model with yes/no decisions. Solved by the software Gurobi. \\
+Optimal & Gurobi proved that no cheaper plan exists. \\
+Time limit & Gurobi stopped after 300 seconds. It may have a plan (not proven best) or no plan at all. \\
+Gap & For a time-limited MILP plan: how far its cost may be above the best possible, in \%. For RL: how much dearer the RL plan is than the MILP plan, in \%. \\
+Infeasible & No plan can satisfy all rules (for example, two EVs too far away to be charged in time). Proven by Gurobi. \\
+Valid plan & A plan that breaks no rule; checked by an independent checker program. \\
+Greedy rule & A simple rule: take EVs one by one and give each the cheapest option still free. Used as a starting plan for the MILP and as the teacher of RL. \\
+RL & Reinforcement learning: a neural network learns, by trial and error on many random examples, to build good plans. \\
+Policy & The trained neural network: given the current partial plan, it says which EV to place next and where. \\
+Zero-shot & The baseline RL policy used, without new training, on an experiment's changed data. \\
+Retrained & A new RL policy trained on the experiment's changed data. \\
+Paired instances & Instances with a valid plan both in the baseline and in the experiment variant. Changes are measured only on these, so that like is compared with like. \\
+Baseline & The run with the standard parameter values. Every experiment changes one value and is compared with it. \\
+\bottomrule
+\end{longtable}}

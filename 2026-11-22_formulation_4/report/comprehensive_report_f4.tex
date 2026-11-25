@@ -1,0 +1,100 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,array,tabularx,longtable}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{adjustbox}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\usepackage[font=small,labelfont={bf,color=headblue},skip=4pt]{caption}
+\usepackage[colorlinks=true,linkcolor=headblue,urlcolor=blue!50!black]{hyperref}
+
+\definecolor{headblue}{RGB}{38,70,120}
+\titleformat{\part}[display]{\centering\Huge\bfseries\color{headblue}}{Part \thepart}{10pt}{}
+\titleformat{\section}{\Large\bfseries\color{headblue}}{\thesection}{0.8em}{}[{\color{black}\titlerule}]
+\titleformat{\subsection}{\large\bfseries\color{headblue}}{\thesubsection}{0.8em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{headblue}}{\thesubsubsection}{0.8em}{}
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+\titlespacing*{\subsection}{0pt}{9pt}{3pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlist{itemsep=1pt,topsep=2pt}
+\renewcommand{\arraystretch}{1.12}
+\setlength{\emergencystretch}{3em}
+
+\newtcolorbox{keybox}{colback=blue!3,colframe=headblue!60,boxrule=0.5pt,arc=2mm,left=2mm,right=2mm,top=1mm,bottom=1mm}
+\newtcolorbox{insum}{colback=green!3,colframe=green!40!black,boxrule=0.4pt,arc=1.5mm,left=2mm,right=2mm,top=0.5mm,bottom=0.5mm,fontupper=\small}
+\newcommand{\inshort}[1]{\begin{insum}\textbf{In short.} #1\end{insum}}
+\newtcolorbox{example}{colback=orange!3,colframe=orange!60!black,boxrule=0.4pt,arc=1.5mm,left=2mm,right=2mm,top=0.5mm,bottom=0.5mm,fontupper=\small}
+\newcommand{\code}[1]{\texttt{#1}}
+\let\origunderscore\_
+\renewcommand{\_}{\origunderscore\allowbreak}
+
+\input{numbers}
+
+\hypersetup{pdftitle={Formulation 4: MILP and RL, comprehensive report}, pdfauthor={Yakshith Maddineni}}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+{\LARGE\bfseries\color{headblue} EV Charging with Two Kinds of Customers\par}
+\vspace{6pt}
+{\Large Formulation 4: data, experiments, MILP and reinforcement learning\par}
+\vspace{4pt}
+{\large A comprehensive report in simple language\par}
+\vspace{16pt}
+{\large CP 320 Operations Research for Mobility Management, course project\par}
+\vspace{24pt}
+{\large Yakshith Maddineni (SR 26080)\par}
+{\normalsize M.Tech Smart Mobility \& Logistics Systems, IISc\par}
+\vspace{6pt}
+{\normalsize 25 November 2026\par}
+\vfill
+\begin{keybox}
+\textbf{What this report covers.} Formulation 4 is formulation 3 with one new fact about every customer: is the car a \emph{personal} car or a \emph{commercial} car (taxi, ride-hailing, fleet)? This report explains, step by step and in plain words: the problem and the model, the data, the five experiments and the data each one uses, the two solution methods (the exact MILP solved with Gurobi, and a reinforcement-learning policy), the results of both methods for the baseline and for every experiment, and how the two methods compare.
+
+\textbf{The run.} One server job (22--25 November 2026) solved 560 instances for the baseline and for each of 15 experiment variants: 16 $\times$ 560 = 8\,960 MILP runs, then the same with RL (baseline + 15 variants $\times$ 2 RL runs each, with 15 retrained models). Every step ended without an error.
+\end{keybox}
+\end{titlepage}
+
+\begin{keybox}
+\textbf{The main findings on one page}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Vans go to rich private car owners, almost never to taxis.} In the MILP plans, \fvanPersMilp\,\% of the personal cars that could choose got a van, but only \fvanComMilp\,\% of the commercial cars. Among personal cars in the richest income band (0.8--1.0) the van share is about 41\,\%. A taxi gains nothing from the van's ``driver is free'' benefit, so it takes a van only to escape a queue.
+  \item \textbf{The single strongest lever is how much a poor commercial driver feels a rupee.} Changing the commercial money sensitivity $\mu^0$ by $\pm25$\,\% moves the total cost $Z$ by about $\pm6.4$\,\%. Commercial drivers are 70\,\% of all customers and mostly low-income, so every rupee they pay counts heavily.
+  \item \textbf{The van price decides who gets vans.} With no van premium ($p^M=p^F$) the personal van share rises from about 20\,\% to 31\,\%; with a doubled premium it falls to 13.5\,\%.
+  \item \textbf{More vans do not lower the cost; they make more instances solvable.} With 3 vans 33 instances lose their plan, with 7 vans 13 new instances get one, but where both are solved to optimality the cost is the same to the last rupee. Fewer seats per van (4 instead of 6) do raise the cost (+1.1\,\%).
+  \item \textbf{A bigger van battery changes nothing} ($-0.01$\,\%), so van recharging need not be modelled.
+  \item \textbf{The RL policy is fast and reliable, a little dearer, and uses fewer vans.} It finds a valid plan in \frlValid{} instances (MILP \fmilpValid), costs on average \frlGapMean\,\% more than the MILP, and needs \frlSolveMean\,s instead of \fmilpSolveMean\,s per instance. But it gives vans to only \fvanPersRl\,\% of personal free-choice cars (MILP \fvanPersMilp\,\%).
+  \item \textbf{RL reproduces the MILP's experiment conclusions.} For all 15 variants the change of $Z$ measured with RL is within about \fagreeRtMean{} percentage points of the MILP's, and the direction agrees wherever the effect is larger than noise.
+\end{enumerate}
+\end{keybox}
+
+\tableofcontents
+\newpage
+
+\input{sections/s0_reading}
+\part{The problem and the model}
+\input{sections/s1_problem}
+\part{The data and the experiments}
+\input{sections/s2_data}
+\part{The two methods}
+\input{sections/s3_methods}
+\part{Results of the MILP}
+\input{sections/s4_milp}
+\part{Results of reinforcement learning}
+\input{sections/s5_rl}
+\part{MILP and RL side by side, and conclusions}
+\input{sections/s6_compare}
+
+\end{document}

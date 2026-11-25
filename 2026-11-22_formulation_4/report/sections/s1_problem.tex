@@ -1,0 +1,99 @@
+%=====================================================================
+\section{The problem in plain words}
+
+A city has electric cars that need charging during a planning period of $T$ minutes. Every car sends one request: \emph{at minute $r_i$ I need $E_i$ kWh}. An operator serves all requests with two kinds of chargers:
+\begin{itemize}
+  \item \textbf{Fixed stations (FCS).} 12 stations with 2 guns each. The car drives there itself (it must be within its remaining range), may wait in a queue for a free gun, and is charged at 22 kW.
+  \item \textbf{Vans.} 5 vans start at a depot. A van drives to a parked car, charges it at 30 kW, then drives to the next car. A van serves at most 6 cars, its 150 kWh battery must cover both driving and charging, and it must be back at the depot by $T$.
+\end{itemize}
+Every car must be fully charged by $T$. The operator decides three things:
+\begin{enumerate}
+  \item who serves each car (which gun of which station, or which van);
+  \item in what order each gun and each van takes its cars;
+  \item when each charging session starts.
+\end{enumerate}
+The aim is the plan with the smallest total cost $Z$, which adds the operator's own costs and the cost the customers feel (money and time, each weighted by the customer's own situation).
+
+\inshort{Assign every charging request to a station gun or a van, order and time the sessions, and keep the total cost to operator and customers as low as possible.}
+
+%=====================================================================
+\section{What is new in formulation 4: two kinds of customers}
+
+Formulation 3 gave every customer an income index $\theta$. Formulation 4 adds a second attribute, the \textbf{use segment}:
+\begin{itemize}
+  \item \textbf{Personal car.} A private owner. When the car is charged by a van, the car stays parked and the owner is free to work, shop or sleep. So a minute spent with a van costs the owner \emph{less} than a minute standing at a station. This is the \emph{driver-free benefit}.
+  \item \textbf{Commercial car.} A taxi, ride-hailing or fleet car. Every minute out of service is lost earnings, whatever the driver is doing. Driving to a station, charging there, waiting for a van and being charged by the van all cost the same \emph{downtime rate} $\omega$ per minute. Queueing costs a little more (the driver must stay with the car and does not know how long it will take).
+\end{itemize}
+
+\begin{example}
+\textbf{Example.} Two cars, both 20 minutes' drive from a free station, each needs 30 kWh (82 minutes at a station, 60 minutes with a van).
+\begin{itemize}
+  \item A rich private owner values station time highly and van time much less. A van saves the 20-minute drive, 22 minutes of charging, and makes the remaining 60 minutes ``free time''. The van is clearly worth its higher price.
+  \item A taxi driver prices every minute at the same downtime rate. The van saves only the drive and the 22 minutes of faster charging, and the driver pays a higher tariff. Unless the station has a long queue, the van is not worth it.
+\end{itemize}
+\end{example}
+
+\subsection{What theory predicts}
+
+Compare, for one car, the extra cost of taking the van instead of a station. Formulation 4 (Section 4.1 of \code{formulation\_4.pdf}) shows:
+\begin{enumerate}
+  \item \textbf{A taxi takes a van only to save downtime.} If the wait for the van is longer than the drive plus the time saved by faster charging, a commercial car never prefers the van, whatever its income.
+  \item \textbf{Queues, not income, push taxis to vans.} Every minute of queue at the station makes the van more attractive to a taxi at the full downtime rate. In busy periods taxis may take vans they would never take otherwise.
+  \item \textbf{The driver-free benefit belongs to personal cars.} With equal values of time at the station, a taxi always values the van less than a private car, by exactly the driver-free discount on the van's minutes.
+  \item \textbf{One income threshold per segment.} Because every sensitivity is a straight line in $\theta$, for each car there is one income $\theta^*$ above which the van is the better choice. For personal cars this threshold is reachable (rich owners take vans); for commercial cars it usually is not.
+  \item \textbf{Scarce vans go to those who gain most}: off-peak the rich personal owners; in congested periods also taxis facing long queues. Poorer customers of both segments absorb the station queues.
+\end{enumerate}
+
+\inshort{Formulation 4 says \emph{who} the customer is, not just how rich. Theory predicts that vans go to rich private owners, and that taxis take vans only to escape queues.}
+
+%=====================================================================
+\section{The cost that is minimised}
+\label{sec:Z}
+
+$Z$ has six parts. The first number in brackets is the share of $Z$ in the MILP baseline plans (Section~\ref{sec:anatomy}).
+\begin{description}[leftmargin=1.5em]
+  \item[$Z_1$ EV driving] (\fshareZOne\,\%): money the car owner spends driving to a station, felt with weight $\mu$.
+  \item[$Z_2$ van driving] (\fshareZTwo\,\%): the operator's cost per van km.
+  \item[$Z_3$ van dispatch] (\fshareZThree\,\%): a fixed cost (Rs 1\,500) for every van that leaves the depot.
+  \item[$Z_4$ operator energy] (\fshareZFour\,\%): electricity bought by the operator; van energy is dearer per kWh and loses 10\,\% in transfer.
+  \item[$Z_5$ tariff] (\fshareZFive\,\%): the price the customer pays per kWh ($p^F$ at a station, $p^M\ge p^F$ for a van), felt with weight $\mu$.
+  \item[$Z_6$ time] (\fshareZSix\,\%): every minute from request to full charge, priced at the customer's own value of time for that activity.
+\end{description}
+$Z_2+Z_3+Z_4$ is the operator's cost (\fshareOperator\,\% of $Z$); $Z_1+Z_5+Z_6$ is what customers feel (the rest). Tariff revenue is not counted as a gain for the operator: the model looks for the plan that is best for operator and customers together.
+
+\inshort{$Z$ = operator cost (about 31\,\%) + money customers feel (about 40\,\%) + time customers lose (about 29\,\%).}
+
+%=====================================================================
+\section{All assumptions}
+
+\subsection{Model assumptions (formulation 3 and 4)}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{All requests are known at the start} (minute 0). \emph{Why:} it gives a planning problem that can be solved exactly; a version with requests arriving during the day is a possible extension.
+  \item \textbf{One resource per car, no interruption.} A car is charged by one gun or one van, from start to full charge.
+  \item \textbf{Constant charging power} (22 kW at a station, 30 kW from a van), so charging times are fixed.
+  \item \textbf{A car goes to a station only within its remaining range.} About 15\,\% of cars are ``stranded'' and can only be served by a van.
+  \item \textbf{Every car must be fully charged by $T$} (hard rule). If this is impossible the instance is \emph{infeasible}.
+  \item \textbf{Queue limit per customer} $W_i$: a customer queues at most $W_i$ minutes; richer and commercial customers accept shorter queues.
+  \item \textbf{Vans are identical}, start and end at one depot, and are not recharged during the period.
+  \item \textbf{Segment and income are known} for every customer, and act only through $\mu$, the values of time $c$, and $W$, each a straight line in $\theta$ with its own end points per segment.
+  \item \textbf{Commercial time is downtime}: $c^D=c^C=c^V=\omega(\theta)$ and $c^Q$ a little higher.
+  \item \textbf{Tariffs are the same for both segments}: $p^F=\fpF$ Rs/kWh at a station, $p^M=\fpM$ Rs/kWh for a van.
+  \item \textbf{Objective}: operator cost plus perceived customer cost; tariff revenue is not a gain.
+\end{enumerate}
+
+\subsection{Data assumptions}
+\begin{enumerate}[leftmargin=*,resume]
+  \item \textbf{City and timing from the Solomon benchmark} (Section~\ref{sec:data}): positions, demands, request times and $T$ come from the 56 Solomon files; 1 grid unit = 0.2 km with a road detour of 1.3, and travel minutes equal grid distance.
+  \item \textbf{Segment share} $\pi_C=0.70$: 70\,\% of charging \emph{requests} come from commercial cars (they drive far more and charge in public far more often than private cars, Section~\ref{sec:calib}).
+  \item \textbf{Income distributions}: personal $\theta\sim$ Beta(2.5, 1) (car owners are mostly rich), commercial $\theta\sim$ Beta(3, 5) (cab drivers mostly lower-middle income).
+  \item \textbf{Most customer parameters are placeholders.} Only the segment share and the two income distributions are calibrated from data; the end points of $\mu$, $c$ and $W$ are reasoned guesses. This is why the experiments vary them.
+\end{enumerate}
+
+\subsection{Run assumptions}
+\begin{enumerate}[leftmargin=*,resume]
+  \item \textbf{MILP}: complete model, 300 seconds per instance, 4 threads, 8 instances at a time, greedy plan as a starting point.
+  \item \textbf{RL}: trained only on random instances made with the same rules; the 56 test files are never seen in training.
+  \item \textbf{Every plan of every method} is scored by the same independent checker, so $Z$ means exactly the same for MILP and RL.
+\end{enumerate}
+
+\inshort{The model is exact and complete; the uncertain part is the customer numbers, which the experiments vary one at a time.}

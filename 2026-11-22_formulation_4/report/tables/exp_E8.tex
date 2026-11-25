@@ -1,0 +1,13 @@
+\scriptsize
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{@{}lrrrrrrrrrrr@{}}
+\toprule
+method & valid & paired & new & lost & \shortstack{$\Delta Z$\\\%} & \shortstack{$\Delta$\\oper. \%} & \shortstack{$\Delta$\\cust. \%} & \shortstack{van \%\\personal} & van \% comm. & vans used & \shortstack{gap to\\MILP \%} \\
+\midrule
+\multicolumn{12}{@{}l}{\textbf{E8\_battery\_200}: B = 200 kWh} \\
+MILP & 476 & 473 & 3 & 1 & $-$0.01 & $-$0.40 & $+$0.19 & 19.9 $\to$ 18.5 & 0.7 $\to$ 0.7 & 2.14 & -- \\
+RL zero-shot & 501 & 500 & 1 & 0 & $-$0.02 & $-$0.17 & $+$0.05 & 6.7 $\to$ 6.5 & 0.9 $\to$ 0.9 & 2.19 & 0.83 \\
+RL retrained & 500 & 499 & 1 & 1 & $-$0.07 & $-$0.06 & $-$0.07 & 6.7 $\to$ 8.2 & 0.9 $\to$ 0.7 & 2.18 & 0.77 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}

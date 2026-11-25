@@ -37,6 +37,9 @@ priced at one downtime rate, and a van only helps it by cutting downtime. The va
 │   ├── experiments.json          the experiments E5, E6, E1, E2, E8 and their variants
 │   ├── run_experiment.py         runs the variants with the MILP or the RL (the experiment folders call it)
 │   └── compare_experiment.py     variants vs baseline (paired instances), per segment and income band
+├── report/                       comprehensive_report_f4.tex/.pdf (32 p., 25 Nov 2026): data, experiments, MILP and RL
+│                                 results of the whole job in simple language; make_report_f4.py -> figures/, tables/,
+│                                 numbers.tex (reads only the results); sections/*.tex
 ├── baseline_MILP/                Gurobi, the complete model of formulation_4.pdf
 │   ├── code/solve_milp_f4.py
 │   └── results/

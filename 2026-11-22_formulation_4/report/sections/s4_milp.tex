@@ -1,0 +1,208 @@
+%=====================================================================
+\section{MILP baseline: how the 560 instances ended}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{figures/milp_status_by_n.pdf}
+\caption{Result of the MILP for each instance size (56 instances per size).}
+\label{fig:status}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{MILP baseline by Solomon class. Median gap: over the time-limited instances with a plan.}
+\input{tables/milp_by_class}
+\end{table}
+
+\begin{itemize}
+  \item \textbf{\fmilpOptimal{} instances optimal}, \fmilpTL{} stopped at the time limit with a plan (median gap \fmilpGapMedian\,\%, mean \fmilpGapMean\,\%), \fmilpTLnoPlan{} stopped \emph{without} a plan, \fmilpInfeasible{} proven infeasible. In total \fmilpValid{} valid plans. Mean solve time \fmilpSolveMean{} s.
+  \item \textbf{Size decides difficulty.} Up to 20 cars almost everything is optimal in seconds. From about 50 cars, most instances hit the 300-second limit.
+  \item \textbf{The infeasible and unsolved instances are in R1 and RC1}, the classes with very short periods (230--240 min). There 100 cars, many requesting late, cannot all be charged by $T$ with 24 guns and 5 vans. The 51 infeasible instances are exactly the 51 of formulation 3: infeasibility comes from the data (time, range, fleet), not from the customer numbers.
+  \item The greedy rule alone finds a valid plan in \fgreedyValid{} instances; the MILP starts from that plan and finds valid plans in 13 more instances.
+  \item Compared with formulation 3 (same data, one customer type), formulation 4 proves more instances optimal (277 against 256); the other statuses are almost unchanged.
+\end{itemize}
+
+\inshort{The MILP solves small instances to optimality and large ones to within a few per cent; the only failures are the short-period classes R1 and RC1 at 60--100 cars, mostly because no plan can exist there.}
+
+%=====================================================================
+\section{MILP baseline: what the cost is made of}
+\label{sec:anatomy}
+
+\begin{table}[H]
+\centering
+\caption{The six parts of $Z$, over the \fmilpValid{} valid MILP plans.}
+\input{tables/milp_anatomy}
+\end{table}
+
+\begin{itemize}
+  \item \textbf{The tariff felt by customers ($Z_5$) is the largest part} (\fshareZFive\,\%): every car pays for 10--40 kWh, and most customers are poor commercial drivers who feel each rupee strongly.
+  \item \textbf{Customers' time ($Z_6$) is next} (\fshareZSix\,\%): about an hour per car from request to full charge.
+  \item \textbf{The operator's energy ($Z_4$)} is \fshareZFour\,\%; van dispatch \fshareZThree\,\%; van driving and EV driving are small.
+\end{itemize}
+
+\inshort{Two thirds of $Z$ is what customers feel (money and time); a third is the operator's cost, mostly electricity.}
+
+%=====================================================================
+\section{MILP baseline: who gets a van}
+
+\begin{table}[H]
+\centering
+\caption{The two segments in the baseline plans of the MILP and of RL (RL is discussed in Part V). Free-choice cars have a station within range. Note: the MILP and RL columns are over their own valid plans (\fmilpValid{} and \frlValid{} instances).}
+\input{tables/segments}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/van_share_income.pdf}
+\caption{Share of free-choice cars served by a van, by segment and income band (numbers above the bars in \%).}
+\label{fig:vanincome}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{By income band (MILP, all valid plans; van share also for RL). ``Money felt'' is the money paid times the customer's $\mu$.}
+\input{tables/income_bands}
+\end{table}
+
+What the MILP plans show:
+\begin{enumerate}
+  \item \textbf{Vans go to personal cars.} \fvanPersMilp\,\% of free-choice personal cars get a van, against \fvanComMilp\,\% of commercial cars. This is theory point 3: the driver-free benefit belongs to private owners.
+  \item \textbf{Among personal cars, van use rises steeply with income}: 0\,\% below $\theta=0.4$, 2\,\% at 0.4--0.6, 10\,\% at 0.6--0.8, 41\,\% above 0.8. A logistic fit of ``van or not'' on $\theta$ puts the income threshold for personal cars at $\theta^*\approx\fthetaStarPers$: only the very richest are more likely than not to get a van. For commercial cars there is no threshold in $[0,1]$.
+  \item \textbf{The few commercial cars with a van are the poorest drivers}, not the richest (1.6\,\% below $\theta=0.2$, 0\,\% above 0.6). They are also the ones with the longest station queues (2.8 minutes on average in the lowest band, 0 in the highest). This is theory point 2: \emph{queues, not income, push taxis to vans}.
+  \item \textbf{Commercial cars wait more at stations} (\fqueueComMilp{} against \fqueuePersMilp{} minutes on average) and take longer until charged (64 against 61 minutes). Low-income customers absorb the queues, as theory point 5 predicts.
+  \item \textbf{Money paid is about the same in both segments} (about Rs 335--350), but \textbf{money felt} is much higher for commercial drivers (Rs 382 against 281), because they are poorer. Personal owners instead lose more in \emph{time} value (Rs 381 against 200).
+  \item By class, the personal van share is lowest in R1 (12\,\%: very short period, a van can make few trips) and highest in RC2 (26\,\%).
+\end{enumerate}
+
+\inshort{In the best plans, vans are a service for rich private owners; taxis and poorer customers use the stations and absorb the queues. The rare taxi with a van is a poor driver escaping a long queue.}
+
+%=====================================================================
+\section{MILP experiments, one by one}
+\label{sec:milpexp}
+
+Each table below shows the MILP row first and then the two RL rows (discussed in Part V). Columns: valid plans; paired instances; instances \emph{new}ly valid or \emph{lost} against the baseline; mean change of $Z$, of the operator's cost and of the customers' cost (paired instances); van share of free-choice cars, baseline $\to$ variant; average number of vans used; for RL the mean gap to the MILP of the same variant.
+
+\subsection{E5: value of charging time}
+
+\begin{table}[H]
+\centering
+\caption{E5. Value of a station minute for the richest private owner ($c^{C,1}$), and the commercial downtime rate at the top income ($\omega^1$), $\pm25$\,\%.}
+\input{tables/exp_E5}
+\end{table}
+
+\begin{itemize}
+  \item \textbf{Personal $c^{C,1}$} moves $Z$ by $-2.2$\,\% / $+2.1$\,\% and \textbf{strongly moves the personal van share}: 19.9\,\% $\to$ 14.1\,\% when station time is valued less, $\to$ 29.4\,\% when it is valued more. When rich owners hate station time more, more of them get vans, and the operator pays for it (operator cost $+2.75$\,\%).
+  \item \textbf{Commercial $\omega^1$} moves $Z$ by $\mp2.7$\,\% but \textbf{does not change who gets vans} (personal 19.6\,\%, commercial 0.7\,\% in both variants). A taxi's drive, charge and van minutes all scale with $\omega$, so both options become dearer together; only the customers' cost changes ($\pm3.8$\,\%).
+  \item Both results are what theory predicted for E5.
+\end{itemize}
+
+\inshort{How much private owners hate station time decides how many vans they get; the taxi downtime rate changes the cost but not the choices.}
+
+\subsection{E6: money sensitivity}
+
+\begin{table}[H]
+\centering
+\caption{E6. How strongly the poorest customer feels a rupee ($\mu^0$), per segment, $\pm25$\,\%.}
+\input{tables/exp_E6}
+\end{table}
+
+\begin{itemize}
+  \item \textbf{Commercial $\mu^0$ is the strongest lever of all experiments}: $Z$ $-6.4$\,\% / $+6.4$\,\%, almost all on the customers' side ($\mp9.4$\,\%). Commercial drivers are 70\,\% of the customers and mostly poor, so their $\mu$ is close to $\mu^0$; every rupee they pay for tariffs and driving is weighted by it, and the tariff is the largest part of $Z$.
+  \item \textbf{Personal $\mu^0$ matters much less} ($\pm1.3$\,\%): private owners are rich, their $\mu$ is close to $\mu^1=0.5$, which does not change.
+  \item \textbf{Nobody changes resource}: van shares stay at about 19--20\,\% and 0.6--0.7\,\%. A larger $\mu$ makes the station and the van dearer in the same proportion (both tariffs are multiplied by $\mu$); only the van premium becomes a little more painful.
+\end{itemize}
+
+\inshort{How poor drivers feel money is the assumption $Z$ depends on most, but it changes the size of the cost, not the plan.}
+
+\subsection{E1: van tariff}
+
+\begin{table}[H]
+\centering
+\caption{E1. Van tariff $p^M$ = 15 (no premium) and 35 Rs/kWh (baseline 25).}
+\input{tables/exp_E1}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/exp_income.pdf}
+\caption{Personal van share by income band (MILP): E1 (van tariff) and E5 (personal value of charging time).}
+\label{fig:expincome}
+\end{figure}
+
+\begin{itemize}
+  \item \textbf{No premium ($p^M=15$)}: $Z$ $-4.2$\,\%. Customers save 7.8\,\%, the operator pays 3.7\,\% more (more vans dispatched, 2.40 instead of 2.17 on average, and dearer van energy). Personal van share 19.8\,\% $\to$ 31.4\,\%; van use spreads down the income scale (Figure~\ref{fig:expincome}: 0.4--0.6 band from 2\,\% to 12\,\%, 0.6--0.8 from 10\,\% to 24\,\%). Commercial van share doubles but stays small (0.7 $\to$ 1.4\,\%).
+  \item \textbf{Double premium ($p^M=35$)}: $Z$ $+3.9$\,\%, customers $+6.5$\,\%, operator $-1.4$\,\%. Personal van share falls to 13.5\,\%; even the richest band drops from 41\,\% to 30\,\%.
+  \item \textbf{Who gains from cheaper vans}: mostly rich private owners (their felt cost in the top band falls from about Rs 646 to 547), because they are the ones who switch. Poor drivers gain little (Rs 607 to 576), mostly because the stations get less crowded.
+  \item 4 instances lose their plan at $p^M=15$ and 3 gain one at $p^M=35$: with more van use the 300-second search gets harder, not the problem itself.
+\end{itemize}
+
+\inshort{The van price is the operator's main tool to decide how many and which customers get vans; making vans cheaper mostly helps rich private owners.}
+
+\subsection{E2: van fleet and seats}
+
+\begin{table}[H]
+\centering
+\caption{E2. 3 or 7 vans (baseline 5); 4 or 8 cars per van (baseline 6).}
+\input{tables/exp_E2}
+\end{table}
+
+\begin{itemize}
+  \item \textbf{The number of vans does not change the cost} of solvable instances: on the instances optimal in both runs the change is 0.000\,\% for 3 and for 7 vans (Table~\ref{tab:direction}). The plans use only about 2.2 vans on average, so the fifth van is rarely needed for cost.
+  \item \textbf{But the number of vans decides feasibility}: with 3 vans 33 instances lose their plan (3 become provably infeasible), with 7 vans 13 new instances get one. These are mostly large R1/RC1 instances (23 of the 33 lost, 10 of the 13 gained; all with 50 or more cars), where stranded cars and late requests need many van trips in a short period. The small changes in the table ($-0.04$\,\%, $+0.02$\,\%) come from time-limited plans, not from a real effect.
+  \item \textbf{Fewer seats per van cost money}: with 4 seats $Z$ rises 1.1\,\% (1.3\,\% at the optima), the operator's cost 3.0\,\%: more vans must be dispatched (2.48 instead of about 2.2) to serve the same cars, and the personal van share falls from 19.8 to 11.6\,\%. With 8 seats $Z$ falls only 0.1\,\%: 6 seats are rarely all used.
+\end{itemize}
+
+\inshort{More vans buy feasibility in the hardest instances, not lower cost; seats per van matter for cost only when they are cut below the baseline.}
+
+\subsection{E8: van battery}
+
+\begin{table}[H]
+\centering
+\caption{E8. Van battery 200 kWh instead of 150.}
+\input{tables/exp_E8}
+\end{table}
+
+$Z$ changes by $-0.01$\,\% on average ($-0.04$\,\% at the optima). The battery almost never limits a van: seats and time run out first. By the decision rule fixed before the run (less than 1\,\%), \textbf{van recharging need not be modelled}.
+
+\inshort{A bigger battery changes nothing; recharging vans can be left out of the model.}
+
+%=====================================================================
+\section{A check of the MILP results against theory}
+\label{sec:direction}
+
+Some directions are certain from the model alone. A dearer van tariff can never make the \emph{optimal} cost lower (every plan gets dearer or stays the same); more vans, seats or battery can never make it higher (every old plan is still allowed). On the instances that are \emph{optimal in both} runs, every variant must therefore move $Z$ the right way:
+
+\begin{table}[H]
+\centering
+\caption{Direction check on instances proven optimal in both the baseline and the variant.}
+\label{tab:direction}
+\input{tables/direction}
+\end{table}
+
+\textbf{All 15 variants pass, with \fdirectionBad{} violations} in about 4\,000 pairs of optimal plans. This is a strong sign that the model, the data changes and the solver runs are consistent.
+
+\inshort{Wherever the MILP proved optimality, every experiment moved the cost in the direction the model requires: the results can be trusted.}
+
+%=====================================================================
+\section{Which assumption matters most}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/exp_tornado.pdf}
+\caption{Mean change of $Z$ for every variant (bars: MILP; markers: RL, Part V). Sorted by size.}
+\label{fig:tornado}
+\end{figure}
+
+Ranking by the effect on $Z$ of a $\pm25$\,\% or comparable change:
+\begin{enumerate}
+  \item commercial money sensitivity $\mu^0$: $\pm6.4$\,\%;
+  \item van tariff $p^M$: $-4.2$ / $+3.9$\,\%;
+  \item commercial downtime rate $\omega^1$: $\pm2.7$\,\%;
+  \item personal value of station time $c^{C,1}$: $\pm2.1$\,\%;
+  \item personal money sensitivity $\mu^0$: $\pm1.3$\,\%;
+  \item seats per van (only when cut): $+1.1$\,\%;
+  \item number of vans, battery: about 0\,\% (but the fleet decides feasibility).
+\end{enumerate}
+For \emph{who gets vans}, the ranking is different: the van tariff, the personal value of station time and cutting seats move the personal van share by about 6 to 12 percentage points; the money sensitivities and the commercial downtime rate move it by about 1 point or less.
+
+\inshort{To estimate the cost well, measure how poor drivers feel money; to decide who gets vans, set the van tariff and know how much private owners value station time.}

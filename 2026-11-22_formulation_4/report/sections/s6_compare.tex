@@ -1,0 +1,80 @@
+%=====================================================================
+\section{MILP and RL side by side}
+
+\begin{table}[H]
+\centering\small
+\caption{The two methods on the baseline (560 instances).}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+ & MILP (Gurobi, 300 s) & RL (attention policy) \\
+\midrule
+valid plans & \fmilpValid & \frlValid \\
+proven optimal & \fmilpOptimal & -- (no proof) \\
+instances with no plan & \fmilpTLnoPlan{} + \fmilpInfeasible{} infeasible & \frlInvalid{} (incl.\ the \fmilpInfeasible{} infeasible) \\
+mean cost against the other & best & $+$\frlGapMean\,\% (median $+$\frlGapMedian\,\%) \\
+mean time per instance & \fmilpSolveMean{} s & \frlSolveMean{} s \\
+one-off cost & none & training \frlTrainMin{} min on a GPU \\
+van share, personal free-choice cars & \fvanPersMilp\,\% & \fvanPersRl\,\% \\
+van share, commercial free-choice cars & \fvanComMilp\,\% & \fvanComRl\,\% \\
+mean station queue, commercial & \fqueueComMilp{} min & 3.36 min \\
+experiment effects on $Z$ & reference & within about 0.15 points \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{When to use which.}
+\begin{itemize}
+  \item \textbf{For the best plan of one instance, and for proofs}, the MILP: it gives proven optima for half the instances and plans within a few per cent for most others, and it shows the true structure of a good plan (who should get vans).
+  \item \textbf{For many instances, quick answers, or the hardest short-period cases}, RL: it answers in a tenth of a second, finds valid plans in 26 instances where the MILP found none, and measures the effect of a changed assumption almost exactly as the MILP does.
+  \item \textbf{For the question ``who gets vans''}, rely on the MILP: RL's plans are almost as cheap but use far fewer vans, so its van shares should not be read as the best policy.
+  \item \textbf{Together}: RL plans could be given to Gurobi as starting plans, exactly as the greedy plan is now; in the 26 instances where only RL found a plan, this would give the MILP a start it does not have today.
+\end{itemize}
+
+\inshort{The MILP is the reference for quality and for the structure of the plan; RL is the fast, robust tool, good enough to measure how the cost reacts to the assumptions.}
+
+%=====================================================================
+\section{Summary of findings}
+
+\begin{enumerate}
+  \item \textbf{Segment matters more than income for van use.} Personal cars get vans (19.9\,\% of those that can choose, 41\,\% of the richest); commercial cars almost never (0.7\,\%), and when they do, it is the poorest drivers escaping queues. This is exactly what the theory of formulation 4 predicted: the driver-free benefit belongs to private owners; taxis take vans only to save downtime.
+  \item \textbf{Low-income customers absorb the queues}: commercial drivers queue about four times as long as private owners, and feel each rupee they pay much more.
+  \item \textbf{$Z$ depends most on how poor drivers feel money} ($\pm6.4$\,\% for $\pm25$\,\% in $\mu^0_C$), then on the van tariff ($\pm4$\,\%), the downtime rate ($\pm2.7$\,\%) and the private owners' value of station time ($\pm2.1$\,\%). These are the numbers worth measuring better.
+  \item \textbf{Who gets vans depends on the van tariff and the private owners' value of station time}; cheaper vans help mostly rich private owners and cost the operator more.
+  \item \textbf{The fleet size decides feasibility, not cost}: with 3 vans 33 instances lose their plan, with 7 vans 13 gain one, while optimal costs do not move. Fewer seats per van raise the cost (+1.1\,\%).
+  \item \textbf{The van battery is never the binding limit}: van recharging need not be modelled.
+  \item \textbf{The results are internally consistent}: all 15 variants move the optimal cost in the direction the model requires (0 violations in about 4\,000 pairs of optimal plans), and the 51 infeasible instances are the same in every variant except 3 vans.
+  \item \textbf{RL is a fast, reliable substitute for measuring costs} (valid plans in 500 instances, $+$0.85\,\% cost, about 1\,000 times faster, the same experiment effects), but it opens too few vans.
+\end{enumerate}
+
+%=====================================================================
+\section{Limitations}
+
+\begin{itemize}
+  \item \textbf{Placeholders.} Apart from the segment share and the income distributions, the customer numbers are reasoned guesses. The experiments show how much each matters, not what the true value is.
+  \item \textbf{One change at a time.} Interactions (for example cheaper vans \emph{and} more vans) are not tested.
+  \item \textbf{Time limit.} 223 of 560 baseline instances end at the 300-second limit; effects smaller than the typical gap (a few per cent) are measured reliably only on the instances optimal in both runs, as in Table~\ref{tab:direction}.
+  \item \textbf{Static demand.} All requests are known at the start. Real requests arrive during the day.
+  \item \textbf{RL}: no optimality guarantee; one training run per model; under-uses vans; trained and tested only on the 100-car files.
+  \item \textbf{Equity} is described (who queues, who pays, who feels what) but not part of the objective.
+\end{itemize}
+
+\section{Possible next steps}
+\begin{enumerate}
+  \item Measure the commercial money sensitivity and downtime rate, and the private owners' value of station time, with a small survey: they drive most of the results.
+  \item Use RL plans as MILP starting plans, especially for R1/RC1.
+  \item Make RL open vans more readily: spread the dispatch cost over the cars of a van in the training signal, or add active search per instance (as in RL2).
+  \item Test combinations of changes (tariff with fleet) and a version with requests arriving during the day.
+\end{enumerate}
+
+%=====================================================================
+\section*{Appendix: files and how to rebuild this report}
+\addcontentsline{toc}{section}{Appendix: files and how to rebuild this report}
+
+All in \code{2026-11-22\_formulation\_4/}:
+\begin{itemize}
+  \item \code{data/}: the dataset with segment and income; \code{data/calibration.md}: where the segment share and income distributions come from;
+  \item \code{common/f4\_params.json}, \code{common/experiments.json}: customer parameters and experiments;
+  \item \code{baseline\_MILP/}, \code{baseline\_RL/}, \code{<E>\_<name>\_MILP/}, \code{<E>\_<name>\_RL/}: code, results (\code{runs.csv}, \code{plan.csv}, \code{analysis/}, \code{comparison/}), RL models and logs;
+  \item \code{job\_progress.log}: the server job, step by step (22--25 Nov 2026, all steps exit code 0);
+  \item \code{report/}: this report. \code{make\_report\_f4.py} reads the results (nothing else) and writes \code{figures/}, \code{tables/} and \code{numbers.tex}; then \code{latexmk -pdf comprehensive\_report\_f4.tex}.
+\end{itemize}
