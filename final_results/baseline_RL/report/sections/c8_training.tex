@@ -1,0 +1,82 @@
+%=====================================================================
+\section{Training: \code{rl\_f4\_generator.py} and \code{train\_rl\_f4.py}}
+\label{sec:training}
+
+\subsection{Practice instances}
+\label{sec:generator}
+
+The policy never trains on the 56 test files. \code{Generator.sample} makes a new random instance for every training episode, with the dataset's rules:
+
+\src{../code/rl_f4_generator.py}{102}{137}
+
+\begin{itemize}
+  \item lines 105--107: a random Solomon class; its template gives $T$, depot, city area, stations, guns, costs and fleet;
+  \item lines 110--118: positions: random (R), Gaussian clusters (C) or half and half (RC);
+  \item line 119: 12 stations at $k$-means centres of the customers;
+  \item line 121: $T$ varied by $\pm15$\,\%;
+  \item lines 122--123: energies 10--40 kWh; lines 124--129: ranges 5--40 km, 15\,\% stranded;
+  \item line 130: request times (a share at 0, the rest from a Beta distribution);
+  \item lines 131--133: \textbf{segment} (commercial with probability 0.70) and \textbf{income} $\theta$ from the Beta of its segment;
+  \item line 135: \code{make\_instance}, the same function as for the test data, so $\mu_i$, $c^a_i$, $W_i$ follow the same lines.
+\end{itemize}
+With \code{--set} (experiments) the generator uses the changed parameters and fleet, so a retrained model practises on the variant.
+
+\subsection{Phase 1: imitation warm-up (first 500 batches)}
+
+\src{../code/train_rl_f4.py}{129}{144}
+
+32 practice instances with the same random $n$ (lines 132--134), each with a random map symmetry (line 136). The greedy rule plays every episode (\code{teacher=GreedyRule(env)}, line 138), and \code{rollout} returns the log-probability that the \emph{policy} gives to the rule's actions. The loss is the average negative log-likelihood per decision:
+\[
+\mathcal L_{\text{IL}}(\phi)=-\frac{1}{B}\sum_{b=1}^{B}\frac1n\sum_t\log p_\phi\big(a^{\text{rule}}_{b,t}\mid s_{b,t}\big)\qquad(\text{line 139}).
+\]
+Minimising it makes the rule's choices more likely. Then (lines 140--143): gradients, gradient-norm clipping at 1.0, one Adam step.
+
+\subsection{Phase 2: REINFORCE with a shared baseline}
+
+\src{../code/train_rl_f4.py}{147}{166}
+
+\paragraph{What we want.} Make the expected cost of a plan built by the policy as small as possible:
+\[
+J(\phi)=\mathbb E_{x}\ \mathbb E_{\pi\sim p_\phi(\cdot\mid x)}\big[\tilde c(\pi)\big].
+\]
+
+\paragraph{The gradient (log-derivative trick).} Since $\nabla p=p\,\nabla\log p$,
+\[
+\nabla_\phi\,\mathbb E_\pi[\tilde c(\pi)]=\sum_\pi\tilde c(\pi)\,\nabla_\phi p_\phi(\pi)=\mathbb E_\pi\big[\tilde c(\pi)\,\nabla_\phi\log p_\phi(\pi)\big],
+\]
+and for any number $b$ that does not depend on the sampled $\pi$, $\mathbb E_\pi[b\,\nabla\log p_\phi(\pi)]=b\,\nabla\sum_\pi p_\phi(\pi)=0$, so
+\[
+\nabla_\phi J=\mathbb E\big[(\tilde c(\pi)-b)\,\nabla_\phi\log p_\phi(\pi)\big].
+\]
+$b$ is the \emph{baseline}: it does not change the average gradient, but a good $b$ makes the estimate much less noisy.
+
+\paragraph{The estimate in the code.}
+\begin{enumerate}
+  \item Lines 148--153: $B=32$ practice instances of one random $n$; the encoder runs once per instance; the embeddings are copied $S=8$ times (line 154).
+  \item Lines 155--156: $B\times S=256$ episodes are played by \emph{sampling}; \code{logp} holds $\log p_\phi(\pi_{bj})$.
+  \item Line 157: penalised costs $\tilde c_{bj}$, shape $(B,S)$.
+  \item Line 158: \textbf{shared baseline} (POMO): the mean of the 8 tries of the same instance, $\bar c_b=\frac18\sum_j\tilde c_{bj}$.
+  \item Line 159: \textbf{advantage}, relative to that mean: $A_{bj}=(\tilde c_{bj}-\bar c_b)/\bar c_b$.
+  \item Line 160: $\mathcal L_{\text{RL}}=\frac{1}{BS}\sum_{b,j}A_{bj}\log p_\phi(\pi_{bj})$. Its gradient is the estimate above (divided by $\bar c_b$).
+  \item Lines 161--164: gradient, clipping, Adam step.
+\end{enumerate}
+\textbf{Effect.} A try that was cheaper than the average of its instance has $A<0$; the gradient step \emph{raises} the probability of all its actions. A dearer try has $A>0$; its actions become less likely. Over many batches the policy moves towards cheap plans.
+
+Why divide by $\bar c_b$: $Z$ differs by orders of magnitude between classes and sizes; a relative advantage gives every instance the same weight. Why 8 tries of the same instance: the average of the other tries is a very good estimate of ``what the policy usually achieves on this instance'', without training a second network (critic).
+
+\subsection{Learning rate, validation, stopping, saving}
+
+\src{../code/train_rl_f4.py}{327}{369}
+
+\begin{itemize}
+  \item Lines 328--332: learning rate $10^{-4}$ during the warm-up, $2\times10^{-5}$ afterwards, both multiplied by $0.9998^{\text{epoch}}$.
+  \item Lines 335--342: an epoch is 50 batches; the first 500 batches of a run are imitation batches, the rest REINFORCE.
+  \item Lines 343--350: a failed batch is logged and skipped; 20 failures in a row stop the run.
+  \item Line 353: \textbf{validation}: on 72 fixed random instances ($n=20,50,100$, 24 each), the policy's greedy plan is compared with the greedy rule's plan; the score is the mean of $\tilde c_{\text{policy}}/\tilde c_{\text{rule}}$ (below 1 = better than the rule).
+  \item Lines 359--366: a better score resets the ``epochs without improvement'' counter; after epoch 200 every REINFORCE epoch without improvement increases it.
+  \item Lines 367--369: \code{model\_last.pt} after every epoch; \code{model\_best.pt} whenever the score improves. Solving uses \code{model\_best.pt}.
+  \item Stopping (line 327 and \code{early\_stop}, lines 321--322): at 500 epochs, after 8 hours, or after 10 epochs without improvement once epoch 200 is passed.
+\end{itemize}
+The baseline model of the server run: untrained score 3.57, after one warm-up epoch 1.17, best 0.969 at epoch 180, stopped at epoch 210 after 39 minutes on the RTX 4090.
+
+\inshort{Training first copies the greedy rule, then plays each practice instance 8 times and makes the cheaper-than-average tries more likely. The best network on fixed validation instances is kept.}

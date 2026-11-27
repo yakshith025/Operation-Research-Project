@@ -1,0 +1,79 @@
+%=====================================================================
+\section{The reward function}
+\label{sec:reward}
+
+\subsection{Definition}
+
+In RL language, after every action the environment gives a \emph{reward}; the agent tries to make the total reward of an episode (the \emph{return}) as large as possible. Here the reward of action $(i_t,k_t)$ is minus the increase of the objective:
+\[
+\boxed{\;r_t=-\Delta Z(i_t,k_t)\;}
+\qquad\text{with}\qquad
+\Delta Z(i,g)=\underbrace{\mu_ic^{EV}d_{if(g)}}_{Z_1}+\underbrace{\pi^\Fcs E_i}_{Z_4}+\underbrace{\mu_ip^\Fcs E_i}_{Z_5}+\underbrace{c^D_it_{if(g)}+c^Q_iq^\Fcs_i+c^C_i\tau^\Fcs_i}_{Z_6}
+\]
+for a gun, and for a van
+\[
+\Delta Z(i,m)=\underbrace{c^\Mcs\big(d_{\ell_mi}+d_{i0}-d_{\ell_m0}\big)}_{Z_2}+\underbrace{c^\Fcs[\kappa_m=0]}_{Z_3}+\underbrace{\pi^\Mcs\tfrac{E_i}{\eta}}_{Z_4}+\underbrace{\mu_ip^\Mcs E_i}_{Z_5}+\underbrace{c^V_i\big(q^\Mcs_i+\tau^\Mcs_i\big)}_{Z_6}.
+\]
+Each part is labelled with the term of the MILP objective (1) it belongs to. There is no discount: the return of an episode is $\sum_tr_t$.
+
+In the code there is no variable called ``reward''. \code{options()} computes $\Delta Z$ for every pair (\code{dz}, lines 172 and 188--191 of \code{rl\_f4\_env.py}), and \code{step()} adds the chosen one to \code{env.cost} (line 219). At the end of an episode, \code{env.cost} $=\sum_t\Delta Z_t=-\sum_tr_t$.
+
+\subsection{The rewards add up exactly to the MILP objective}
+
+\begin{proposition}\label{prop:sum}
+If an episode places every car, $\sum_t\Delta Z(i_t,k_t)=Z$ of the resulting plan, with $Z$ as in (1).
+\end{proposition}
+\begin{proof}
+$Z_1$, $Z_4$, $Z_5$, $Z_6$ are sums over cars, and each car's terms are added exactly once, when it is placed. $Z_3$: $c^\Fcs$ is added when a van gets its first car ($\kappa_m=0$), so once per used van. $Z_2$: a van with route $0\to i_1\to i_2\to\dots\to i_k\to0$ adds
+\[
+c^\Mcs\big[(d_{0i_1}+d_{i_10}-d_{00})+(d_{i_1i_2}+d_{i_20}-d_{i_10})+\dots+(d_{i_{k-1}i_k}+d_{i_k0}-d_{i_{k-1}0})\big].
+\]
+Each $d_{i_j0}$ is added once and subtracted once at the next stop, except the last; with $d_{00}=0$ the sum is $c^\Mcs(d_{0i_1}+d_{i_1i_2}+\dots+d_{i_k0})$, the route length times $c^\Mcs$.
+\end{proof}
+Section~\ref{sec:trace} checks this on a real episode: the simulator's sum and the independent checker's $Z$ agree to the last paisa.
+
+\subsection{What the training actually minimises: the penalised cost}
+
+If a car is dropped, the plan breaks the hard rule ``every car is served''. Training therefore uses
+\[
+\tilde c=Z+\lambda\,\sigma\,|D|,\qquad \lambda=10\ \ (\text{\code{drop\_penalty}}),
+\]
+where $|D|$ is the number of dropped cars and $\sigma$ the instance's typical cost per car (\code{cost\_scale}). A dropped car therefore costs as much as about ten ordinary cars, so the policy learns that leaving a car without a charger is never worth it. Measuring the penalty in units of $\sigma$ makes it comparable between cheap and expensive instances. This is \code{penalised\_cost} (lines 240--242).
+
+When the best of several plans is chosen (validation, solving), the order is \emph{fewest dropped cars first, then lowest $Z$}: the code uses the key $10^{12}|D|+Z$ (Section~\ref{sec:solve}).
+
+\subsection{Why the step costs matter even though training uses only the total}
+
+REINFORCE (Section~\ref{sec:training}) only needs the total $\tilde c$ of each episode. The per-step $\Delta Z$ is still essential:
+\begin{itemize}
+  \item it is how the total is computed, exactly, without a separate evaluation;
+  \item it feeds the features: the cheapest option of each car, its regret, and the pair feature $\Delta Z(i,k)/\sigma$ tell the network directly what each choice costs now;
+  \item it is the teacher's criterion: the greedy rule picks the smallest $\Delta Z$.
+\end{itemize}
+
+\subsection{Three more facts that make the design correct}
+
+\begin{proposition}[Earliest start is optimal]\label{prop:timing}
+Fix which resource serves each car and the order on every gun and van. If some start times satisfy all rules, the earliest-start times computed by \code{options()} satisfy them too, and give a $Z$ that is not higher.
+\end{proposition}
+\begin{proof}[Idea of the proof]
+With the order fixed, the rules on start times are lower bounds ($S_i\ge r_i+t_{if}$, $S_j\ge C_i$ on a gun, $S_j\ge C_i+t_{ij}$ on a van) and upper bounds ($q^\Fcs_i\le W_i$, $C_i\le T$, back by $T$). The earliest schedule meets every lower bound with the smallest possible times, so it also meets every upper bound that any other schedule meets. $Z$ depends on start times only through $c^Q_iq^\Fcs_i$ and $c^V_iq^\Mcs_i$, which grow with later starts.
+\end{proof}
+
+\begin{proposition}[No plan is out of reach]\label{prop:complete}
+Every feasible plan of the MILP can be produced by some sequence of allowed actions (up to swapping identical guns or vans), with a cost not higher.
+\end{proposition}
+\begin{proof}[Idea of the proof]
+Add the cars in the order of their start times in that plan. Each resource's sequence is rebuilt in its own order, the earliest start times are not later than the plan's, so queue, deadline and return rules hold; the van battery check holds because by the triangle inequality the rest of the route home is at least $d_{i0}$ long.
+\end{proof}
+
+\begin{proposition}[A dead car stays dead]\label{prop:dead}
+If a car has no allowed resource now, it has none later.
+\end{proposition}
+\begin{proof}[Idea of the proof]
+Gun free times only grow (so queues and finishes only grow); van seats only fill; a van that moves on is, by the triangle inequality, no earlier and no closer in energy to any car; unused vans do not change.
+\end{proof}
+
+Together: the action space loses no plan (Proposition~\ref{prop:complete}), the timing is the best possible (Proposition~\ref{prop:timing}), the reward is exactly the objective (Proposition~\ref{prop:sum}), and dropping dead cars early loses nothing (Proposition~\ref{prop:dead}). The full proofs are in \code{RL\_implementation\_report.pdf}, Section 6.
+
+\inshort{The reward of each decision is minus the exact increase of the MILP objective it causes. The rewards of an episode add up to $-Z$; training adds a large penalty for every car left without a charger.}

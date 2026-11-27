@@ -1,0 +1,61 @@
+%=====================================================================
+\section{The problem as the MILP states it}
+\label{sec:milp}
+
+The RL solves exactly the same problem as the MILP of \code{formulation\_4.pdf}. To compare the two later (Section~\ref{sec:compare}), here is the MILP in one place. Formulation 4 has the variables and constraints of formulation 3; only the per-car coefficients $\mu_i$, $c^a_i$, $W_i$ depend on the segment.
+
+\subsection{Decision variables}
+\begin{itemize}
+  \item $y_{ig}\in\{0,1\}$: car $i$ charges at gun $g$ (only guns of stations within range, $g\in G_i$);
+  \item $z_{im}\in\{0,1\}$: car $i$ is served by van $m$;
+  \item $x_{uvm}\in\{0,1\}$: van $m$ drives from node $u$ to node $v$ (depot $0$ / $n+1$, cars $1..n$);
+  \item $u_m\in\{0,1\}$: van $m$ leaves the depot;
+  \item $o_{ij}\in\{0,1\}$: car $i$ is charged before car $j$ on a shared gun;
+  \item $S_i\ge0$: start of car $i$'s charging; $q^\Fcs_i\ge0$ queue at a station; $q^\Mcs_i\ge0$ wait for a van.
+\end{itemize}
+Short-hands: $y_i=\sum_g y_{ig}$ (station user), $z_i=\sum_m z_{im}$ (van user), $Y_{if}=\sum_{g\in G_f}y_{ig}$, $C_i=S_i+\tau^\Fcs_i y_i+\tau^\Mcs_i z_i$.
+
+\subsection{Objective}
+\begin{equation}
+\begin{aligned}
+\min Z=&\underbrace{\sum_i\mu_i c^{EV}\sum_f d_{if}Y_{if}}_{Z_1}
++\underbrace{c^\Mcs\sum_m\sum_{(u,v)}d_{uv}x_{uvm}}_{Z_2}
++\underbrace{c^\Fcs\sum_m u_m}_{Z_3}
++\underbrace{\pi^\Fcs\sum_i E_iy_i+\pi^\Mcs\sum_i\tfrac{E_i}{\eta}z_i}_{Z_4}\\
+&+\underbrace{\sum_i\mu_iE_i\big(p^\Fcs y_i+p^\Mcs z_i\big)}_{Z_5}
++\underbrace{\sum_i\Big(c^D_i\sum_f t_{if}Y_{if}+c^Q_iq^\Fcs_i+c^C_i\tau^\Fcs_iy_i+c^V_i\big(q^\Mcs_i+\tau^\Mcs_iz_i\big)\Big)}_{Z_6}.
+\end{aligned}\tag{1}
+\end{equation}
+
+\subsection{Constraints}
+{\small
+\begin{longtable}{@{}l>{\raggedright\arraybackslash}p{7.3cm}>{\raggedright\arraybackslash}p{6.3cm}@{}}
+\toprule
+no. & constraint & meaning \\
+\midrule
+\endhead
+(2) & $\sum_{g\in G_i}y_{ig}+\sum_m z_{im}=1$ & every car gets exactly one resource \\
+(3) & $S_i\ge r_i+\sum_f t_{if}Y_{if}$ & a station user starts only after driving there \\
+(4) & $q^\Fcs_i+q^\Mcs_i=S_i-r_i-\sum_f t_{if}Y_{if}$ & the waiting time \\
+(5) & $q^\Fcs_i\le W_iy_i$ & queue at most $W_i$ \\
+(6) & $q^\Mcs_i\le Tz_i$ & only van users wait for a van \\
+(7)--(8) & $S_j\ge S_i+\tau^\Fcs_i-M(3-y_{ig}-y_{jg}-o_{ij})$ and the reverse & two cars on one gun do not overlap \\
+(9) & $\sum_i\tau^\Fcs_iy_{ig}\le T-\min_i(r_i+t_{if(g)})$ & gun-load cut (valid inequality, tightens the LP) \\
+(10) & $\sum_iy_{ig_1}\ge\sum_iy_{ig_2}$ & symmetry: gun 1 of a station before gun 2 \\
+(11)--(12) & $\sum_v x_{0vm}=u_m$, $\sum_u x_{u,n+1,m}=u_m$ & a used van leaves and returns once \\
+(13)--(14) & $\sum_u x_{ujm}=z_{jm}$, $\sum_v x_{jvm}=z_{jm}$ & a van enters and leaves each of its cars once \\
+(15) & $\sum_iz_{im}\le Qu_m$ & at most $Q$ cars per van \\
+(16) & $\sum_i\frac{E_i}{\eta}z_{im}+\beta\sum_{(u,v)}d_{uv}x_{uvm}\le Bu_m$ & battery covers charging and driving \\
+(17) & $S_j\ge t_{0j}x_{0jm}$ & the first car waits for the van to arrive \\
+(18) & $S_j\ge S_i+\tau^\Mcs_i+t_{ij}-M(1-x_{ijm})$ & a van charges one car at a time, in route order \\
+(19) & $S_i+\tau^\Mcs_i+t_{i,n+1}\le T+\dots(1-x_{i,n+1,m})$ & the van is back at the depot by $T$ \\
+(20) & $S_i\ge r_i$ & no charging before the request \\
+(21) & $C_i\le T$ & every car fully charged by $T$ \\
+(22) & $u_m\ge u_{m+1}$ & symmetry: vans used in order \\
+(23) & domains (binary / non-negative) & \\
+\bottomrule
+\end{longtable}}
+
+For a 100-car instance this model has thousands of binary variables (one $x$ per pair of cars per van, one $o$ per pair of cars per shared gun). Gurobi needs up to 300 seconds and may still not prove optimality. The RL never builds these variables; it reaches the same kind of plan by construction.
+
+\inshort{The MILP decides everything at once with binary variables and big-$M$ constraints; the RL will make the same decisions one at a time and check the same rules directly.}
