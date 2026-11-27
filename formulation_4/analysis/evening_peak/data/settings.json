@@ -1,0 +1,16 @@
+{
+  "source": "2026-11-22_formulation_4/data",
+  "changed_column": "request_min",
+  "profile": {
+    "type": "(1-w) Uniform(0,1) + w TruncNormal(mu, sigma) on u = t / L_i",
+    "w": 0.4,
+    "mu": 0.75,
+    "sigma": 0.08
+  },
+  "latest_feasible": "L_i = max(0, T - slack * need_i)",
+  "slack": 1.25,
+  "seed": 2026,
+  "order": "rank of original request time, random tie-break (seed per file)",
+  "evs_with_old_request_after_L": 76,
+  "evs_with_L_zero": 0
+}

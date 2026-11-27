@@ -1,0 +1,20 @@
+\begin{adjustbox}{max width=\textwidth}\begin{tabular}{llr}\toprule
+ & setting & value \\ \midrule
+Network & embedding size $d$ / heads / encoder layers & 128 / 8 / 3 \\
+ & feed-forward width / logit clip $C$ / dynamic MLP width & 512 / 10 / 32 \\
+ & trainable parameters & 765\,858 \\
+Generator & templates (file size, class) & 6 (100 EVs; C1 \dots RC2) \\
+ & clusters / cluster spread (share of area) & 5--12 / 0.015--0.05 \\
+ & share of requests at $t=0$ / Beta shape of the rest & 0.15--0.3 / $a\in[1.0,2.5]$ \\
+ & latest request (share of $T$) / jitter of $T$ & 0.83--0.92 / $\pm15$\% \\
+Training & imitation warm-up batches / learning rate & 500 / 0.0001 \\
+ & REINFORCE learning rate / decay per epoch & 2e-05 / 0.9998 \\
+ & instances per batch $\times$ rollouts per instance & 32 $\times$ 8 \\
+ & batches per epoch / instance size $n$ & 50 / 10--100 \\
+ & penalty per unplaced EV (cost scales) & 10 \\
+ & stop rule & $\ge$200 epochs, patience 10, max 500, 8 h \\
+ & validation & 24 instances at $n\in\{20,50,100\}$ \\
+Inference & map symmetries $\times$ (greedy + sampled rollouts) & 8 $\times$ (1 + 64) = 520 \\
+ & plan kept & fewest unplaced EVs, then lowest $Z$ \\
+Hardware & device / CPU threads / torch & CUDA GPU / 24 / 2.14.1 \\
+\bottomrule\end{tabular}\end{adjustbox}

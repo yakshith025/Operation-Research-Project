@@ -1,0 +1,13 @@
+\begin{table}[H]\centering
+\footnotesize
+\caption{Shadow prices of the fixed-plan LPs (absolute values, Rs/min) of every valid RL and MILP plan.}\label{tab:duals}
+\begin{adjustbox}{max width=\textwidth}\begin{tabular}{lrrrrrrp{3.2cm}}\toprule
+constraint & rows RL & non-zero (\%) & mean if $\neq0$ & rows MILP & non-zero (\%) & mean if $\neq0$ & meaning \\ \midrule
+FCS arrival $S_i\ge r_i+t_{if}$ & 21\,547 & 11.0 & 6.70 & 18\,903 & 7.6 & 5.00 & not unique (degenerate); not interpreted \\
+van release $S_i\ge r_i$ & 4\,503 & 51.2 & 3.99 & 4\,927 & 54.0 & 4.26 & not unique (degenerate); not interpreted \\
+gun order $S_j\ge S_i+\tau^{\mathrm F}_i$ & 12\,454 & 23.4 & 6.75 & 10\,829 & 13.5 & 5.14 & value of one gun-minute \\
+van order $S_j\ge S_i+\tau^{\mathrm M}_i+t_{ij}$ & 3\,398 & 41.5 & 5.47 & 3\,887 & 38.7 & 5.51 & value of one van-minute \\
+first stop $S_a\ge t_{0a}$ & 1\,105 & 70.1 & 7.84 & 1\,040 & 72.6 & 8.31 & value of an earlier van departure \\
+queue limit $q^{\mathrm F}_i\le W_i$ & 21\,547 & 0.0 & 0.00 & 18\,903 & 0.0 & 0.00 & one more minute of patience \\
+deadline $C_i\le T$, van return & 27\,155 & 0.0 & 0.00 & 24\,870 & 0.0 & 0.00 & one more minute of horizon \\
+\bottomrule\end{tabular}\end{adjustbox}\end{table}

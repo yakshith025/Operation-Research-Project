@@ -1,0 +1,12 @@
+\begin{table}[H]\centering
+\scriptsize
+\caption{E9 and E10: utilisation, baseline RL $\to$ variant, with the variant's capacities (guns per station, kW per gun, energy per EV); means of per-instance and per-van shares, paired instances.}\label{tab:utilrl}
+\begin{adjustbox}{max width=\textwidth}\begin{tabular}{llccccccc}\toprule
+variant & run & \shortstack{gun\\util. (\%)} & \shortstack{idle guns\\per inst.} & \shortstack{van share\\of kWh (\%)} & \shortstack{fleet\\use (\%)} & \shortstack{seats\\(\%)} & \shortstack{battery\\(\%)} & \shortstack{installed\\capacity (\%)} \\ \midrule
+1 gun per station & RL retrained & 11.2$\to$21.0 & 6.7$\to$2.0 & 16.7$\to$19.9 & 38$\to$46 & 71$\to$72 & 64$\to$68 & 10.4$\to$17.0 \\
+4 guns per station & RL retrained & 15.8$\to$8.0 & 5.8$\to$18.5 & 16.9$\to$16.3 & 44$\to$43 & 68$\to$67 & 62$\to$61 & 14.7$\to$8.3 \\
+11 kW per gun & RL retrained & 9.3$\to$15.5 & 6.8$\to$7.4 & 17.1$\to$31.7 & 39$\to$65 & 74$\to$80 & 67$\to$76 & 8.8$\to$14.4 \\
+44 kW per gun & RL retrained & 15.8$\to$8.1 & 5.8$\to$6.8 & 16.9$\to$14.5 & 44$\to$42 & 68$\to$61 & 62$\to$56 & 14.7$\to$8.3 \\
+energy per EV $\times0.75$ & RL retrained & 15.8$\to$12.0 & 5.8$\to$6.3 & 16.9$\to$16.6 & 44$\to$40 & 68$\to$72 & 62$\to$51 & 14.7$\to$11.0 \\
+energy per EV $\times1.25$ & RL retrained & 10.6$\to$13.2 & 6.4$\to$6.9 & 17.2$\to$16.9 & 40$\to$44 & 73$\to$66 & 66$\to$74 & 9.9$\to$12.4 \\
+\bottomrule\end{tabular}\end{adjustbox}\end{table}

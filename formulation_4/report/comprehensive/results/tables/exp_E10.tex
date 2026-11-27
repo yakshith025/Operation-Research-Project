@@ -1,0 +1,8 @@
+\begin{table}[H]\centering
+\scriptsize
+\caption{E10 (RL only): every variant against the baseline RL run (paired instances; van shares, vans used and the mean station queue of commercial EVs: baseline $\to$ variant).}\label{tab:expE10}
+\begin{adjustbox}{max width=\textwidth}\begin{tabular}{llrrrrrrrrrrr}\toprule
+variant & run & valid & paired & \shortstack{newly valid\\/ lost} & \shortstack{mean\\$\Delta Z$ (\%)} & \shortstack{median\\$\Delta Z$ (\%)} & \shortstack{operator\\(\%)} & \shortstack{customers\\(\%)} & \shortstack{van share\\personal (\%)} & \shortstack{van share\\commercial (\%)} & vans used & \shortstack{queue\\commercial (min)} \\ \midrule
+energy per EV $\times0.75$ & RL retrained & 539 & 500 & +39/$-$0 & $-$21.82 & $-$21.79 & $-$18.59 & $-$23.35 & 6.7$\to$6.1 & 0.94$\to$0.12 & 2.21$\to$2.00 & 2.50$\to$2.48 \\
+energy per EV $\times1.25$ & RL retrained & 421 & 421 & +0/$-$79 & +22.19 & +21.96 & +19.33 & +23.57 & 6.3$\to$5.5 & 0.40$\to$0.77 & 1.99$\to$2.19 & 1.60$\to$1.57 \\
+\bottomrule\end{tabular}\end{adjustbox}\end{table}

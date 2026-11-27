@@ -1,0 +1,44 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2cm]{geometry}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,array,tabularx,xltabular}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[font=small,labelfont={bf,color=headblue},skip=4pt]{caption}
+\usepackage[colorlinks=true,linkcolor=headblue,urlcolor=blue!50!black]{hyperref}
+
+\definecolor{headblue}{RGB}{38,70,120}
+\titleformat{\section}{\Large\bfseries\color{headblue}}{\thesection}{0.8em}{}[{\color{black}\titlerule}]
+\titleformat{\subsection}{\large\bfseries\color{headblue}}{\thesubsection}{0.8em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{headblue}}{\thesubsubsection}{0.8em}{}
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+\titlespacing*{\subsection}{0pt}{9pt}{3pt}
+\titlespacing*{\subsubsection}{0pt}{7pt}{2pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlist{itemsep=2pt,topsep=2pt}
+\setlength{\emergencystretch}{3em}
+\renewcommand{\arraystretch}{1.12}
+\setlength{\tabcolsep}{4.5pt}
+\setlength{\LTpre}{2pt}\setlength{\LTpost}{2pt}
+\allowdisplaybreaks
+\newtcolorbox{keybox}{colback=blue!3,colframe=headblue!60,boxrule=0.5pt,arc=2mm,left=2mm,right=2mm,top=1mm,bottom=1mm}
+\newtcolorbox{insum}{colback=green!3,colframe=green!40!black,boxrule=0.4pt,arc=1.5mm,left=2mm,right=2mm,top=0.5mm,bottom=0.5mm,fontupper=\small}
+\newcommand{\inshort}[1]{\begin{insum}\textbf{In short.} #1\end{insum}}
+\newcommand{\pct}{\,\%}
+\newcommand{\code}[1]{\texttt{#1}}
+% title block shared by the three reports: \reporttitle{subtitle}
+\newcommand{\reporttitle}[1]{%
+\begin{center}
+{\LARGE\bfseries\color{headblue} EV Charging with Personal and Commercial Customers\\[2pt] (Formulation 4)}\\[8pt]
+{\large #1}\\[6pt]
+{\normalsize CP 320 Operations Research for Mobility, course project}\\[2pt]
+{\normalsize Yakshith Maddineni (SR 26080) \quad\textperiodcentered\quad Kartikeya Gaur (SR 26371)}\\[2pt]
+{\normalsize 27 November 2026}
+\end{center}}

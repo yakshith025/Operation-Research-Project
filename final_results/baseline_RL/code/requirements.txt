@@ -1,4 +1,0 @@
-numpy>=1.26
-torch>=2.1
-# matplotlib (optional: figures of the analysis)
-# gurobipy is NOT needed for the RL

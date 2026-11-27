@@ -1,0 +1,12 @@
+\begin{table}[H]\centering
+\small
+\caption{The six RL-only variants (no MILP run). The last column is what a lower cost bound requires of an exact optimum; RL gives no guarantee, so it is only an expectation here.}\label{tab:variantsrl}
+\begin{adjustbox}{max width=\textwidth}\begin{tabular}{lllrrl}\toprule
+exp. & variant & baseline & value & change (\%) & $Z$ expected to \\ \midrule
+E9 & 1 gun per station & 2 & 1 & $-$50 & rises \\
+ & 4 guns per station & 2 & 4 & +100 & falls \\
+ & 11 kW per gun & 22 & 11 & $-$50 & rises \\
+ & 44 kW per gun & 22 & 44 & +100 & falls \\
+E10 & energy per EV $\times0.75$ & 1 & 0.75 & $-$25 & falls \\
+ & energy per EV $\times1.25$ & 1 & 1.25 & +25 & rises \\
+\bottomrule\end{tabular}\end{adjustbox}\end{table}

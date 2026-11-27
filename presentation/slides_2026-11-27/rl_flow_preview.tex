@@ -1,0 +1,32 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}
+\usepackage[scaled=.92]{helvet}
+\usepackage{booktabs,tikz}
+\usetikzlibrary{arrows.meta,shapes.geometric,fit,backgrounds}
+\definecolor{gradOrange}{HTML}{F07F3C}
+\definecolor{gradPurple}{HTML}{B84FC2}
+\definecolor{iiscOrange}{gray}{0.45}
+\definecolor{iiscPurple}{gray}{0.1}
+\definecolor{accP}{HTML}{5F4B6B}
+\definecolor{accA}{HTML}{C58A63}
+\setbeamercolor{background canvas}{bg=white!99!black}
+\setbeamercolor{structure}{fg=iiscPurple}
+\setbeamercolor{itemize item}{fg=iiscOrange}
+\setbeamercolor{itemize subitem}{fg=iiscPurple}
+\setbeamerfont{frametitle}{series=\bfseries,size=\LARGE}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize item}[square]
+\setbeamertemplate{frametitle}{\vskip3.5ex{\color{black}\sffamily\bfseries\LARGE\insertframetitle}\par\vskip1.6ex}
+\setbeamertemplate{background}{\vbox to\paperheight{\vfill\hbox to\paperwidth{%
+  \tikz[baseline=0]\shade[left color=gradOrange,right color=gradPurple] (0,0) rectangle (\paperwidth,.16);}}}
+\setbeamertemplate{footline}{\hfill{\color{black!35}\fontsize{7}{8}\selectfont\insertframenumber/\inserttotalframenumber}\hspace*{.85cm}\vskip4.6ex}
+\setbeamersize{text margin left=1.6cm,text margin right=1.6cm}
+% ---- extras needed by the content
+\usepackage{amsmath,amssymb}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\SetAlFnt{\scriptsize}\SetAlCapFnt{\scriptsize}\SetAlgoSkip{}
+\input{numbers.tex}
+\begin{document}
+\input{rl_flow_frames}
+\end{document}

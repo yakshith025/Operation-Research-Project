@@ -1,0 +1,28 @@
+\begin{table}[H]\centering
+\small
+\caption{Infrastructure utilisation on the 474 paired baseline instances (24 guns of 22\,kW, 5 vans of 30\,kW, 6 seats, 150\,kWh, over $[0,T]$). Means of per-instance (guns, energy) and per-van shares; rows marked pooled divide sums over instances.}\label{tab:utilm}
+\begin{adjustbox}{max width=\textwidth}\begin{tabular}{lrrr}\toprule
+measure & MILP & RL & RL $-$ MILP \\ \midrule
+gun utilisation, mean over instances (\% of $G\,T$) & 12.8 & 13.3 & +0.5 \\
+gun utilisation, pooled over instances (\%) & 7.2 & 7.5 & +0.3 \\
+90th percentile of gun utilisation (\%) & 34.6 & 35.9 & +1.3 \\
+busiest gun (\%) & 91.4 & 92.4 & +1.1 \\
+idle guns per instance (of 24) & 7.0 & 6.1 & $-$0.8 \\
+guns never used (\%) & 29.0 & 25.6 & $-$3.5 \\
+energy delivered by vans (\% of the instance's kWh) & 20.1 & 16.9 & $-$3.2 \\
+energy delivered by vans, pooled (\% of all kWh) & 19.7 & 16.5 & $-$3.2 \\
+installed-capacity utilisation (\%) & 12.4 & 12.4 & $-$0.0 \\
+vans dispatched per instance & 2.19 & 2.08 & $-$0.12 \\
+fleet use (dispatched / $M$, \%) & 43.9 & 41.6 & $-$2.3 \\
+seat use of dispatched vans (\%) & 79.0 & 69.4 & $-$9.6 \\
+vans with every seat taken (\%) & 48.1 & 19.4 & $-$28.7 \\
+battery drawn (\% of $B$) & 71.1 & 63.5 & $-$7.6 \\
+vans drawing $>$90\,\% of $B$ (\%) & 22.2 & 14.5 & $-$7.7 \\
+time on the road (\% of $T$) & 68.4 & 68.6 & +0.2 \\
+time charging EVs (\% of $T$) & 24.8 & 22.0 & $-$2.8 \\
+van power capacity used (\% of $P^{\mathrm M}T$) & 24.8 & 22.0 & $-$2.8 \\
+on-road time spent charging (\%) & 35.4 & 31.7 & $-$3.7 \\
+on-road time spent driving (\%) & 26.3 & 26.7 & +0.3 \\
+on-road time idle or waiting (\%) & 38.2 & 41.6 & +3.4 \\
+on-road time idle or waiting, pooled (\%) & 59.7 & 63.4 & +3.7 \\
+\bottomrule\end{tabular}\end{adjustbox}\end{table}

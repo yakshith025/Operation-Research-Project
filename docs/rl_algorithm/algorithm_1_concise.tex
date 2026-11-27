@@ -1,0 +1,44 @@
+% Algorithm 1: RL Training -- short version for a paper (same method as algorithm_1.tex, which has every detail).
+% Formulation-4 RL: 2026-11-22_formulation_4/baseline_RL/code (train_rl_f4.py, rl_f4_model.py, rl_f4_env.py).
+% Compile: pdflatex algorithm_1_concise.tex
+\documentclass[10pt]{article}
+\usepackage[paperwidth=12.2cm,paperheight=15.2cm,margin=0.4cm]{geometry}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\SetKwComment{Comment}{\scriptsize$\triangleright$\ }{}
+\SetCommentSty{textit}
+\pagestyle{empty}
+\begin{document}
+\begin{algorithm}[H]
+\small
+\caption{RL Training}
+Initialize the policy network $\pi_\theta$ with random weights $\theta$\;
+Initialize batch size $B{=}32$, plans per instance $S{=}8$, warm-up length $N{=}500$ batches\;
+\For{$epoch = 1$ \KwTo $500$}{
+  \For{$batch = 1$ \KwTo $50$}{
+    Generate $B$ random instances with the same number of EVs $n\in[10,100]$\;
+    \ForEach{instance, and each of its $S$ plans (one plan during warm-up)}{
+      Reset the environment: every EV unassigned, guns free, vans at the depot\;
+      \While{some EV is neither assigned nor dropped}{
+        Find the feasible (EV $i$, charger $k$) pairs: range, queue limit, deadline $T$, van seats and battery\;
+        \lIf{an EV has no feasible charger}{drop it (it stays unassigned)}
+        Choose EV $i\sim\pi_\theta(i\mid s)$, then its charger $k\sim\pi_\theta(k\mid s,i)$ \Comment*[r]{warm-up: copy the greedy rule}
+        Assign $i$ to $k$ at the earliest possible start; add its cost increase $\Delta Z_{ik}$\;
+      }
+      Plan cost $L = Z + \text{penalty}\times(\text{dropped EVs})$\;
+    }
+    \eIf{warm-up (first $N$ batches)}{
+      loss $=-$ mean $\log\pi_\theta(\text{greedy-rule plan})$ \Comment*[r]{imitation}
+    }{
+      advantage $A = \big(L-\bar L\big)/\bar L$, \ $\bar L$ = mean cost of the $S$ plans of the same instance\;
+      loss $=$ mean $\big(A\cdot\log\pi_\theta(\text{plan})\big)$ \Comment*[r]{REINFORCE}
+    }
+    Update $\theta$ with Adam (gradient norm clipped to 1)\;
+  }
+  Validate: greedy plans on 72 fixed instances vs. the greedy rule; keep the best $\theta$\;
+  \lIf{no better validation for 10 epochs (after epoch 200) or 8 h used}{stop}
+}
+\end{algorithm}
+\end{document}

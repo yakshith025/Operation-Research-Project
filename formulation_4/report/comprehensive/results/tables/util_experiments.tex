@@ -1,0 +1,36 @@
+\begin{table}[H]\centering
+\scriptsize
+\caption{Utilisation of every variant against its own baseline on its paired instances (MILP and retrained RL; capacities $M$, $Q$, $B$ of the variant; arrows: baseline $\to$ variant).}\label{tab:utilexp}
+\begin{adjustbox}{max width=\textwidth}\begin{tabular}{llrrcccccr}\toprule
+variant & method & \shortstack{$\Delta$ gun time\\(pts)} & \shortstack{$\Delta$ van share\\of kWh (pts)} & \shortstack{fleet use\\(\% of $M$)} & \shortstack{seats\\(\% of $Q$)} & \shortstack{battery\\(\% of $B$)} & \shortstack{on the road\\(\% of $T$)} & \shortstack{van power\\used (\%)} & \shortstack{$\Delta$ installed\\capacity (pts)} \\ \midrule
+personal $c^{\mathrm C,1}=7.5$ & MILP & +0.24 & $-$1.87 & 44$\to$43 & 79$\to$76 & 71$\to$68 & 68$\to$66 & 24.5$\to$23.1 & $-$0.00 \\
+ & RL retrained & +0.12 & $-$1.11 & 44$\to$44 & 68$\to$65 & 62$\to$60 & 71$\to$69 & 24.7$\to$24.0 & $-$0.00 \\
+personal $c^{\mathrm C,1}=12.5$ & MILP & $-$0.34 & +2.26 & 44$\to$47 & 79$\to$81 & 71$\to$74 & 68$\to$69 & 24.5$\to$25.0 & $-$0.00 \\
+ & RL retrained & $-$0.23 & +1.23 & 44$\to$45 & 68$\to$71 & 62$\to$65 & 71$\to$72 & 24.8$\to$26.1 & +0.00 \\
+commercial $\omega^{1}=4.5$ & MILP & +0.01 & $-$0.07 & 44$\to$43 & 79$\to$79 & 71$\to$71 & 68$\to$68 & 24.4$\to$24.5 & $-$0.00 \\
+ & RL retrained & $-$0.06 & $-$0.03 & 44$\to$45 & 68$\to$67 & 62$\to$62 & 71$\to$71 & 24.7$\to$24.9 & +0.00 \\
+commercial $\omega^{1}=7.5$ & MILP & +0.03 & $-$0.04 & 44$\to$44 & 79$\to$78 & 71$\to$70 & 68$\to$67 & 24.5$\to$24.0 & $-$0.00 \\
+ & RL retrained & $-$0.03 & +0.04 & 44$\to$44 & 68$\to$68 & 62$\to$62 & 71$\to$71 & 24.7$\to$24.8 & $-$0.00 \\
+personal $\mu^{0}=1.125$ & MILP & +0.01 & +0.00 & 44$\to$44 & 79$\to$79 & 71$\to$71 & 68$\to$69 & 24.5$\to$24.6 & $-$0.00 \\
+ & RL retrained & $-$0.08 & +0.26 & 44$\to$44 & 68$\to$69 & 62$\to$63 & 71$\to$71 & 24.8$\to$25.5 & +0.00 \\
+personal $\mu^{0}=1.875$ & MILP & +0.04 & $-$0.33 & 44$\to$44 & 79$\to$78 & 71$\to$71 & 68$\to$68 & 24.6$\to$24.4 & $-$0.00 \\
+ & RL retrained & $-$0.04 & +0.04 & 44$\to$44 & 68$\to$68 & 62$\to$62 & 71$\to$71 & 24.7$\to$24.9 & +0.00 \\
+commercial $\mu^{0}=1.125$ & MILP & +0.02 & $-$0.06 & 44$\to$44 & 79$\to$78 & 71$\to$71 & 68$\to$68 & 24.8$\to$24.6 & $-$0.00 \\
+ & RL retrained & $-$0.01 & +0.03 & 44$\to$44 & 68$\to$68 & 62$\to$63 & 71$\to$71 & 24.8$\to$25.1 & +0.00 \\
+commercial $\mu^{0}=1.875$ & MILP & +0.02 & $-$0.05 & 44$\to$44 & 79$\to$79 & 71$\to$71 & 68$\to$68 & 24.6$\to$24.4 & $-$0.00 \\
+ & RL retrained & $-$0.06 & +0.08 & 44$\to$44 & 68$\to$68 & 62$\to$62 & 71$\to$71 & 24.7$\to$25.0 & +0.00 \\
+$p^{\mathrm M}=15$ & MILP & $-$0.41 & +3.76 & 43$\to$48 & 79$\to$84 & 71$\to$77 & 68$\to$70 & 24.2$\to$24.9 & $-$0.00 \\
+ & RL retrained & $-$0.24 & +1.45 & 44$\to$45 & 68$\to$71 & 62$\to$66 & 71$\to$72 & 24.7$\to$26.0 & +0.00 \\
+$p^{\mathrm M}=35$ & MILP & +0.28 & $-$2.14 & 44$\to$42 & 79$\to$75 & 71$\to$67 & 68$\to$66 & 24.8$\to$23.3 & $-$0.00 \\
+ & RL retrained & +0.22 & $-$1.72 & 44$\to$44 & 68$\to$63 & 62$\to$58 & 71$\to$66 & 24.7$\to$23.2 & $-$0.00 \\
+3 vans & MILP & +0.09 & $-$0.36 & 40$\to$65 & 81$\to$82 & 73$\to$73 & 67$\to$68 & 22.3$\to$22.3 & +1.03 \\
+ & RL retrained & +0.07 & $-$0.17 & 41$\to$67 & 69$\to$69 & 63$\to$63 & 69$\to$69 & 21.6$\to$21.1 & +1.17 \\
+7 vans & MILP & $-$0.03 & +0.08 & 44$\to$32 & 79$\to$79 & 71$\to$71 & 68$\to$68 & 24.8$\to$24.7 & $-$1.01 \\
+ & RL retrained & $-$0.07 & $-$0.02 & 44$\to$32 & 68$\to$67 & 62$\to$62 & 71$\to$71 & 24.8$\to$25.1 & $-$1.20 \\
+4 seats per van & MILP & +0.20 & $-$1.33 & 43$\to$50 & 79$\to$91 & 71$\to$56 & 69$\to$62 & 24.8$\to$20.1 & $-$0.00 \\
+ & RL retrained & $-$0.05 & +0.22 & 44$\to$51 & 67$\to$86 & 62$\to$53 & 71$\to$65 & 24.8$\to$21.5 & +0.00 \\
+8 seats per van & MILP & $-$0.01 & +0.20 & 44$\to$43 & 79$\to$62 & 71$\to$74 & 68$\to$69 & 24.4$\to$24.9 & +0.00 \\
+ & RL retrained & $-$0.07 & +0.03 & 44$\to$43 & 68$\to$52 & 62$\to$64 & 71$\to$71 & 24.7$\to$25.7 & $-$0.00 \\
+battery 200 kWh & MILP & +0.05 & $-$0.13 & 44$\to$43 & 79$\to$79 & 71$\to$54 & 68$\to$68 & 24.6$\to$24.8 & $-$0.00 \\
+ & RL retrained & $-$0.07 & +0.29 & 44$\to$44 & 68$\to$69 & 62$\to$48 & 71$\to$71 & 24.7$\to$25.5 & +0.00 \\
+\bottomrule\end{tabular}\end{adjustbox}\end{table}

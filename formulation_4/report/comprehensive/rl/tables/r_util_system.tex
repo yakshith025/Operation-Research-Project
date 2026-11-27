@@ -1,0 +1,19 @@
+\begin{table}[H]\centering
+\caption{Infrastructure utilisation (\code{infra.utilisation}): stations, guns and the system. Paired = instances where both RL and MILP have a valid plan.}\label{tab:utilsystem}
+\begin{adjustbox}{max width=\textwidth}\begin{tabular}{lrrr}\toprule
+measure & RL, all valid & RL, paired & MILP, paired \\ \midrule
+instances (valid plans) & 500 & 474 & 474 \\
+energy asked per instance (kWh) & 1021 & 987 & 987 \\
+charged at stations (\% of kWh) & 83.4 & 83.5 & 80.3 \\
+gun time = energy utilisation over $[0,T]$ (\%) & 15.80 & 13.31 & 12.82 \\
+idle guns per instance (of 24) & 5.8 & 6.1 & 7.0 \\
+guns without any EV (\% of guns) & 24.2 & 25.6 & 29.0 \\
+busiest gun (\% of $T$) & 97.6 & 92.4 & 91.4 \\
+station utilisation, 90th pct (\%) & 46.5 & 34.5 & 33.4 \\
+peak concurrent guns (mean) & 13.6 & 13.1 & 12.9 \\
+peak concurrent guns (max) & 24 & 24 & 24 \\
+installed-capacity utilisation (\%) & 14.73 & 12.39 & 12.39 \\
+van fleet use (dispatched / 5, \%) & 44.2 & 41.6 & 43.9 \\
+vans per instance & 2.21 & 2.08 & 2.19 \\
+peak concurrent vans (mean) & 2.1 & 2.0 & 2.2 \\
+\bottomrule\end{tabular}\end{adjustbox}\end{table}

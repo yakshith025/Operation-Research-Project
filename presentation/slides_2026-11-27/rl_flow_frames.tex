@@ -1,0 +1,90 @@
+% Two frames: overall RL flow, then the policy network (MHA encoder-decoder).
+% Paste into slides.tex in place of the "Policy network" frame, or \input{rl_flow_frames} there.
+% Needs \usetikzlibrary{arrows.meta,fit}. Colour code (same on both slides):
+%   encoder = blue, decoder = orange, environment = green, learning / update = purple.
+\definecolor{encC}{HTML}{2F7FE0}
+\definecolor{decC}{HTML}{F28C28}
+\definecolor{envC}{HTML}{22A06B}
+\definecolor{lrnC}{HTML}{8E5CD9}
+
+% ======================================================================= RL flow
+\begin{frame}{How the RL method works}
+\centering
+\begin{tikzpicture}[font=\scriptsize,
+  bx/.style={draw=black!60,fill=white,rounded corners=2pt,align=center,minimum height=.8cm,text width=1.95cm,line width=.6pt},
+  enc/.style={bx,draw=encC!85!black,fill=encC!22},
+  dec/.style={bx,draw=decC!85!black,fill=decC!25},
+  env/.style={bx,draw=envC!85!black,fill=envC!20},
+  lrn/.style={bx,draw=lrnC!85!black,fill=lrnC!20},
+  a/.style={-{Stealth[length=3.5pt]},black!65,line width=.5pt},
+  fb/.style={-{Stealth[length=3.5pt]},lrnC!85!black,line width=.7pt,dashed}]
+\node[bx] (inst) at (0,0) {Instance\\ EVs, stations, vans};
+\node[enc] (enc) at (2.65,0) {\textbf{Encoder}\\ (once per instance)};
+\node[env] (feas) at (5.3,0) {Environment: feasible pairs, cost $\Delta Z$};
+\node[dec] (pick) at (7.95,0) {\textbf{Decoder}: pick EV $i$, then charger $k$};
+\node[env] (book) at (10.6,0) {Environment: book $i$ on $k$, cost $+{=}\,\Delta Z_{ik}$};
+\draw[a] (inst) -- (enc);
+\draw[a] (enc) -- (feas);
+\draw[a] (feas) -- (pick);
+\draw[a] (pick) -- (book);
+\draw[a] (book.north) -- ++(0,.4) -| node[above, pos=.25]{next step, until all EVs placed or dropped} (feas.north);
+\node[env] (plan) at (10.6,-1.85) {Plan cost $L=Z+$ penalty $\times$ dropped};
+\node[lrn, text width=2.6cm] (adv) at (7.3,-1.85) {8 plans per instance: $A_j=(L_j-\bar L)/\bar L$};
+\node[lrn, text width=2.9cm] (upd) at (2.65,-1.85) {\textbf{Update weights}: loss $=A_j\log\pi_\theta(\text{plan}_j)$, Adam};
+\draw[a] (book) -- node[right]{done} (plan);
+\draw[a] (plan) -- (adv);
+\draw[a] (adv) -- (upd);
+\draw[fb] (upd) -- node[left, text=lrnC!85!black]{better network} (enc);
+% legend
+\foreach \c/\t [count=\k] in {encC/encoder, decC/decoder, envC/environment, lrnC/learning}
+  \node[anchor=west, font=\tiny] at (-1.0+2.0*\k,-2.8) {\tikz\node[draw=\c!85!black,fill=\c!25,minimum size=2.2mm,inner sep=0pt]{}; \ \t};
+\end{tikzpicture}
+
+\vspace{-.5ex}
+\footnotesize
+\begin{itemize}
+  \item Training: 32 instances $\times$ 8 episodes per batch; first 500 batches copy the greedy rule.
+  \item Test: 8 rotations $\times$ (1 greedy + 64 sampled) episodes; keep the best plan.
+\end{itemize}
+\end{frame}
+
+% ======================================================================= policy network
+\begin{frame}{Policy network: attention encoder and decoder}
+\centering
+\begin{tikzpicture}[font=\scriptsize,
+  bx/.style={draw=black!60,fill=white,rounded corners=2pt,align=center,minimum height=.6cm,line width=.6pt},
+  e/.style={bx,draw=encC!85!black,fill=encC!12},
+  ee/.style={bx,draw=encC!85!black,fill=encC!30},
+  d/.style={bx,draw=decC!85!black,fill=decC!12},
+  dd/.style={bx,draw=decC!85!black,fill=decC!32},
+  a/.style={-{Stealth[length=3.5pt]},black!65,line width=.5pt}]
+\node[e, text width=2.6cm] (in) at (0,0) {Features: EV 19, station 4, depot 4};
+\node[e, text width=2.6cm] (emb) at (0,-1.0) {Linear embedding, $d=128$};
+\node[ee, text width=2.6cm] (mha) at (0,-2.05) {\textbf{3 self-attention layers, 8 heads}};
+\node[e, text width=2.6cm] (h) at (0,-3.1) {embeddings $h_i,\ h_f,\ h_0$};
+\draw[a] (in) -- (emb); \draw[a] (emb) -- (mha); \draw[a] (mha) -- (h);
+\begin{scope}[on background layer]
+\node[draw=encC!85!black, fill=encC!5, dashed, rounded corners=3pt, fit=(in)(h), inner sep=5pt,
+      label={[font=\scriptsize\bfseries, text=encC!85!black]above:Encoder (once per instance)}] (E) {};
+\end{scope}
+\node[d, text width=3.3cm] (ctx) at (4.45,0) {Context: mean of waiting EVs $+\ h_0\ +$ global state};
+\node[dd, text width=3.3cm] (gl) at (4.45,-1.0) {\textbf{Attention glimpse} over feasible EVs $\to g$};
+\node[d, text width=3.3cm] (u) at (4.45,-2.05) {$u_i=10\tanh\!\big(\tfrac{h_i\cdot g}{\sqrt d}+\text{MLP}(\phi_i)\big)$, mask, softmax};
+\node[d, text width=3.3cm] (i) at (4.45,-3.1) {pick EV $i\sim\pi(i)$};
+\draw[a] (ctx) -- (gl); \draw[a] (gl) -- (u); \draw[a] (u) -- (i);
+\node[d, text width=3.3cm] (q) at (8.95,0) {Query from $[h_i;\ g]$};
+\node[dd, text width=3.3cm] (k) at (8.95,-1.0) {\textbf{Keys}: gun $\to$ its station; van $\to$ node it is at; + charger state};
+\node[d, text width=3.3cm] (v) at (8.95,-2.05) {$v_k=10\tanh\!\big(\tfrac{\text{key}\cdot q}{\sqrt d}+\text{MLP}(\psi_{ik})\big)$, mask, softmax};
+\node[d, text width=3.3cm] (kk) at (8.95,-3.1) {pick charger $k\sim\pi(k\mid i)$};
+\draw[a] (q) -- (k); \draw[a] (k) -- (v); \draw[a] (v) -- (kk);
+\begin{scope}[on background layer]
+\node[draw=decC!85!black, fill=decC!5, dashed, rounded corners=3pt, fit=(ctx)(i)(q)(kk), inner sep=5pt,
+      label={[font=\scriptsize\bfseries, text=decC!85!black]above:Decoder (every step): pick EV, then its charger}] (D) {};
+\end{scope}
+\draw[a] (h.east) -- ++(.5,0) |- (ctx.west);
+\draw[a] (i.east) -- ++(.35,0) |- (q.west);
+\end{tikzpicture}
+
+\vspace{.5ex}
+\scriptsize $\log\pi(i,k)=\log\pi(i)+\log\pi(k\mid i)$; infeasible EVs and chargers are masked; no positional encoding, so one network serves any $n$.
+\end{frame}

@@ -1,0 +1,16 @@
+\begin{table}[H]\centering
+\caption{RL outcome per instance size, next to the MILP (300\,s) and the greedy rule. RL only = RL has a valid plan, the MILP none.}\label{tab:outcome}
+\begin{adjustbox}{max width=\textwidth}\begin{tabular}{lrrrrrrr}\toprule
+$n$ & instances & RL valid & RL invalid & MILP plan & greedy plan & RL only & RL time (s) \\ \midrule
+10 & 56 & 55 & 1 & 55 & 55 & 0 & 0.030 \\
+20 & 56 & 55 & 1 & 55 & 55 & 0 & 0.044 \\
+30 & 56 & 55 & 1 & 55 & 55 & 0 & 0.064 \\
+40 & 56 & 55 & 1 & 55 & 53 & 0 & 0.085 \\
+50 & 56 & 53 & 3 & 53 & 48 & 0 & 0.106 \\
+60 & 56 & 50 & 6 & 49 & 45 & 1 & 0.127 \\
+70 & 56 & 47 & 9 & 44 & 43 & 3 & 0.149 \\
+80 & 56 & 47 & 9 & 39 & 38 & 8 & 0.172 \\
+90 & 56 & 45 & 11 & 36 & 36 & 9 & 0.195 \\
+100 & 56 & 38 & 18 & 33 & 33 & 5 & 0.220 \\
+\midrule all & 560 & 500 & 60 & 474 & 461 & 26 & 0.119 \\
+\bottomrule\end{tabular}\end{adjustbox}\end{table}

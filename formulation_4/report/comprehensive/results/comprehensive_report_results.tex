@@ -1,0 +1,441 @@
+\input{../common/preamble.tex}
+\usepackage{adjustbox}
+\input{tables/numbers}
+\newcommand{\Rt}{RL$_{\mathrm{rt}}$}
+
+\begin{document}
+
+\reporttitle{Comprehensive results report: MILP against RL and the experiments E1--E10}
+
+\begin{keybox}
+{\color{headblue}\textbf{How to read this report}}\\
+This is the third of three reports on formulation 4 (the MILP report and the RL report describe each method on its own). It reads the results of the whole server job, \NRuns{} runs of \NInst{} instances each, and answers two questions: \emph{how do the two methods compare on the same instances}, and \emph{what does each experiment show}: the five experiments solved with both methods (E5, E6, E1, E2, E8) and the two RL-only experiments on station capacity (E9) and charging demand (E10), which have no MILP run. \textbf{Part I} sets up the job, the experiments and how runs are compared. \textbf{Part II} compares the MILP and RL on the baseline, including peak and off-peak demand. \textbf{Part III} answers the question of every experiment with both methods, then puts the experiments side by side. Every subsection ends with a green \emph{In short} box; Section~\ref{sec:glossary} explains the terms.
+\end{keybox}
+
+\begin{keybox}
+{\color{headblue}\textbf{The main results in fourteen lines}}
+\begin{enumerate}[leftmargin=1.4em,itemsep=1pt]
+  \item The job ran \JobHours{} hours without a failed step; all \NVariants{} variants were solved by the MILP and by RL twice (zero-shot and retrained) (Section~\ref{sec:job}).
+  \item On the baseline RL is \GapMean\pct{} dearer than the MILP on average (median \GapMedian\pct{}), \SpeedUp{} times faster, and finds plans in \RlOnly{} instances where the MILP found none (Section~\ref{sec:gap}).
+  \item The two methods serve \AgreeFree\pct{} of free-choice EVs with the same resource, but on the instances both solved RL gives vans to far fewer personal cars: \VanPersonalRl\pct{} of free-choice personal EVs against \VanPersonalMilp\pct{} (Section~\ref{sec:agree}).
+  \item Peak demand: commercial EVs use vans only at high demand pressure (\PVanCommercialHighMilp\pct{} there, \PVanCommercialLowMilp\pct{} at low pressure), and RL reproduces this (\PVanCommercialHighRl\pct{}); private owners get vans mostly off-peak (Section~\ref{sec:peak}).
+  \item The exact optimum moved in the direction the model requires in all \DirPairs{} optimal pairs (\DirBad{} violations) (Section~\ref{sec:direction}).
+  \item $Z$ reacts most to the money sensitivity of poor commercial drivers ($\pm$25\pct{}: \dZEsixComLoMilp\pct{} / \dZEsixComHiMilp\pct{}), then to the van tariff (\dZEonePMLoMilp\pct{} / \dZEonePMHiMilp\pct{}) (Section~\ref{sec:synth}).
+  \item Who gets vans is moved by the van tariff and the private owners' value of charging time, not by the commercial parameters (Sections~\ref{sec:e5}, \ref{sec:e1}).
+  \item A van at the station tariff (E1) lowers $Z$ by \dZEonePMLoMilp\pct{} but raises the operator's cost by \dOpEonePMLoMilp\pct{}; rich private owners gain most (Section~\ref{sec:e1}).
+  \item The fleet size decides feasibility, not cost: 3 vans lose \LostEtwoVansLoMilp{} instances, 7 vans gain \NewEtwoVansHiMilp{}; 4 seats per van raise $Z$ by \dZEtwoSeatsLoMilp\pct{} (Section~\ref{sec:e2}).
+  \item A 200\,kWh battery moves $Z$ by \dZEeightBatHiMilp\pct{}, \EeightDecision{} the 1\pct{} threshold: van recharging need not be modelled (Section~\ref{sec:e8}).
+  \item RL measures every experiment's effect on $Z$ within \EffDiffRtMean{} points of the MILP on average, but reproduces only about half of the MILP's change in van shares (Section~\ref{sec:rlexp}).
+  \item RL-only (E9, E10, no MILP run): energy per EV is the strongest factor of all (\dZEtenDemLoRt\pct{} / \dZEtenDemHiRt\pct{} for $\pm$25\pct), then station power (11\,kW per gun: \dZEninePowLoRt\pct, 44\,kW: \dZEninePowHiRt\pct); halving the guns costs \dZEnineGunsLoRt\pct. Less capacity or more energy makes many short-horizon instances infeasible (\LostEninePowLoRt{} with 11\,kW, \LostEtenDemHiRt{} with $\times$1.25) (Sections~\ref{sec:e9}, \ref{sec:e10}).
+  \item With half the station power RL sends \VanPEninePowLoRt\pct{} of free-choice private cars to vans (baseline \VanPBEninePowLoRt\pct): station capacity, not income, then decides who gets a van (Section~\ref{sec:e9}).
+  \item The infrastructure is lightly used: on average a gun is busy \UGunMilp\pct{} of the period and \UIdleGunsMilp{} of 24 guns stay idle per instance; vans carry \UVanEnergyMilp\pct{} of an instance's energy and spend \UIdleVanMilp\pct{} of their time on the road waiting. Only the seats are nearly full (\USeatMilp\pct) (Sections~\ref{sec:util}, \ref{sec:utilexp}).
+\end{enumerate}
+\end{keybox}
+
+\tableofcontents
+\clearpage
+
+%=====================================================================
+\section{Glossary}\label{sec:glossary}
+\begin{xltabular}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.6cm}X@{}}
+\toprule
+\textbf{Term} & \textbf{Meaning} \\ \midrule
+\endhead
+EV, segment & Electric vehicle asking to be charged; \emph{personal} (private owner) or \emph{commercial} (taxi, ride-hailing, fleet). \\
+Income index $\theta$ & Number in $[0,1]$; 0 = lowest income. Income band: width 0.2. \\
+Free-choice EV & EV with at least one station in range (the others are \emph{stranded} and must take a van). \\
+FCS, gun; MCS, van & Fixed charging station with guns of 22\,kW; mobile charging van (30\,kW, 6 seats, 150\,kWh). \\
+Objective $Z$ & Operator cost ($Z_2$--$Z_4$) plus the customers' perceived cost ($Z_1$, $Z_5$, $Z_6$). \\
+MILP & The complete model of formulation 4 solved by Gurobi (300\,s per instance). \\
+Optimal, time-limit plan & Plan proven optimal; valid plan not proven optimal when the 300\,s ran out. \\
+RL & Attention policy trained with REINFORCE that builds a plan EV by EV; best of 520 rollouts per instance. \\
+Zero-shot RL & The baseline RL model applied to a variant's inputs without retraining. \\
+Retrained RL (\Rt) & A new RL model trained on the variant with the baseline recipe. \\
+Valid plan & Plan accepted by the independent checker of every constraint. \\
+Variant & One changed input (for example $p^{\mathrm M}=15$); everything else as in the baseline. \\
+One-factor experiment & An experiment whose variants change one factor at a time. \\
+Paired instances & Instances with a valid plan in both runs being compared; all changes are measured on them. \\
+$\Delta Z$ & $100\,(Z_{\text{variant}}-Z_{\text{baseline}})/Z_{\text{baseline}}$ on one paired instance, in \%. \\
+Gap RL to MILP & $100\,(Z_{\text{RL}}-Z_{\text{MILP}})/Z_{\text{MILP}}$ on instances valid for both. \\
+Van share & Share of free-choice EVs served by a van, pooled over the paired instances. \\
+Direction check & On instances optimal in both runs, the optimum must rise when a cost rises or a capacity falls (Section~\ref{sec:direction}). \\
+Elasticity & \% change of $Z$ per \% change of the factor. \\
+Swing & Effect of the high variant minus that of the low one, in points of $\Delta Z$. \\
+Demand pressure & $\text{load}_i/29$: the number of requests of the instance (EV $i$ included) released during one mean station charging time up to $r_i$, per charger (24 guns, 5 vans); terciles low / medium / high pooled over the free-choice EVs of all 560 baseline instances (Section~\ref{sec:pressdef}). \\
+Peak / off-peak & Formulation 4's own label: load above / not above the median load of the instance. Different from the terciles. \\
+Gun utilisation & Minutes a gun charges, divided by $T$ (equal to energy delivered over energy capacity, at constant power). \\
+Fleet use & Vans dispatched divided by the vans available $M$. \\
+Installed-capacity utilisation & Energy delivered divided by what 24 guns of 22\,kW and $M$ vans of 30\,kW could deliver in $[0,T]$. \\
+Wilson interval & 95\pct{} interval of a share, reliable for small or extreme shares. \\
+Correlation of $\Delta Z$ & Pearson correlation, over instances, of the MILP and the \Rt{} change of $Z$. \\
+\bottomrule
+\end{xltabular}
+
+%=====================================================================
+\part{Set-up}
+\section{The job, the methods and the experiments}
+
+\subsection{The problem in one paragraph}
+During a planning period $[0,T]$ parked EVs request charging; each is served either at a station gun or by a van that drives to it. Formulation 4 gives every EV a segment (personal or commercial, 70\pct{} commercial) and an income $\theta$. The model decides who is served where, the order on every gun, the van routes and every start time, and minimises the operator's cost plus the cost each customer perceives. A commercial driver prices every minute out of service at one downtime rate $\omega(\theta)$; a private owner prices driving, queueing and station charging, but not the van's charging minutes, during which the owner is free.
+
+\subsection{The job}\label{sec:job}
+\begin{itemize}
+  \item One script (\code{job.sh}) on the lab server, \JobStart{} to \JobEnd{} (\JobHours{} hours); no step failed (\JobNonZero{} non-zero exit codes).
+  \item Phase 1, MILP: the baseline and the \NVariants{} variants, 560 instances each, 8 instances at a time with 4 threads, 300\,s per instance, greedy warm start.
+  \item Phase 2, RL: the baseline model (\RlParams{} parameters, \RlTrainMin{} min on an RTX 4090) and, for every variant, a zero-shot run and a retrained model.
+  \item Phase 3: every variant compared with its baseline. This report recomputes all comparisons from \code{runs.csv} and \code{plan.csv}.
+  \item Instances: the 56 Solomon files with their first $n=10,20,\dots,100$ EVs.
+\end{itemize}
+
+\subsection{The experiments}
+\input{tables/variants}
+\input{tables/variants_rl}
+
+\begin{xltabular}{\textwidth}{@{}p{0.7cm}>{\raggedright\arraybackslash}p{5.2cm}X@{}}
+\toprule
+\# & \textbf{Question} & \textbf{What the theory of formulation 4 predicts} \\ \midrule
+E5 & How sensitive is each segment's van share to the most influential value of time? & A higher $c^{\mathrm C,1}$ makes station charging dearer for rich private owners, so more of them take a van. A higher $\omega^1$ raises the value of saved downtime for commercial EVs; this should push them to vans \emph{at peak}, where station queues are long. \\[2pt]
+E6 & The same for the coefficient with the largest elasticity on $Z$, $\mu^0$. & $Z$ moves directly (every rupee is weighted by $\mu$); low-income customers of the changed segment may shift between station and van through $\mu\,\Pi_i$. \\[2pt]
+E1 & Who gets vans, by segment and income, at what cost to the operator and to equity? & At $p^{\mathrm M}=p^{\mathrm F}$ the van premium disappears, so the money channel favours the van; the choice is then decided by the operator's extra cost $\kappa_i$, the saved downtime and the driver-free benefit. \\[2pt]
+E2 & Where does another van or seat pay off, and where is capacity idle? & More vans help where vans run out of time (short horizons); more seats where vans fill their seats. \\[2pt]
+E8 & Is van recharging worth modelling? & The battery was rarely binding in formulation 3: $Z$ should move by less than 1\pct{}. \\[2pt]
+E9$^{\dagger}$ & How do the guns per station and the power per gun affect cost, queues and van use? & Fewer or weaker guns make the stations a tighter bottleneck: longer queues and sessions ($\tau^{\mathrm F}=60E/P^{\mathrm F}$), more EVs pushed to vans, higher $Z$; more or stronger guns the reverse. \\[2pt]
+E10$^{\dagger}$ & How does the energy each EV needs affect the solution? & More energy lengthens every session at stations and vans, draws more van battery and raises every energy and tariff term: $Z$ should grow almost in proportion. \\
+\midrule
+\multicolumn{3}{@{}p{\linewidth}@{}}{\footnotesize $^{\dagger}$ RL only: retrained RL alone; no MILP run, hence no gap to the MILP and no direction check.} \\
+\bottomrule
+\end{xltabular}
+
+\subsection{How runs are compared}
+\begin{itemize}
+  \item A variant is compared with the baseline of the \emph{same method}: MILP with the baseline MILP run, both RL runs with the baseline RL run. Only paired instances count; instances that become valid or stop being valid are counted separately.
+  \item Van shares are pooled over the free-choice EVs of the paired instances, so the baseline value differs slightly between variants (each has its own pairs).
+  \item Effects are means over instances. Most large instances end at the time limit with a gap of a few per cent, so effects below about 0.1 points are not reliable on all pairs; the direction check uses the optimal pairs only.
+  \item The pressure labels of Part~II are computed from the baseline data and kept for every variant, so the same EVs are compared. In E2 with 3 or 7 vans the number of chargers would be 27 or 31; the baseline labels (load divided by 29) are kept on purpose. The same holds for E9 (12 or 48 guns; 11 or 44\,kW changes the window $w$) and E10 (energy changes $\tau^{\mathrm F}$ and hence $w$).
+  \item E9 and E10 were run with the retrained RL model only (no MILP run and no zero-shot run exist); they are compared with the baseline RL run.
+\end{itemize}
+
+\subsection{Demand pressure: the definition}\label{sec:pressdef}
+The three reports share one definition, coded once in \code{common/infra.py}; it is the definition of formulation 4's own code (\code{peak\_flags}). For EV $i$ of an instance (a file and its first $n$ EVs):
+\[
+w=\frac{1}{n}\sum_{j}\frac{60\,E_j}{22\ \text{kW}},\qquad
+\text{load}_i=\#\{\,j:\ r_i-w\le r_j\le r_i\,\}\ (i\text{ included}),\qquad
+\text{pressure}_i=\frac{\text{load}_i}{24+5}.
+\]
+\begin{itemize}
+  \item $w$ is the mean station charging time of the instance's EVs (\PressWindowMin--\PressWindowMax{} minutes, mean \PressWindowMean); the pressure is ``how many requests arrived during one average charging time up to mine, per charger''.
+  \item It uses only the data (request times, energies, fleet), never a plan: an EV has the same pressure in every method and variant.
+  \item Terciles: the cut points are the 1/3 and 2/3 quantiles over the \PressEVs{} free-choice EVs of all 560 baseline instances: low $\le$ \PressLowCut{} $<$ medium $\le$ \PressHighCut{} $<$ high.
+  \item It ignores travel time to a station, charging still in progress from earlier requests, and that a van can serve several EVs (a van counts as one charger).
+  \item Formulation 4's own peak/off-peak label (load above the instance's median load) is a different, per-instance split; Section~\ref{sec:peak} shows why it misleads here.
+\end{itemize}
+\inshort{\NVariants{} one-factor variants, each solved by the MILP and by RL twice; every change is measured on paired instances against the baseline of the same method.}
+
+%=====================================================================
+\part{The baseline: MILP against RL}
+\section{MILP against RL on the same 560 instances}
+
+\subsection{How the instances ended}
+\begin{figure}[H]\centering\includegraphics[width=0.95\textwidth]{figures/status_by_n.pdf}
+\caption{Outcome of the 56 instances of each size for the two methods.}\end{figure}
+\input{tables/status_by_n}
+\begin{itemize}
+  \item The MILP proves \MilpOptimal{} plans optimal, stops with a plan in \MilpTL{}, without one in \MilpTLnoPlan{}, and proves \MilpInfeasible{} instances infeasible. RL returns a valid plan in \RlValid{} instances.
+  \item RL's \RlInvalid{} invalid plans are the \RlInvalidMilpInfeasible{} infeasible instances plus \RlInvalidMilpNoPlan{} where the MILP found no plan either; \RlInvalidShort{} of them are in the short-horizon families R1 and RC1. RL never fails where the MILP succeeds (\RlInvalidMilpValid{} such instances).
+  \item In \RlOnly{} instances only RL has a plan; all were time-limit-without-plan instances of the MILP. \NeitherValid{} instances have no valid plan from either method.
+\end{itemize}
+\inshort{RL is valid wherever the MILP is, and in \RlOnly{} more instances; the \MilpInfeasible{} infeasible instances are beyond both.}
+
+\subsection{How much dearer RL is}\label{sec:gap}
+\begin{figure}[H]\centering\includegraphics[width=0.95\textwidth]{figures/gap_baseline.pdf}
+\caption{Gap of RL to the MILP by size (left) and by family, split by how the MILP ended (right).}\end{figure}
+\input{tables/gap_by_n}
+\input{tables/gap_by_family}
+\begin{itemize}
+  \item On the \BothValid{} instances valid for both, RL costs \GapMean\pct{} more on average (median \GapMedian\pct{}, 90th percentile \GapPninety\pct{}, at most \GapMax\pct{}); \RlWithinOne\pct{} of its plans are within 1\pct{} of the MILP.
+  \item Against proven optima the gap is \GapOpt\pct{}; against time-limit plans \GapTL\pct{}. In \RlBetter{} instances RL is cheaper than the MILP, all of them time-limit plans; in \RlEqual{} it finds the same cost.
+  \item The gap is largest in C2 and R2 (long horizons, many van decisions) and smallest in the short-horizon families R1 and RC1.
+\end{itemize}
+\inshort{RL is within about one per cent of the MILP on almost every instance; it beats unfinished MILP runs in \RlBetter{} instances.}
+
+\subsection{Do the two methods take the same decisions?}\label{sec:agree}
+\input{tables/agreement}
+\input{tables/composition_methods}
+\begin{itemize}
+  \item \AgreeFree\pct{} of free-choice EVs get the same resource from both methods (\AgreeAll\pct{} of all EVs; stranded EVs always get a van). When both send an EV to a station, it is the same station in \AgreeStation\pct{} of cases.
+  \item The disagreement is almost entirely about private cars: \MvanRfcsPersonal{} personal EVs get a van from the MILP but a station from RL, only \MfcsRvanPersonal{} the other way round. The methods agree on \AgreeCommercial\pct{} of commercial and \AgreePersonal\pct{} of personal free-choice EVs (Table~\ref{tab:agree}).
+  \item RL dispatches about as many vans (\VansRl{} against \VansMilp{} per instance) but fills fewer seats. It saves a little dispatch cost ($Z_3$: \DZthreeRl{} points of $Z$) and pays much more in perceived time ($Z_6$: \DZsixRl{} points): the private owners it sends to stations lose the driver-free benefit.
+\end{itemize}
+\inshort{The methods agree on almost every commercial EV; RL's extra cost comes from the private owners it sends to stations instead of filling the van seats.}
+
+\subsection{Who gets vans, by segment and income}
+\begin{figure}[H]\centering\includegraphics[width=0.9\textwidth]{figures/vanshare_methods.pdf}
+\caption{Van share of free-choice EVs by income band, MILP (solid) and RL (dashed).}\end{figure}
+\input{tables/vanshare_methods}
+\input{tables/segment_methods}
+\begin{itemize}
+  \item Both methods show the shape the theory predicts: private owners take vans more the richer they are (MILP: \VanPersTopMilp\pct{} in the top band), commercial drivers almost never (MILP \VanCommercialMilp\pct{}, RL \VanCommercialRl\pct{}).
+  \item RL's curve for private owners has the same shape but a third of the height (\VanPersTopRl\pct{} in the top band).
+  \item Commercial drivers queue longer at stations than private owners with both methods; RL's commercial queues are longer (\QueueComRl{} against \QueueComMilp{} min).
+\end{itemize}
+\inshort{Both methods reproduce ``segment before income''; RL under-uses vans for rich private owners.}
+
+\subsection{Peak and off-peak: demand pressure}\label{sec:peak}
+Demand pressure as defined in Section~\ref{sec:pressdef}: requests per charger during one mean charging time up to the EV's own request; low up to \PressLowCut, high above \PressHighCut.
+\begin{figure}[H]\centering\includegraphics[width=0.92\textwidth]{figures/pressure_methods.pdf}
+\caption{Van share (top) and mean station queue (bottom) by income band for low, medium and high pressure; MILP solid, RL dashed.}\end{figure}
+\input{tables/pressure_methods}
+\input{tables/pressure_band}
+\input{tables/pressure_band_queue}
+\begin{itemize}
+  \item \textbf{Queues are a peak phenomenon.} Commercial station users queue \PQueueCommercialLowMilp{} min at low and \PQueueCommercialHighMilp{} min at high pressure (MILP); at high pressure the poorest commercial drivers queue \PQueueComHighPoorMilp{} min, the richest private owners \PQueuePersHighRichMilp{} min.
+  \item \textbf{Commercial EVs take vans only at peak}, as formulation 4 predicts (queues, not income, push them to vans): \PVanCommercialLowMilp\pct{} at low, \PVanCommercialHighMilp\pct{} at high pressure. \ComVanUsersHighShare\pct{} of the \ComVanUsers{} commercial van users are in the high tercile, and they are poorer than commercial station users (mean $\theta$ \ComVanUsersTheta{} against \ComFcsUsersTheta).
+  \item \textbf{Private owners take vans mostly off-peak}: \PVanPersonalLowMilp\pct{} at low, \PVanPersonalHighMilp\pct{} at high pressure. At peak the seats are shared with stranded EVs and commercial EVs facing queues.
+  \item \textbf{RL reproduces the peak behaviour of commercial EVs} (\PVanCommercialHighRl\pct{} at high pressure, none below) but not that of private owners: its van share falls from \PVanPersonalLowRl\pct{} to \PVanPersonalHighRl\pct{}, and its commercial queues at peak are longer (\PQueueCommercialHighRl{} min).
+  \item \textbf{Caveat 1: the peak label.} Formulation 4's label (load above the instance median) calls a request tied with the start-of-period burst off-peak; \OffHighShare\pct{} of free-choice EVs are ``off-peak'' but in the high pressure tercile, and all \ComVanOffPeak{} commercial van users are labelled off-peak. The terciles are used here for that reason; with the median label the commercial share would read \PPeakVanCommercialMilp\pct{} at peak and \POffVanCommercialMilp\pct{} off-peak, which is misleading.
+  \item \textbf{Caveat 2: only time-limit plans have peaks.} All \ComVanUsers{} commercial van users are in time-limit plans (\ComVanInOptimal{} in proven-optimal plans); the \ComHighNOpt{} high-pressure commercial station users of optimal plans do not queue (\ComHighQueueOpt{} min against \ComHighQueueTL{} min in time-limit plans). Congestion occurs only in the large instances the MILP does not finish, so the peak behaviour cannot be confirmed on proven optima. That RL, an independent method, finds the same commercial van share at peak supports it being a property of the model rather than of the unfinished search.
+\end{itemize}
+\inshort{At peak, queues push poor commercial drivers to vans and private owners lose their seats; RL reproduces the commercial part. Congestion exists only in instances the MILP does not finish, so this is confirmed by two methods but not by proofs.}
+
+\subsection{Time}
+\begin{figure}[H]\centering\includegraphics[width=0.5\textwidth]{figures/time_methods.pdf}
+\caption{Mean time per instance (log scale).}\end{figure}
+The MILP needs \MilpSolveMean{}\,s per instance on average (about \MilpCPUh{} core-hours for the 560), RL \RlSolveMean{}\,s, \SpeedUp{} times less; RL's one-off training took \RlTrainMin{} minutes on a GPU.
+\inshort{RL answers in a tenth of a second; the MILP needs minutes from $n\approx40$ on.}
+
+%=====================================================================
+\section{Infrastructure utilisation}\label{sec:util}
+Measured with \code{common/infra.py} on the \BothValid{} paired baseline instances. As in the MILP and RL reports, every utilisation is the mean of per-instance (or per-van) shares; a value that divides sums over instances is marked \emph{pooled}. Capacities: every gun of 22\,kW and every van of 30\,kW is available during $[0,T]$; a van has 6 seats and a 150\,kWh battery. An instance asks for \UKwhPerInst\,kWh on average.
+\input{tables/util_methods}
+\begin{figure}[H]\centering\includegraphics[width=0.98\textwidth]{figures/util_profile.pdf}
+\caption{Share of guns and vans charging over the period (mean over instances): MILP solid, RL dashed; right: short against long horizons (MILP).}\end{figure}
+\input{tables/util_family}
+\input{tables/util_n}
+\begin{figure}[H]\centering\includegraphics[width=0.98\textwidth]{figures/util_dists.pdf}
+\caption{Gun utilisation of every gun (left), van seats, battery and time on the road (middle), and how vans spend their time on the road (right).}\end{figure}
+
+\subsection{Stations and guns}
+\begin{itemize}
+  \item On average a gun charges during \UGunMilp\pct{} of the period (MILP; RL \UGunRl\pct; mean of per-instance shares; pooled over all instances \UGunPooledMilp\pct, because long horizons weigh more); the busiest gun of an instance reaches \UGunMaxMilp\pct{}, the 90th percentile \UGunPninetyMilp\pct. \UIdleGunShareMilp\pct{} of guns are never used (\UIdleGunsMilp{} per instance; \UIdleGunsMilpNten{} at $n=10$, \UIdleGunsMilpNhundred{} at $n=100$).
+  \item The busy profile follows the demand: at most \UPeakGunsBusy\pct{} of guns charge at once, at the start of the period ($t/T\approx$ \UPeakGunsAt), when the burst of requests at $t=0$ arrives; after $0.75\,T$ only \ULateGunsBusy\pct{}.
+  \item By family, the short horizons are the busiest (R1 \UGunFamRone\pct{}, RC1 \UGunFamRCone\pct) and C2 the least (\UGunFamCtwo\pct): the same demand in a much shorter period.
+\end{itemize}
+\inshort{Stations have far more capacity than the demand needs on average; they are scarce only in the start-of-period burst and in the short-horizon families.}
+
+\subsection{Vans}
+\begin{itemize}
+  \item \UVansUsedMilp{} of the 5 vans leave per instance (fleet use \UFleetMilp\pct). A dispatched van fills \USeatMilp\pct{} of its seats (\UFullMilp\pct{} are full) and draws \UBatteryMilp\pct{} of its battery (\UBninetyMilp\pct{} draw more than 90\pct).
+  \item A van is on the road \UOnRoadMilp\pct{} of the period but charges only \UChargeMilp\pct{} of it, which is also the share of its power capacity used. Of its on-road time, \UChargeVanMilp\pct{} is charging, \UDriveVanMilp\pct{} driving and \UIdleVanMilp\pct{} waiting for the next EV's request (means over vans; pooled over all vans the waiting share is \UIdleVanPooledMilp\pct, because the long-horizon vans wait longest).
+  \item In the short horizons vans are on the road most of the period (R1 \UOnRoadFamRone\pct) with few seats used (R1 \USeatFamRone\pct): they run out of time; in the long horizons they fill their seats (C1 \USeatFamCone\pct).
+  \item RL leaves the seats emptier (\USeatRl\pct, \UFullRl\pct{} full) and its vans carry less energy (\UVanEnergyRl\pct{} of an instance's kWh against \UVanEnergyMilp\pct).
+\end{itemize}
+\inshort{Seats are the van resource in use; battery, power and time are mostly spare, and over a third of a van's time on the road is spent waiting for requests.}
+
+\subsection{The system}
+\begin{itemize}
+  \item Vans deliver \UVanEnergyMilp\pct{} of an instance's energy on average (RL \UVanEnergyRl\pct; pooled over all instances \UVanEnergyPooledMilp\pct), stations the rest.
+  \item The installed capacity (24 guns and 5 vans over $[0,T]$) is used at \USystemMilp\pct{} on average (\USystemMilpNhundred\pct{} at $n=100$). Every EV is fully charged in every valid plan, so this number depends only on the data and the fleet, never on the method: it is the same for the MILP and RL.
+\end{itemize}
+\inshort{The network is sized for the burst, not for the average: about one eighth of the installed capacity is used, and how it is shared between stations and vans is the only thing a plan changes.}
+
+\part{The experiments}
+\section{First check: every variant moves the optimum the right way}\label{sec:direction}
+A cost coefficient that rises (or a capacity that falls) cannot lower the exact optimum, because every plan of the baseline remains possible and none becomes cheaper. On the instances optimal in both runs this must hold exactly.
+\input{tables/direction}
+\begin{itemize}
+  \item Over \DirPairs{} pairs of optimal plans there are \DirBad{} violations: the runs are consistent with the model.
+  \item Several variants leave the optimum unchanged in many optimal pairs (column ``unchanged''): with 3 or 7 vans every optimal pair is unchanged, with the 200\,kWh battery most of them. These capacities do not bind in the instances the MILP solves to optimality.
+  \item RL's gap to the MILP of the same variant stays between \GapVarMin\pct{} and \GapVarMax\pct{}, close to the baseline's \GapMean\pct{}. The correlation of the instance-level effects is high where the effect is large (E6 commercial, E1, E5 personal) and near zero where the MILP effect is zero (vans, battery).
+\end{itemize}
+\inshort{\DirBad{} violations in \DirPairs{} optimal pairs; the experiments measure the model, not solver noise.}
+
+\clearpage
+\section{E5: value of charging time at \texorpdfstring{$\theta=1$}{theta=1}}\label{sec:e5}
+\input{tables/exp_E5}
+\begin{figure}[H]\centering\includegraphics[width=0.92\textwidth]{figures/vanshare_E5.pdf}
+\caption{E5, MILP: van share by income band, baseline and variants.}\end{figure}
+\input{tables/band_E5}
+\input{tables/equity_E5}
+\begin{itemize}
+  \item \textbf{Personal $c^{\mathrm C,1}$ moves the van share of private owners strongly}: \VanPBEfivePersLoMilp\pct{} $\to$ \VanPEfivePersLoMilp\pct{} at 7.5 and \VanPBEfivePersHiMilp\pct{} $\to$ \VanPEfivePersHiMilp\pct{} at 12.5 (MILP); the change happens in the two top income bands, where the threshold lies. $Z$ moves \dZEfivePersLoMilp\pct{} / \dZEfivePersHiMilp\pct{}, mostly through the private owners' perceived cost (\CcPersEfivePersLoMilp\pct{} / \CcPersEfivePersHiMilp\pct).
+  \item \textbf{The commercial downtime rate $\omega^1$ moves $Z$ more} (\dZEfiveComLoMilp\pct{} / \dZEfiveComHiMilp\pct), entirely through the commercial perceived cost (\CcComEfiveComLoMilp\pct{} / \CcComEfiveComHiMilp\pct), \textbf{but not the van share}: commercial \VanCBEfiveComHiMilp\pct{} $\to$ \VanCEfiveComHiMilp\pct{} at 7.5.
+  \item \textbf{The peak prediction is not confirmed} (Section~\ref{sec:e5peak}).
+  \item RL reproduces the effects on $Z$ (\dZEfivePersHiRt\pct{} and \dZEfiveComHiRt\pct{} for the two high variants, retrained) and the direction of the personal van share (\VanPBEfivePersHiRt\pct{} $\to$ \VanPEfivePersHiRt\pct{}), with a smaller amplitude.
+\end{itemize}
+
+\subsection{Does a higher downtime rate push commercial EVs to vans at peak?}\label{sec:e5peak}
+\input{tables/pressure_experiments}
+\begin{figure}[H]\centering\includegraphics[width=0.92\textwidth]{figures/pressure_experiments.pdf}
+\caption{Change of the van share at low, medium and high pressure for six variants (MILP).}\end{figure}
+Formulation 4 predicts $\partial\Delta^{\mathrm C}_i/\partial q^{\mathrm F}_i=-(\omega+\delta)$: the larger $\omega$, the more a queued commercial EV gains from a van, so a higher $\omega^1$ should raise the commercial van share at high pressure and a lower one reduce it.
+\begin{itemize}
+  \item Across EVs the prediction holds in the baseline (commercial van users are at peak and queue-driven, Section~\ref{sec:peak}).
+  \item Across variants it does not: at high pressure the commercial van share changes by \PredOmegaUpHigh{} points for $\omega^1=7.5$ and \PredOmegaDnHigh{} points for $\omega^1=4.5$ (MILP, baseline \PXEfiveComHiVanBCommercialHigh\pct); both are below the noise of time-limit plans and of opposite sign to the prediction for the increase. On the optimal pairs there is nothing to test: their high-pressure commercial EVs (\PredOptEfiveComHiN{}) neither queue nor use a van in either run.
+  \item A likely reason: at the baseline $\omega$, the van premium ($p^{\mathrm M}-p^{\mathrm F}$ times $E$, weighted by the high $\mu$ of poor drivers) is far larger than $\pm25\pct$ of the downtime saved, so the threshold barely moves; queues push only the few commercial EVs with the longest waits.
+\end{itemize}
+\inshort{The private owners' value of charging time decides how many of them get vans; the commercial downtime rate changes what commercial drivers feel, not where they charge. The peak mechanism exists but is not sensitive to $\pm25\pct$ of $\omega$.}
+
+%---------------------------------------------------------------------
+\section{E6: money sensitivity at \texorpdfstring{$\theta=0$}{theta=0}}\label{sec:e6}
+\input{tables/exp_E6}
+\input{tables/band_E6}
+\begin{figure}[H]\centering\includegraphics[width=0.92\textwidth]{figures/vanshare_E6.pdf}
+\caption{E6, MILP: van share by income band, baseline and variants.}\end{figure}
+\input{tables/equity_E6}
+\begin{itemize}
+  \item \textbf{Commercial $\mu^0$ is the factor with the largest effect on $Z$}: \dZEsixComLoMilp\pct{} / \dZEsixComHiMilp\pct{} for $\pm25\pct$. The effect is almost all in the commercial perceived cost (\CcComEsixComLoMilp\pct{} / \CcComEsixComHiMilp\pct); the operator's cost does not move (\dOpEsixComLoMilp\pct{} / \dOpEsixComHiMilp\pct).
+  \item Personal $\mu^0$ has a smaller effect (\dZEsixPersLoMilp\pct{} / \dZEsixPersHiMilp\pct), because private owners are fewer and richer.
+  \item \textbf{Nobody changes resource}: the van shares stay within two points of the baseline in every band (Table~\ref{tab:bandE6}). The plan stays the same; only the rupee weights change. This is the envelope-theorem situation: the change of $Z$ equals the share of $Z$ carried by the coefficient.
+  \item RL agrees almost exactly (\dZEsixComLoRt\pct{} / \dZEsixComHiRt\pct{} retrained).
+\end{itemize}
+\inshort{How strongly poor commercial drivers feel money is the most influential number of the model for $Z$, but it changes no decision.}
+
+%---------------------------------------------------------------------
+\section{E1: van tariff \texorpdfstring{$p^{\mathrm M}$}{pM}}\label{sec:e1}
+\input{tables/exp_E1}
+\begin{figure}[H]\centering\includegraphics[width=0.92\textwidth]{figures/vanshare_E1.pdf}
+\caption{E1, MILP: van share by income band, baseline and variants.}\end{figure}
+\input{tables/band_E1}
+\input{tables/equity_E1}
+\begin{itemize}
+  \item \textbf{Who gets vans.} Without a premium ($p^{\mathrm M}=15$) the van share of private owners rises from \VanPBEonePMLoMilp\pct{} to \VanPEonePMLoMilp\pct{} (top band \VanPersTopBEonePMLo\pct{} $\to$ \VanPersTopEonePMLo\pct) and reaches the middle bands; commercial drivers move little (\VanCBEonePMLoMilp\pct{} $\to$ \VanCEonePMLoMilp\pct). At $p^{\mathrm M}=35$ the private share falls to \VanPEonePMHiMilp\pct.
+  \item \textbf{At what cost.} $p^{\mathrm M}=15$: $Z$ \dZEonePMLoMilp\pct, the customers \dCuEonePMLoMilp\pct, the operator \dOpEonePMLoMilp\pct{} (more vans: \VansBEonePMLoMilp{} $\to$ \VansEonePMLoMilp{} per instance). $p^{\mathrm M}=35$: $Z$ \dZEonePMHiMilp\pct, the operator \dOpEonePMHiMilp\pct.
+  \item \textbf{Equity} (Table~\ref{tab:eqE1}, all EVs including the stranded, who must take the van). The richest private owners gain most from cheaper vans (perceived cost \CcPersTopEonePMLo\pct) and lose most from dearer ones (\CcPersTopEonePMHi\pct). Commercial drivers gain or lose a similar share in every band below the top (poorest band \CcComLowEonePMLo\pct{} / \CcComLowEonePMHi\pct): almost all of it is paid by \emph{stranded} commercial EVs, who have no station in range and pay the van tariff whatever it is. The tariff is therefore also a charge on the customers with no choice.
+  \item \textbf{Peak and off-peak} (Table~\ref{tab:pressexp}): the extra van seats of $p^{\mathrm M}=15$ go mostly to private owners at low pressure (\PXEonePMLoVanPersonalLow{} points, against \PXEonePMLoVanPersonalHigh{} at high pressure); at peak the seats are already taken.
+  \item RL measures the same change of $Z$ (\dZEonePMLoRt\pct{} / \dZEonePMHiRt\pct) and the same direction of the private van share (\VanPBEonePMLoRt\pct{} $\to$ \VanPEonePMLoRt\pct{} retrained, \VanPEonePMLoZs\pct{} zero-shot): retraining makes RL's response much stronger.
+\end{itemize}
+\inshort{The van tariff is the operator's lever on who gets vans: removing the premium helps rich private owners most, costs the operator more and lowers the total cost; for commercial drivers it acts mainly through the stranded EVs, who pay it without choice.}
+
+\clearpage
+\section{E2: van fleet and seats}\label{sec:e2}
+\input{tables/exp_E2}
+\input{tables/e2_family}
+\input{tables/band_E2}
+\input{tables/van_limits}
+\begin{figure}[H]\centering\includegraphics[width=0.92\textwidth]{figures/vanshare_E2.pdf}
+\caption{E2, MILP: van share by income band, baseline and variants.}\end{figure}
+\begin{itemize}
+  \item \textbf{Vans decide feasibility, not cost.} With 3 vans \LostEtwoVansLoMilp{} instances lose their plan, with 7 vans \NewEtwoVansHiMilp{} gain one; most are in the short-horizon families R1 and RC1 (Table~\ref{tab:e2fam}), where vans run out of time. Where a plan exists, $Z$ hardly moves (\dZEtwoVansLoMilp\pct{} / \dZEtwoVansHiMilp\pct), and every optimal pair is unchanged.
+  \item \textbf{Seats decide cost.} 4 seats per van raise $Z$ by \dZEtwoSeatsLoMilp\pct{}, all of it the operator's (\dOpEtwoSeatsLoMilp\pct): more vans leave (\VansBEtwoSeatsLoMilp{} $\to$ \VansEtwoSeatsLoMilp) and the seats of each are almost all taken (\SeatsBEtwoSeatsLoMilp\pct{} $\to$ \SeatsEtwoSeatsLoMilp\pct). The private van share falls to \VanPEtwoSeatsLoMilp\pct, most of it at low pressure (\PXEtwoSeatsLoVanPersonalLow{} points).
+  \item \textbf{8 seats are idle}: $Z$ \dZEtwoSeatsHiMilp\pct, seats used \SeatsBEtwoSeatsHiMilp\pct{} $\to$ \SeatsEtwoSeatsHiMilp\pct. With 8 seats the battery becomes the tightest resource of most vans (Table~\ref{tab:vanlim}).
+  \item \textbf{At peak}, fewer vans cost the private owners their seats (Table~\ref{tab:pressexp}: 3 vans, high pressure); commercial drivers lose little because they have few seats to lose.
+  \item RL reproduces the losses of feasibility (\LostEtwoVansLoRt{} instances lost with 3 vans, \NewEtwoVansHiRt{} gained with 7) and the cost of 4 seats (\dZEtwoSeatsLoRt\pct), but not the drop of the private van share with 4 seats.
+\end{itemize}
+\inshort{Another van pays off only where it makes an instance feasible (R1, RC1); another seat pays off everywhere vans fill up; beyond 6 seats the extra seats are idle.}
+
+%---------------------------------------------------------------------
+\section{E8: van battery}\label{sec:e8}
+\input{tables/exp_E8}
+\begin{itemize}
+  \item With 200\,kWh $Z$ changes by \dZEeightBatHiMilp\pct{} on average (\dZEeightBatHiRt\pct{} for \Rt), \EeightDecision{} the decision threshold of 1\pct{}. Of the \DirNEeightBatHi{} optimal pairs, \EeightOptChanged{} change at all.
+  \item In the baseline \VanBninetyBase\pct{} of vans draw more than 90\pct{} of their battery, but the battery is the tightest resource for only \VanBattTightBase\pct{} of them (seats \VanSeatTightBase\pct, time \VanTimeTightBase\pct). With 200\,kWh it is tightest for \VanBattTightEeight\pct.
+  \item \textbf{Decision: van recharging need not be modelled} at 6 seats. If the seats were raised to 8, the battery would become the main limit (Table~\ref{tab:vanlim}) and the question would have to be asked again.
+\end{itemize}
+\inshort{A larger battery changes nothing that matters: drop recharging, unless the seats per van grow.}
+
+%=====================================================================
+\section{E9: station capacity (RL only)}\label{sec:e9}
+No MILP run exists for E9: the numbers are those of the retrained RL model against the baseline RL run, without a gap to the MILP or a direction check. Utilisation uses the variant's guns and power.
+\input{tables/exp_E9}
+\input{tables/band_E9}
+\begin{itemize}
+  \item \textbf{Guns per station.} Halving the guns (12 instead of 24) raises $Z$ by \dZEnineGunsLoRt\pct{} (median \dZmedEnineGunsLoRt\pct; operator \dOpEnineGunsLoRt\pct, customers \dCuEnineGunsLoRt\pct) and makes \LostEnineGunsLoRt{} instances infeasible for RL, mostly R1 (\LostFamEnineGunsLoRone) and RC1 (\LostFamEnineGunsLoRCone). The commercial station queue grows from \QComBEnineGunsLoRt{} to \QComEnineGunsLoRt{} min and vans take over: private cars \VanPBEnineGunsLoRt\pct{} $\to$ \VanPEnineGunsLoRt\pct, commercial \VanCBEnineGunsLoRt\pct{} $\to$ \VanCEnineGunsLoRt\pct. Doubling the guns changes $Z$ by \dZEnineGunsHiRt\pct, makes \NewEnineGunsHiRt{} instances feasible and almost removes queues (\QComBEnineGunsHiRt{} $\to$ \QComEnineGunsHiRt{} min).
+  \item \textbf{Power per gun.} 11\,kW doubles every station session: $Z$ \dZEninePowLoRt\pct{} (operator \dOpEninePowLoRt\pct), \LostEninePowLoRt{} instances lost, and vans become the main resource for private owners (\VanPBEninePowLoRt\pct{} $\to$ \VanPEninePowLoRt\pct; vans used \VansBEninePowLoRt{} $\to$ \VansEninePowLoRt). 44\,kW changes $Z$ by \dZEninePowHiRt\pct, almost all of it the customers' charging time (\dCuEninePowHiRt\pct), gains \NewEninePowHiRt{} instances, and private van use falls to \VanPEninePowHiRt\pct.
+  \item \textbf{Peak} (Table~\ref{tab:pressrl}): with 1 gun per station the extra van use is at high pressure (private \PXEnineGunsLoVanPersonalHigh, commercial \PXEnineGunsLoVanCommercialHigh{} points), where the commercial queue grows from \PXEnineGunsLoQBHigh{} to \PXEnineGunsLoQHigh{} min: the queue-driven switch of commercial EVs to vans that E5 could not show appears clearly once station capacity is cut.
+  \item \textbf{Utilisation} (Table~\ref{tab:utilrl}): with 12 guns a gun is busy \UXEnineGunsLoGunRt\pct{} of the period (baseline \UXBEnineGunsLoGunRt\pct); with 11\,kW \UXEninePowLoGunRt\pct, and the vans carry \UXEninePowLoVanEnergyRt\pct{} of the energy (baseline \UXBEninePowLoVanEnergyRt\pct). With 48 guns \UXEnineGunsHiIdleGunsRt{} guns per instance stay idle.
+\end{itemize}
+\inshort{Station power matters far more than the number of guns: halving the power raises the cost by a fifth and moves private owners to vans; halving the guns costs a few per cent but creates peak queues that push commercial drivers to vans. Cutting either loses many short-horizon instances.}
+
+\section{E10: charging demand (RL only)}\label{sec:e10}
+No MILP run exists for E10. Energy per EV is scaled by 0.75 or 1.25; this changes every charging time, so the pressure window changes too, but the baseline labels are kept.
+\input{tables/exp_E10}
+\input{tables/band_E10}
+\input{tables/rl_family}
+\input{tables/pressure_rl}
+\input{tables/util_rl}
+\begin{itemize}
+  \item \textbf{$Z$ moves almost in proportion to the energy}: \dZEtenDemLoRt\pct{} at $\times0.75$ and \dZEtenDemHiRt\pct{} at $\times1.25$ (elasticity \ElastEnergyRl), operator and customers alike (\dOpEtenDemHiRt\pct{} / \dCuEtenDemHiRt\pct{} at $\times1.25$): energy, tariffs and charging time all scale with $E$.
+  \item \textbf{Feasibility}: $\times1.25$ loses \LostEtenDemHiRt{} instances (R1 \LostFamEtenDemHiRone, RC1 \LostFamEtenDemHiRCone): in the 230--240-minute horizons the longer sessions no longer fit. $\times0.75$ makes \NewEtenDemLoRt{} instances feasible.
+  \item \textbf{Who gets vans} changes little: private van share \VanPBEtenDemHiRt\pct{} $\to$ \VanPEtenDemHiRt\pct{} at $\times1.25$; vans used \VansBEtenDemHiRt{} $\to$ \VansEtenDemHiRt.
+  \item \textbf{Utilisation}: at $\times1.25$ a gun is busy \UXEtenDemHiGunRt\pct{} of the period (baseline \UXBEtenDemHiGunRt\pct) and the installed capacity is used at \UXEtenDemHiSystemRt\pct{} (baseline \UXBEtenDemHiSystemRt\pct).
+\end{itemize}
+\inshort{Energy per EV scales the whole problem: the cost moves almost one for one, the short horizons lose feasibility, but the allocation between stations and vans hardly changes.}
+
+\section{All experiments side by side}\label{sec:synth}
+\begin{figure}[H]\centering\includegraphics[width=0.8\textwidth]{figures/tornado.pdf}
+\caption{Mean change of $Z$ for every variant, MILP and retrained RL.}\end{figure}
+\input{tables/tornado}
+\begin{itemize}
+  \item \textbf{What moves $Z$}: \TopFactor{} (swing \TopSwing{} points), then the van tariff, the commercial downtime rate and the private owners' value of charging time. All four are customer parameters that are placeholders or only partly calibrated.
+  \item \textbf{What moves decisions}: only the van tariff, the private owners' value of charging time and the seats per van change the van share by several points. The money sensitivities and the commercial downtime rate change $Z$ without changing who is served where.
+  \item \textbf{What does not matter}: the number of vans (except for feasibility) and the battery.
+\end{itemize}
+\inshort{To make the results credible, measure the money sensitivity and downtime rate of commercial drivers and the private owners' value of station time; to steer who gets vans, use the tariff and the seats.}
+
+\subsection{All ten experiments, measured with RL}\label{sec:allrl}
+Only retrained RL was run on every experiment. Measured with it, the factors rank as follows ($^{\dagger}$: RL-only).
+\input{tables/tornado_rl}
+\begin{figure}[H]\centering\includegraphics[width=0.78\textwidth]{figures/tornado_rl.pdf}
+\caption{Mean change of $Z$ for every variant of the ten experiments, retrained RL (light: lower value, dark: higher value; hatched: RL-only experiments).}\end{figure}
+\begin{itemize}
+  \item The strongest factor of all is \TopFactorRl{} (swing \TopSwingRl{} points); station power ranks \RankPowerRl{} and guns per station \RankGunsRl{} of \NFactorsAll.
+  \item The RL-only factors (E9, E10) cannot be checked against the MILP: their size rests on RL alone, whose effects on $Z$ were within about \EffDiffRtMean{} points of the MILP's on the other experiments.
+\end{itemize}
+\inshort{Energy per EV and station power move the cost far more than any customer parameter; the commercial money sensitivity comes next, ahead of the number of guns.}
+
+\subsection{Utilisation across experiments}\label{sec:utilexp}
+\input{tables/util_experiments}
+\begin{figure}[H]\centering\includegraphics[width=0.98\textwidth]{figures/util_experiments.pdf}
+\caption{Change of the van share of energy and of the gun time used for every variant, MILP and retrained RL.}\end{figure}
+\begin{itemize}
+  \item \textbf{E2 vans: the extra capacity is not used.} With 7 vans the fleet use falls from \UXBEtwoVansHiFleetMilp\pct{} to \UXEtwoVansHiFleetMilp\pct{}: the same number of vans leave (\UXBEtwoVansHiVansUsedMilp{} $\to$ \UXEtwoVansHiVansUsedMilp) and the van share of energy changes by \UXKwhEtwoVansHi{} points. With 3 vans the fleet use rises to \UXEtwoVansLoFleetMilp\pct; on the instances that stay feasible nothing else changes.
+  \item \textbf{E2 seats: extra seats stay empty, fewer seats are filled.} With 8 seats the seat use falls from \UXBEtwoSeatsHiSeatMilp\pct{} to \UXEtwoSeatsHiSeatMilp\pct{} and the battery use rises (\UXBEtwoSeatsHiBatteryMilp\pct{} $\to$ \UXEtwoSeatsHiBatteryMilp\pct); with 4 seats the seats are \UXEtwoSeatsLoSeatMilp\pct{} used and the van share of energy changes by \UXKwhEtwoSeatsLo{} points.
+  \item \textbf{E8: with 200\,kWh} the battery use falls from \UXBEeightBatHiBatteryMilp\pct{} to \UXEeightBatHiBatteryMilp\pct{} of $B$, and \UXEeightBatHiBninetyMilp\pct{} of vans draw more than 90\pct; nothing else moves.
+  \item \textbf{E1 shifts energy between stations and vans}: $p^{\mathrm M}=15$ moves \UXKwhEonePMLo{} points of the energy to vans (fleet use \UXBEonePMLoFleetMilp\pct{} $\to$ \UXEonePMLoFleetMilp\pct, seats \UXBEonePMLoSeatMilp\pct{} $\to$ \UXEonePMLoSeatMilp\pct), $p^{\mathrm M}=35$ \UXKwhEonePMHi{} points.
+  \item \textbf{E5 personal} moves energy the same way (\UXDEfivePersHiVanEnergyMilp{} points at $c^{\mathrm C,1}=12.5$); \textbf{E5 commercial and E6} move it by less than half a point.
+  \item The installed-capacity utilisation changes only when the fleet changes ($M=3$: \UXDEtwoVansLoSystemMilp{} points); the guns' time used changes by less than half a point in every variant.
+  \item RL moves utilisation in the same direction as the MILP where the MILP effect is large (E1, E5 personal), with a smaller amplitude for the van share of energy; with 4 seats it does not shift energy from vans to stations as the MILP does.
+\end{itemize}
+\inshort{None of the variants makes the infrastructure scarce: more vans or seats stay idle, a bigger battery stays partly empty; only the van tariff and the private value of charging time move a few points of energy between stations and vans.}
+
+\subsection{Can RL replace the MILP for experiments?}\label{sec:rlexp}
+\begin{figure}[H]\centering\includegraphics[width=0.92\textwidth]{figures/effects_methods.pdf}
+\caption{Effect of every variant measured by RL against the MILP: change of $Z$ (left) and of the private van share (right).}\end{figure}
+\input{tables/retraining}
+\begin{itemize}
+  \item \textbf{Effects on $Z$}: the mean effect of a variant differs from the MILP's by \EffDiffRtMean{} points on average (at most \EffDiffRtMax) for retrained RL and \EffDiffZsMean{} (at most \EffDiffZsMax) zero-shot; the sign agrees in \SignAgreeRt{} (retrained) and \SignAgreeZs{} (zero-shot) of \NVariants{} variants, the exceptions being variants whose MILP effect is about zero.
+  \item \textbf{Effects on decisions}: of the \VanEffBig{} variants that move the MILP's private van share by more than half a point, RL moves it the same way in \VanEffSignAgree{}, with about \VanEffRatio{} of the amplitude.
+  \item \textbf{Retraining} (\RetrainMinMean{} minutes per variant, \RetrainMinTotal{} GPU-hours in total) does not lower the gap to the MILP on average (\GapZsAll\pct{} zero-shot, \GapRtAll\pct{} retrained; better in \RtBetterCount{} of \NVariants), but it makes the van shares respond more strongly (E1).
+\end{itemize}
+\inshort{RL, even zero-shot, measures how $Z$ reacts to an assumption almost as the MILP does; for how decisions react it gets the direction right but about half the size.}
+
+%=====================================================================
+\section{Robustness and caveats}
+\begin{itemize}
+  \item \textbf{Time-limit plans.} Effects below about 0.1 points are within the noise of unfinished MILP runs; the direction check settles their sign only on optimal pairs.
+  \item \textbf{Congestion only in unfinished instances.} All queues and commercial van use at peak are in time-limit plans; peak results rest on two independent methods, not on proofs.
+  \item \textbf{Peak label.} The median label of formulation 4 counts the start-of-period burst as off-peak; the pooled pressure terciles should be used (and \code{share\_van\_peak\_\%} in \code{runs.csv} read with care).
+  \item \textbf{One factor at a time}; interactions (cheaper vans and more seats) are not tested.
+  \item \textbf{One RL training per model} and one seed; the RL numbers carry the spread of training.
+  \item \textbf{E9 and E10 are RL only}: no MILP run (no gap, no direction check) and no zero-shot run; RL's validity losses there may include instances that are feasible but that RL fails to solve.
+  \item \textbf{Placeholders}: apart from the segment share and incomes, the customer parameters are reasoned values; the experiments show how much each matters, not its true value.
+\end{itemize}
+
+%=====================================================================
+\section{Summary of findings and recommendations}
+\begin{enumerate}
+  \item The job is sound: \DirBad{} direction violations in \DirPairs{} optimal pairs; RL and MILP agree on feasibility except where only RL finds a plan.
+  \item RL is \GapMean\pct{} dearer and \SpeedUp{} times faster; it takes the same decision for \AgreeFree\pct{} of free-choice EVs but gives too few vans to rich private owners.
+  \item At peak, queues push poor commercial drivers to vans and take seats from private owners; RL reproduces the commercial part. The effect lives only in instances the MILP does not finish, and $\pm25\pct$ of the downtime rate does not change it.
+  \item $Z$ depends most on the commercial money sensitivity $\mu^0$, then on the van tariff, the commercial downtime rate and the private value of charging time: measure these first.
+  \item The van tariff and the private value of charging time decide who gets vans; a tariff equal to the station's helps rich private owners most and costs the operator more.
+  \item More vans make short-horizon instances feasible; more seats lower the cost up to 6; the battery does not matter, so van recharging can be left out.
+  \item For screening assumptions RL is good enough (effects on $Z$ within about \EffDiffRtMean{} points); for who gets vans, use the MILP.
+  \item Among physical inputs (RL only), energy per EV and station power dominate: $\pm$25\pct{} energy moves $Z$ by \dZEtenDemLoRt\pct{} / \dZEtenDemHiRt\pct, half the station power by \dZEninePowLoRt\pct; cutting station capacity or adding energy loses short-horizon instances.
+  \item The infrastructure is far from its limits (a gun busy \UGunMilp\pct{} of the period, installed capacity \USystemMilp\pct{} used, vans waiting \UIdleVanMilp\pct{} of their road time); only the van seats are nearly full, and no variant of E1--E8 makes guns, vans or batteries scarce; only cutting station capacity (E9) does.
+\end{enumerate}
+
+\vspace{6pt}
+{\footnotesize Generated from \code{2026-11-22\_formulation\_4/*/results/*/runs.csv}, \code{plan.csv}, the RL \code{train\_meta.json} files and the formulation-4 data by \code{make\_results\_report.py}, \code{peak\_analysis.py}, \code{infra\_analysis.py} and \code{rl\_only\_analysis.py} in this folder, with the shared definitions of \code{../common/infra.py}.}
+
+\end{document}

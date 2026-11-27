@@ -1,0 +1,21 @@
+\begin{table}[H]\centering
+\scriptsize
+\caption{Checks of every variant. Left: the exact optimum on instances optimal in both MILP runs (direction check). Right: RL against the MILP of the same variant; last column: correlation over instances of the MILP and the retrained-RL change of $Z$.}\label{tab:direction}
+\begin{adjustbox}{max width=\textwidth}\begin{tabular}{lrrrrrrrrr}\toprule
+variant & \shortstack{expected\\sign} & \shortstack{optimal\\pairs} & \shortstack{mean $\Delta Z$\\optimal (\%)} & \shortstack{unchanged\\($\le$0.01\,\%)} & violations & \shortstack{RL$_{\mathrm{rt}}$ effect\\$-$ MILP effect} & \shortstack{gap to MILP\\zero-shot (\%)} & \shortstack{gap to MILP\\retrained (\%)} & \shortstack{corr.\ of\\$\Delta Z$} \\ \midrule
+personal $c^{\mathrm C,1}=7.5$ & $-$ & 275 & $-$2.19 & 5 & 0 & $-$0.25 & 0.56 & 0.56 & 0.76 \\
+personal $c^{\mathrm C,1}=12.5$ & $+$ & 252 & +1.95 & 12 & 0 & +0.30 & 1.22 & 1.14 & 0.75 \\
+commercial $\omega^{1}=4.5$ & $-$ & 275 & $-$2.51 & 0 & 0 & +0.14 & 0.82 & 0.98 & 0.56 \\
+commercial $\omega^{1}=7.5$ & $+$ & 275 & +2.50 & 0 & 0 & +0.09 & 0.83 & 0.86 & 0.49 \\
+personal $\mu^{0}=1.125$ & $-$ & 273 & $-$1.30 & 0 & 0 & +0.13 & 0.92 & 0.95 & 0.43 \\
+personal $\mu^{0}=1.875$ & $+$ & 276 & +1.30 & 0 & 0 & +0.03 & 0.80 & 0.84 & 0.44 \\
+commercial $\mu^{0}=1.125$ & $-$ & 272 & $-$6.45 & 0 & 0 & +0.14 & 0.87 & 0.91 & 0.79 \\
+commercial $\mu^{0}=1.875$ & $+$ & 275 & +6.46 & 0 & 0 & $-$0.10 & 0.80 & 0.79 & 0.82 \\
+$p^{\mathrm M}=15$ & $-$ & 225 & $-$4.45 & 7 & 0 & +0.41 & 1.31 & 1.25 & 0.81 \\
+$p^{\mathrm M}=35$ & $+$ & 276 & +4.07 & 7 & 0 & $-$0.19 & 0.58 & 0.63 & 0.79 \\
+3 vans & $+$ & 275 & +0.00 & 275 & 0 & +0.13 & 0.91 & 0.96 & 0.00 \\
+7 vans & $-$ & 273 & $-$0.00 & 273 & 0 & $-$0.01 & 0.84 & 0.81 & $-$0.17 \\
+4 seats per van & $+$ & 275 & +1.30 & 108 & 0 & $-$0.20 & 0.69 & 0.65 & 0.74 \\
+8 seats per van & $-$ & 263 & $-$0.16 & 188 & 0 & +0.15 & 0.86 & 0.98 & 0.23 \\
+battery 200 kWh & $-$ & 274 & $-$0.04 & 240 & 0 & $-$0.07 & 0.84 & 0.77 & 0.08 \\
+\bottomrule\end{tabular}\end{adjustbox}\end{table}

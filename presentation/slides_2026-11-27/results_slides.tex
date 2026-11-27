@@ -1,0 +1,205 @@
+\documentclass[aspectratio=169,11pt,t]{beamer}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}
+\usepackage[scaled=.92]{helvet}
+\usepackage{booktabs,tikz}
+\usetikzlibrary{arrows.meta}
+\definecolor{gradOrange}{HTML}{F07F3C}
+\definecolor{gradPurple}{HTML}{B84FC2}
+\definecolor{iiscOrange}{gray}{0.45}
+\definecolor{iiscPurple}{gray}{0.1}
+\definecolor{accP}{HTML}{5F4B6B}
+\definecolor{accA}{HTML}{C58A63}
+\setbeamercolor{background canvas}{bg=white!99!black}
+\setbeamercolor{structure}{fg=iiscPurple}
+\setbeamercolor{itemize item}{fg=iiscOrange}
+\setbeamercolor{itemize subitem}{fg=iiscPurple}
+\setbeamerfont{frametitle}{series=\bfseries,size=\LARGE}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize item}[square]
+\setbeamertemplate{frametitle}{\vskip1.1ex{\color{black}\sffamily\bfseries\LARGE\insertframetitle}\par\vskip1.2ex}
+\setbeamertemplate{background}{\vbox to\paperheight{\vfill\hbox to\paperwidth{%
+  \tikz[baseline=0]\shade[left color=gradOrange,right color=gradPurple] (0,0) rectangle (\paperwidth,.16);}}}
+\setbeamertemplate{footline}{\hfill{\color{black!35}\fontsize{7}{8}\selectfont\insertframenumber/\inserttotalframenumber}\hspace*{.85cm}\vskip4.6ex}
+\setbeamersize{text margin left=1.6cm,text margin right=1.6cm}
+\usepackage{amsmath,amssymb}
+\input{results_numbers.tex}
+\newcommand{\slidefoot}[1]{\par\vfill{\tiny\color{black!55}#1}\par\vspace{.4ex}}
+
+\begin{document}
+
+% =================================================================== 1 MILP infrastructure
+\begin{frame}{Results (MILP): infrastructure use}
+\begin{columns}[T]
+\column{.58\textwidth}
+\includegraphics[width=\textwidth]{figures/res_infra_M.png}
+
+\scriptsize\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lr@{\hspace{10pt}}lr}
+\toprule
+guns busy over $[0,T]$ & \rGunM\% & vans sent (of 5) & \rFleetM\%\\
+short / long horizon & \rGunShortM{} / \rGunLongM\% & seats used & \rSeatsM\%\\
+idle guns (of 24) & \rIdleGunsM & vans full & \rFullM\%\\
+guns never used & \rGunNeverM\% & battery used & \rBattM\%\\
+\bottomrule
+\end{tabular}
+\column{.39\textwidth}
+\small
+\begin{itemize}
+  \item Guns idle most of the time; demand comes in bursts.
+  \item Long horizons: busiest at the start, then nearly idle.
+  \item Vans: \rRoadM\% of $T$ on the road; \rVanChargeM\% of it charging, \rVanWaitM\% waiting.
+  \item Short horizons: vans run out of \textbf{time}; long: of \textbf{seats} (\rVansLongSeatsM\%).
+\end{itemize}
+\end{columns}
+\slidefoot{MILP on the \rNPairedR{} instances both methods solve; means over plans and dispatched vans.}
+\end{frame}
+
+% =================================================================== 2 MILP income
+\begin{frame}{Results (MILP): income and segment}
+\begin{columns}[T]
+\column{.58\textwidth}
+\includegraphics[width=\textwidth]{figures/res_income_M.png}
+\column{.39\textwidth}
+\small
+\begin{itemize}
+  \item Personal by van: \rVanPersM\%; 0\% below $\theta=0.4$, \rVanPersTopM\% above 0.9.
+  \item The step sits at theory's $\theta^*=0.66$.
+  \item Taxis by van: \rVanComM\%, all in unfinished plans.
+  \item Taxis: \rQUserComM\% of station users, \rQShareComM\% of queue time.
+  \item $\theta<0.4$: \rQUserPoorM\% of users, \rQSharePoorM\% of queue time.
+\end{itemize}
+\end{columns}
+\slidefoot{Free-choice EVs (a station in range). Dotted: proven-optimal plans only.}
+\end{frame}
+
+% =================================================================== 3 MILP demand pressure
+\begin{frame}{Results (MILP): demand pressure}
+\begin{columns}[T]
+\column{.58\textwidth}
+\includegraphics[width=\textwidth]{figures/res_pressure_M.png}
+\column{.39\textwidth}
+\small
+\begin{itemize}
+  \item Queues only at high pressure: \rQueueLowM{} / \rQueueMedM{} / \rQueueHigM{} min.
+  \item Users queueing: \rQueuedLowM\% $\to$ \rQueuedHigM\%.
+  \item Taxis use vans only at high pressure (\rVanComHigM\%).
+  \item Personal vans fall: \rVanPersLowM\% $\to$ \rVanPersHigM\%.
+  \item High pressure: \rQueueHiPoorM{} min ($\theta<0.4$) vs \rQueueHiRichM{} ($\theta\ge0.8$).
+\end{itemize}
+\end{columns}
+\slidefoot{Pressure of EV $i$ = requests in the last average charging time / 29 chargers; low $\le$ \rCutLo, high $>$ \rCutHi{} (terciles, all 560 instances).}
+\end{frame}
+
+% =================================================================== 4 RL infrastructure
+\begin{frame}{Results (RL): infrastructure use}
+\begin{columns}[T]
+\column{.58\textwidth}
+\includegraphics[width=\textwidth]{figures/res_infra_R.png}
+
+\scriptsize\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lr@{\hspace{10pt}}lr}
+\toprule
+guns busy over $[0,T]$ & \rGunR\% & vans sent (of 5) & \rFleetR\%\\
+short / long horizon & \rGunShortR{} / \rGunLongR\% & seats used & \rSeatsR\%\\
+idle guns (of 24) & \rIdleGunsR & vans full & \rFullR\%\\
+guns never used & \rGunNeverR\% & battery used & \rBattR\%\\
+\bottomrule
+\end{tabular}
+\column{.39\textwidth}
+\small
+\begin{itemize}
+  \item Same time profile as the MILP.
+  \item Leans on stations: guns busier, fewer idle.
+  \item Emptier vans: \rFullR\% full (MILP \rFullM\%).
+  \item Van road time: \rVanChargeR\% charging, \rVanWaitR\% waiting.
+  \item Energy by van: \rVanEnergyR\% (MILP \rVanEnergyM\%).
+\end{itemize}
+\end{columns}
+\slidefoot{RL on the same \rNPairedR{} instances; means over plans and dispatched vans.}
+\end{frame}
+
+% =================================================================== 5 RL income
+\begin{frame}{Results (RL): income and segment}
+\begin{columns}[T]
+\column{.58\textwidth}
+\includegraphics[width=\textwidth]{figures/res_income_R.png}
+\column{.39\textwidth}
+\small
+\begin{itemize}
+  \item Same order as the MILP, weaker: personal by van \rVanPersR\%, \rVanPersTopR\% above $\theta=0.9$.
+  \item Van users rich ($\bar\theta=$ \rThetaVanR), station users not (\rThetaFcsR).
+  \item Taxis by van: \rVanComR\%.
+  \item Taxis do \rQShareComR\% of the queueing.
+  \item $\theta<0.4$: \rQSharePoorR\% of queue time.
+\end{itemize}
+\end{columns}
+\slidefoot{Free-choice EVs of the \rNPairedR{} paired instances.}
+\end{frame}
+
+% =================================================================== 6 RL demand pressure
+\begin{frame}{Results (RL): demand pressure}
+\begin{columns}[T]
+\column{.58\textwidth}
+\includegraphics[width=\textwidth]{figures/res_pressure_R.png}
+\column{.39\textwidth}
+\small
+\begin{itemize}
+  \item Queues: \rQueueLowR{} / \rQueueMedR{} / \rQueueHigR{} min; longer than the MILP at high pressure.
+  \item Users queueing at high pressure: \rQueuedHigR\%.
+  \item Taxis use vans only at high pressure (\rVanComHigR\%).
+  \item Personal vans fall faster: \rVanPersLowR\% $\to$ \rVanPersHigR\%.
+  \item High pressure: \rQueueHiPoorR{} min ($\theta<0.4$) vs \rQueueHiRichR{} ($\theta\ge0.8$).
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% =================================================================== 7 combined
+\begin{frame}{Results: MILP and RL combined}
+\begin{columns}[T]
+\column{.58\textwidth}
+\includegraphics[width=\textwidth]{figures/res_combined.png}
+
+\scriptsize\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrr}
+\toprule
+ & MILP & RL\\
+\midrule
+valid plans (of 560) & \rNValidM & \rNValidR\\
+time per instance, $n=100$ & \rTimeMHundred\,s & \rTimeRHundred\,s\\
+personal / taxi by van & \rVanPersM{} / \rVanComM\% & \rVanPersR{} / \rVanComR\%\\
+guns busy / vans full & \rGunM{} / \rFullM\% & \rGunR{} / \rFullR\%\\
+\bottomrule
+\end{tabular}
+\column{.39\textwidth}
+\small
+\begin{itemize}
+  \item RL: +\rGapMean\% cost (median \rGapMed\%).
+  \item Equal in \rRlEqual, better than the MILP's time-limit plan in \rRlBetter.
+  \item RL plans \rRlOnly{} instances the MILP cannot.
+  \item Same charger type for \rAgree\% of EVs.
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% =================================================================== 8 experiments
+\begin{frame}{Additional experiments and sensitivities}
+\begin{columns}[T]
+\column{.47\textwidth}
+\includegraphics[height=5.3cm]{figures/res_experiments.png}
+\column{.5\textwidth}
+\scriptsize
+\begin{itemize}
+  \item \textbf{Taxi money sensitivity} moves $Z$ most: \rdZmTaxiMuLo\% / \rdZmTaxiMuHi\%.
+  \item \textbf{Van tariff} 15 / 35: $Z$ \rdZmTariffLo\% / \rdZmTariffHi\%; personal vans \rdVPmTariffLo{} / \rdVPmTariffHi{} pts.
+  \item \textbf{Fleet}: 3 vans lose \rLostmVansThree{} instances, 7 vans gain \rNewmVansSeven; cost flat. \textbf{Battery} 200\,kWh: \rdZmBattery\%.
+  \item \textbf{Station power}\textsuperscript{RL}: 11\,kW $Z$ \rdZrPowerLo\% (\rLostrPowerLo{} lost); 44\,kW \rdZrPowerHi\%.
+  \item \textbf{Guns per station}\textsuperscript{RL}: 1 gives \rdZrGunsOne\%, 4 gives \rdZrGunsFour\%.
+  \item \textbf{Energy per EV} $\pm25\%$\textsuperscript{RL}: $Z$ \rdZrDemandLo\% / \rdZrDemandHi\%.
+  \item RL follows the MILP's direction in \rDirAgree{} of \rDirTotal{} shared variants.
+\end{itemize}
+\end{columns}
+\slidefoot{One factor at a time; mean change of $Z$ on instances valid in both runs. RL: retrained model. \textsuperscript{RL} RL only (no MILP run).}
+\end{frame}
+
+\end{document}

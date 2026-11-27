@@ -1,0 +1,18 @@
+\begin{table}[H]\centering
+\scriptsize
+\caption{E5: every variant against its own baseline, for the three runs (paired instances; van shares and vans used: baseline $\to$ variant on the same paired instances).}\label{tab:expE5}
+\begin{adjustbox}{max width=\textwidth}\begin{tabular}{llrrrrrrrrrr}\toprule
+variant & method & valid & paired & \shortstack{newly valid\\/ lost} & \shortstack{mean\\$\Delta Z$ (\%)} & \shortstack{median\\$\Delta Z$ (\%)} & \shortstack{operator\\(\%)} & \shortstack{customers\\(\%)} & \shortstack{van share\\personal (\%)} & \shortstack{van share\\commercial (\%)} & vans used \\ \midrule
+personal $c^{\mathrm C,1}=7.5$ & MILP & 473 & 472 & +1/$-$2 & $-$2.21 & $-$2.20 & $-$1.15 & $-$2.59 & 19.9$\to$14.0 & 0.72$\to$0.82 & 2.18$\to$2.13 \\
+ & RL zero-shot & 499 & 499 & +0/$-$1 & $-$2.49 & $-$2.54 & $-$0.21 & $-$3.45 & 6.7$\to$5.5 & 0.93$\to$0.92 & 2.20$\to$2.20 \\
+ & RL retrained & 500 & 499 & +1/$-$1 & $-$2.46 & $-$2.56 & $-$0.59 & $-$3.24 & 6.7$\to$3.9 & 0.93$\to$0.83 & 2.20$\to$2.19 \\
+personal $c^{\mathrm C,1}=12.5$ & MILP & 473 & 472 & +1/$-$2 & +2.08 & +1.99 & +2.75 & +1.84 & 19.9$\to$29.4 & 0.73$\to$0.67 & 2.18$\to$2.37 \\
+ & RL zero-shot & 502 & 500 & +2/$-$0 & +2.45 & +2.49 & +0.31 & +3.36 & 6.7$\to$8.0 & 0.94$\to$0.84 & 2.21$\to$2.23 \\
+ & RL retrained & 500 & 500 & +0/$-$0 & +2.38 & +2.46 & +0.93 & +3.02 & 6.7$\to$11.7 & 0.94$\to$0.56 & 2.21$\to$2.26 \\
+commercial $\omega^{1}=4.5$ & MILP & 472 & 471 & +1/$-$3 & $-$2.67 & $-$2.66 & $-$0.17 & $-$3.80 & 19.9$\to$19.6 & 0.72$\to$0.67 & 2.18$\to$2.17 \\
+ & RL zero-shot & 500 & 499 & +1/$-$1 & $-$2.72 & $-$2.71 & $-$0.13 & $-$3.86 & 6.7$\to$6.5 & 0.93$\to$0.85 & 2.20$\to$2.19 \\
+ & RL retrained & 500 & 499 & +1/$-$1 & $-$2.52 & $-$2.56 & +0.17 & $-$3.70 & 6.7$\to$7.6 & 0.91$\to$0.57 & 2.20$\to$2.23 \\
+commercial $\omega^{1}=7.5$ & MILP & 475 & 472 & +3/$-$2 & +2.66 & +2.65 & +0.26 & +3.81 & 19.9$\to$19.6 & 0.73$\to$0.68 & 2.18$\to$2.20 \\
+ & RL zero-shot & 500 & 500 & +0/$-$0 & +2.72 & +2.71 & +0.26 & +3.82 & 6.7$\to$6.9 & 0.94$\to$0.93 & 2.21$\to$2.24 \\
+ & RL retrained & 499 & 499 & +0/$-$1 & +2.75 & +2.69 & +0.14 & +3.92 & 6.7$\to$7.0 & 0.91$\to$0.79 & 2.20$\to$2.22 \\
+\bottomrule\end{tabular}\end{adjustbox}\end{table}

@@ -1,3 +1,0 @@
-numpy>=1.26
-gurobipy>=13
-# matplotlib (optional: figures of the analysis)

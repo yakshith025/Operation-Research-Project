@@ -1,0 +1,111 @@
+% Algorithm 1: RL Training -- formulation-4 RL (2026-11-22_formulation_4/baseline_RL/code)
+% Compiles on its own (pdflatex algorithm_1.tex). To use in a paper, copy the preamble packages and the
+% algorithm environments. Every line is traced in code_traceability.md; symbols in mathematical_formulation.md.
+\documentclass[10pt]{article}
+\usepackage[margin=1.8cm,top=1.4cm,bottom=1.6cm]{geometry}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\algrenewcommand\algorithmicrequire{\textbf{Input:}}
+\algrenewcommand\algorithmicensure{\textbf{Output:}}
+\algnewcommand{\LineComment}[1]{\State \(\triangleright\) \textit{#1}}
+\newcommand{\Fe}{\mathcal F}
+\begin{document}
+
+\begin{algorithm}[H]
+\caption{RL Training (formulation~4: attention policy, imitation warm-up, then REINFORCE with a shared baseline)}
+\label{alg:rl-training}
+\small
+\begin{algorithmic}[1]
+\Require dataset templates per (file size, class); customer parameters $P$ (\texttt{f4\_params.json});
+  $N_{\text{imit}}{=}500$ (\texttt{imitation\_batches}), $I{=}50$ (\texttt{iters\_per\_epoch}),
+  $B{=}32$ (\texttt{batch\_instances}), $S{=}8$ (\texttt{samples}), $[n_{\min},n_{\max}]{=}[10,100]$,
+  $\alpha_{\text{imit}}{=}10^{-4}$ (\texttt{lr}), $\alpha_{\text{RL}}{=}2{\cdot}10^{-5}$ (\texttt{lr\_reinforce}),
+  $\gamma_{\alpha}{=}0.9998$ (\texttt{lr\_decay\_per\_epoch}), $g_{\max}{=}1$ (\texttt{max\_grad\_norm}),
+  $\lambda{=}10$ (\texttt{drop\_penalty}), $E_{\max}{=}500$, $E_{\min}{=}200$, $p{=}10$ (\texttt{patience\_epochs}),
+  $H{=}8$\,h
+\Ensure \texttt{model\_best.pt} (policy of the best validation epoch), \texttt{model\_last.pt}, \texttt{train\_log.csv}
+\State Initialise policy $\pi_\theta$ (\texttt{Policy}: $d{=}128$, 8 heads, 3 layers) with random weights; Adam optimiser
+\State Generator $\mathcal G \gets$ \textsc{Generator}(templates, $P$, seed)
+\State $\mathcal V \gets$ 24 fixed instances for each $n\in\{20,50,100\}$ from $\mathcal G$ (seed 777)
+\ForAll{$J\in\mathcal V$} \Comment{reference cost of the validation}
+  \State $L^{\text{rule}}_J \gets$ \Call{Rollout}{$J$, policy $=$ \textsc{GreedyRule}} \Comment{$Z+\lambda\sigma N_{\text{drop}}$}
+\EndFor
+\State $e\gets 0$;\; $\textit{iters}\gets 0$;\; $q^{\star}\gets\infty$;\; $\textit{stale}\gets 0$
+\While{$t_{\text{train}}<H$ \textbf{and} $e<E_{\max}$ \textbf{and not} ($e\ge E_{\min}+p$ \textbf{and} $\textit{stale}\ge p$)}
+  \State $\alpha \gets (\textit{iters}\ge N_{\text{imit}}\ ?\ \alpha_{\text{RL}} : \alpha_{\text{imit}})\cdot\gamma_\alpha^{\,e}$ \Comment{set once per epoch}
+  \For{$it=1,\dots,I$} \Comment{a failed batch is logged and skipped}
+    \State $n\sim\mathcal U\{n_{\min},\dots,n_{\max}\}$;\; $\{J_b\}_{b=1}^{B}\gets\mathcal G.\textsc{Batch}(n,B)$;\; $\textit{aug}_b\sim\mathcal U\{0,\dots,7\}$
+    \State $(h^{ev},h^{st},h^{dep})_b \gets \textsc{Encode}_\theta\big(\textsc{StaticFeatures}(J_b,\textit{aug}_b)\big)$ \Comment{once per instance}
+    \If{$\textit{iters}<N_{\text{imit}}$} \Comment{imitation warm-up (teacher forcing)}
+      \State $\log\pi_\theta(\tau_b) \gets$ \Call{Rollout}{$J_b$, $\pi_\theta$, teacher $=$ \textsc{GreedyRule}}, $b=1..B$
+      \State $\mathcal L \gets -\frac1B\sum_b \frac1n\log\pi_\theta(\tau_b)$
+    \Else \Comment{REINFORCE with shared baseline}
+      \State repeat every instance $S$ times; $\log\pi_\theta(\tau_{bj}), L_{bj} \gets$ \Call{Rollout}{$J_b$, $\pi_\theta$, sample}, $j=1..S$
+      \State $\bar L_b \gets \frac1S\sum_{j} L_{bj}$;\quad $A_{bj}\gets (L_{bj}-\bar L_b)/\max(|\bar L_b|,10^{-9})$ \Comment{no gradient}
+      \State $\mathcal L \gets \frac{1}{BS}\sum_{b,j} A_{bj}\,\log\pi_\theta(\tau_{bj})$
+    \EndIf
+    \State $g\gets\nabla_\theta\mathcal L$;\; \textbf{if} $\|g\|_2>g_{\max}$ \textbf{then} $g\gets g\,g_{\max}/\|g\|_2$
+    \State $\theta\gets\textsc{AdamStep}(\theta,g,\alpha)$;\quad $\textit{iters}\gets\textit{iters}+1$;\quad \textbf{if} $t_{\text{train}}\ge H$ \textbf{then break}
+  \EndFor
+  \State $q\gets \frac{1}{|\mathcal V|}\sum_{J\in\mathcal V} L_J^{\pi}/L^{\text{rule}}_J$, \;$L_J^{\pi}\gets$ \Call{Rollout}{$J$, $\pi_\theta$, greedy} (no augmentation)
+  \State $e\gets e+1$
+  \If{$q<q^{\star}$} \Comment{$q$ = validation ratio RL / rule}
+    \State $q^{\star}\gets q$;\; $\textit{stale}\gets0$;\; save \texttt{model\_best.pt}
+  \ElsIf{the epoch had REINFORCE batches \textbf{and} $e>E_{\min}$} \State $\textit{stale}\gets\textit{stale}+1$
+  \Else \State $\textit{stale}\gets 0$
+  \EndIf
+  \State save \texttt{model\_last.pt}; append a row to \texttt{train\_log.csv}
+\EndWhile
+\Statex
+\Function{Rollout}{$J$, policy, mode $\in\{$sample, greedy, teacher$\}$} \Comment{\texttt{rl\_f4\_model.rollout}}
+  \State $\mathcal D,\mathcal X\gets\emptyset$;\; $a_k\gets0\ \forall k<G$;\; $p_m\gets0,\ a_m\gets0,\ b_m\gets B_{\text{van}},\ \nu_m\gets0\ \forall m$;\; $Z_{\text{acc}}\gets0$;\; $\ell\gets0$
+  \State $\sigma\gets$ mean over EVs of $\min_k\{\Delta Z_{ik}:\Fe_{ik}\}$ on this empty state (clamped $\ge1$) \Comment{\texttt{cost\_scale}}
+  \Loop
+    \State compute $S_{ik},w_{ik},C_{ik},\Delta Z_{ik},\Fe_{ik}$ for all open $i$ and all $K=G{+}M$ resources \Comment{\texttt{options}}
+    \State $\mathcal X\gets\mathcal X\cup\{i\notin\mathcal D:\ \neg\exists k\ \Fe_{ik}\}$;\; $\mathcal D\gets\mathcal D\cup\mathcal X$ \Comment{\texttt{drop\_dead}}
+    \If{$\mathcal D=\{0,\dots,n-1\}$} \Comment{every EV placed or dropped}
+      \State \textbf{break}
+    \EndIf
+    \State $u\gets \textsc{EVLogits}_\theta(h,\phi,\text{global}; \text{mask } \exists k\,\Fe_{ik})$;\; $i\gets$ select from $\mathrm{softmax}(u)$ by mode
+    \State $v\gets \textsc{ResLogits}_\theta(h_i,g,\rho,\psi_{i\cdot}; \text{mask }\Fe_{i\cdot})$;\; $k\gets$ select from $\mathrm{softmax}(v)$ by mode
+    \State $\ell\gets\ell+\log\mathrm{softmax}(u)_i+\log\mathrm{softmax}(v)_k$
+    \State $Z_{\text{acc}}\gets Z_{\text{acc}}+\Delta Z_{ik}$;\; $\mathcal D\gets\mathcal D\cup\{i\}$;\; record $(\mathrm{res}_i,S_{ik},C_{ik})$ \Comment{\texttt{Env.step}}
+    \If{$k<G$} \Comment{gun}
+      \State $a_k\gets C_{ik}$
+    \Else \Comment{van $m=k-G$}
+      \State $b_m\gets b_m-E_i/\eta-\beta d_{p_m,i+1}$;\; $p_m\gets i+1$;\; $a_m\gets C_{ik}$;\; $\nu_m\gets\nu_m+1$
+    \EndIf
+  \EndLoop
+  \State \Return $\ell=\log\pi(\tau)$ and $L = Z_{\text{acc}}+\lambda\,\sigma\,|\mathcal X|$ \Comment{\texttt{penalised\_cost}}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Mode of selection in \textsc{Rollout}.} \emph{sample}: $i\sim\mathrm{softmax}(u)$, $k\sim\mathrm{softmax}(v)$
+(\texttt{torch.multinomial}); \emph{greedy}: $\arg\max$; \emph{teacher}: the \textsc{GreedyRule} action (EVs ordered
+stranded first, then by $r_i$, then by larger $c^Q_i$; cheapest feasible $\Delta Z_{ik}$), whose log-probability under
+$\pi_\theta$ is accumulated. \textsc{GreedyRule} as a \emph{policy} (validation reference) uses the same choice without
+a network. Definitions of $S_{ik}, w_{ik}, C_{ik}, \Delta Z_{ik}, \Fe_{ik}$, the features $\phi,\rho,\psi$ and the
+logits: \texttt{mathematical\_formulation.md}, Sections 3--6.
+
+\begin{algorithm}[H]
+\caption{RL Evaluation / inference (\texttt{solve\_rl\_f4.py}; no parameter update)}
+\label{alg:rl-eval}
+\begin{algorithmic}[1]
+\Require trained $\pi_\theta$ (\texttt{model\_best.pt}); test instance $J$ (Solomon file, first $n$ EVs); $A{=}8$ symmetries, $S'{=}64$ samples
+\Ensure plan of $J$ with status \texttt{plan} or \texttt{invalid\_plan}
+\State encode $J$ once per symmetry $\textit{aug}=0,\dots,A-1$
+\For{$\textit{aug}=0,\dots,A-1$}
+  \State run \Call{Rollout}{$J$, $\pi_\theta$, greedy} once and \Call{Rollout}{$J$, $\pi_\theta$, sample} $S'$ times (in chunks of 1040)
+\EndFor
+\State keep the rollout with the smallest $|\mathcal X|\cdot10^{12}+Z_{\text{acc}}$ \Comment{fewest dropped EVs, then lowest $Z$}
+\If{$\mathcal X\neq\emptyset$} append each dropped EV (by $r_i$) to the resource finishing it earliest, ignoring the violated limits \Comment{\texttt{plan\_of}}
+\EndIf
+\State score the plan with the independent checker (\texttt{check\_plan\_f4}); status \texttt{invalid\_plan} if it reports violations
+\end{algorithmic}
+\end{algorithm}
+
+\end{document}

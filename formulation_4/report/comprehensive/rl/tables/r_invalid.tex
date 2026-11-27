@@ -1,0 +1,8 @@
+\begin{table}[H]\centering
+\caption{Invalid RL plans by family. Last column: instances where an EV the policy could not place cannot be fully charged by $T$ even alone (free gun at once, or a van leaving for it at once).}\label{tab:invalid}
+\begin{adjustbox}{max width=\textwidth}\begin{tabular}{lrrrrrrr}\toprule
+family & invalid & smallest $n$ & largest $n$ & MILP infeasible & MILP no plan & unplaced EVs (mean) & one EV alone impossible \\ \midrule
+C2 & 1 & 100 & 100 & 0 & 1 & 1.0 & 0 \\
+R1 & 31 & 50 & 100 & 29 & 2 & 2.1 & 29 \\
+RC1 & 28 & 10 & 100 & 22 & 6 & 1.9 & 20 \\
+\bottomrule\end{tabular}\end{adjustbox}\end{table}

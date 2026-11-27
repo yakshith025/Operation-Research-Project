@@ -1,0 +1,16 @@
+\begin{table}[H]\centering
+\small
+\caption{Distribution of instance-level results over the valid RL plans.}\label{tab:inststats}
+\begin{adjustbox}{max width=\textwidth}\begin{tabular}{lrrrrrrr}\toprule
+measure (per instance) & count & mean & median & 10th pct & 90th pct & min & max \\ \midrule
+objective $Z$ per EV (Rs) & 500 & 898 & 875 & 813 & 1027 & 776 & 1132 \\
+operator share of $Z$ (\%) & 500 & 30.8 & 30.0 & 27.5 & 37.4 & 18.9 & 48.0 \\
+vans used & 500 & 2.2 & 2.0 & 1.0 & 4.0 & 0.0 & 5.0 \\
+EVs served by a van (\%) & 500 & 17.6 & 16.7 & 12.0 & 25.0 & 0.0 & 40.0 \\
+free-choice EVs by van (\%) & 500 & 2.9 & 1.2 & 0.0 & 7.4 & 0.0 & 22.2 \\
+mean FCS queue (min) & 500 & 1.88 & 0.19 & 0.00 & 7.82 & 0.00 & 15.12 \\
+mean van wait (min) & 493 & 22.3 & 14.9 & 0.0 & 53.0 & 0.0 & 147.3 \\
+mean request to charged (min) & 500 & 64.8 & 60.8 & 55.0 & 79.5 & 48.5 & 111.9 \\
+van km & 500 & 71.0 & 69.1 & 21.6 & 127.1 & 0.0 & 240.1 \\
+RL time (s), all instances & 560 & 0.119 & 0.119 & 0.042 & 0.201 & 0.023 & 0.389 \\
+\bottomrule\end{tabular}\end{adjustbox}\end{table}

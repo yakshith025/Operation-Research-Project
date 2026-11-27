@@ -1,0 +1,12 @@
+\begin{table}[H]\centering
+\small
+\caption{E9 and E10: the six retrained models (no zero-shot run exists for these experiments).}\label{tab:retrainrl}
+\begin{adjustbox}{max width=\textwidth}\begin{tabular}{lrrrrr}\toprule
+model trained on & minutes (GPU) & best epoch & \shortstack{validation cost\\RL / greedy} & \shortstack{mean $\Delta Z$\\(\%)} & valid plans \\ \midrule
+1 gun per station & 41 & 216 & 0.930 & +4.76 & 432 \\
+4 guns per station & 38 & 198 & 0.981 & $-$2.21 & 509 \\
+11 kW per gun & 39 & 203 & 0.943 & +20.13 & 398 \\
+44 kW per gun & 38 & 203 & 0.976 & $-$12.30 & 532 \\
+energy per EV $\times0.75$ & 43 & 218 & 0.959 & $-$21.82 & 539 \\
+energy per EV $\times1.25$ & 38 & 142 & 0.969 & +22.19 & 421 \\
+\bottomrule\end{tabular}\end{adjustbox}\end{table}

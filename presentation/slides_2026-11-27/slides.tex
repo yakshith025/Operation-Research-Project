@@ -1,0 +1,740 @@
+\documentclass[aspectratio=169,11pt,t]{beamer}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}
+\usepackage[scaled=.92]{helvet}
+\usepackage{booktabs,tikz}
+\usetikzlibrary{arrows.meta,shapes.geometric}
+\definecolor{gradOrange}{HTML}{F07F3C}
+\definecolor{gradPurple}{HTML}{B84FC2}
+\definecolor{iiscOrange}{gray}{0.45}
+\definecolor{iiscPurple}{gray}{0.1}
+\definecolor{accP}{HTML}{5F4B6B}
+\definecolor{accA}{HTML}{C58A63}
+\setbeamercolor{background canvas}{bg=white!99!black}
+\setbeamercolor{structure}{fg=iiscPurple}
+\setbeamercolor{itemize item}{fg=iiscOrange}
+\setbeamercolor{itemize subitem}{fg=iiscPurple}
+\setbeamerfont{frametitle}{series=\bfseries,size=\LARGE}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize item}[square]
+% title pinned to the top of the slide
+\setbeamertemplate{frametitle}{\vskip1.1ex{\color{black}\sffamily\bfseries\LARGE\insertframetitle}\par\vskip1.2ex}
+\setbeamertemplate{background}{\vbox to\paperheight{\vfill\hbox to\paperwidth{%
+  \tikz[baseline=0]\shade[left color=gradOrange,right color=gradPurple] (0,0) rectangle (\paperwidth,.16);}}}
+\setbeamertemplate{footline}{\hfill{\color{black!35}\fontsize{7}{8}\selectfont\insertframenumber/\inserttotalframenumber}\hspace*{.85cm}\vskip4.6ex}
+\setbeamersize{text margin left=1.6cm,text margin right=1.6cm}
+% ---- extras needed by the content
+\usepackage{amsmath,amssymb}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\SetAlFnt{\scriptsize}\SetAlCapFnt{\scriptsize}
+\input{numbers.tex}
+% diagram palette (muted accents + light tints of the bar colours)
+\colorlet{cEV}{accP!14}
+\colorlet{cFCS}{accA!35}
+\colorlet{cVan}{gradOrange!30}
+\colorlet{cDepot}{gradPurple!22}
+\colorlet{cNet}{accP!18}
+\colorlet{cPtr}{accA!25}
+
+\begin{document}
+
+% ======================================================================= 1 title
+\begin{frame}[plain,c]
+\centering
+\IfFileExists{logo_hd.png}{\includegraphics[height=2.4cm]{logo_hd.png}}{\rule{0pt}{2.4cm}}\vfill
+{\fontsize{22}{26}\selectfont\bfseries EV Charging with Stations and Vans:\\[.2em]MILP and Reinforcement Learning\par}\vfill
+{\rmfamily\itshape\normalsize Yakshith Maddineni (SR 26080) \ and \ Kartikeya Gaur (SR 26371)\\[.5ex]
+CP 320 Operations Research for Mobility, course project\\[.5ex]
+Indian Institute of Science, Bengaluru\\[.5ex]
+27 November 2026\par}
+\vspace{.5cm}
+\end{frame}
+
+% ======================================================================= 2 outline
+\begin{frame}{Outline}
+\centering
+\begin{tikzpicture}[
+ root/.style={fill=accP,text=white,minimum width=6.2cm,minimum height=.75cm,font=\small\bfseries},
+ branch/.style={draw=accP!60,line width=.6pt,fill=accP!7,minimum width=2.45cm,minimum height=.7cm,font=\footnotesize\bfseries,align=center},
+ leaf/.style={draw=accP!25,line width=.4pt,fill=white,text width=2.33cm,minimum height=.56cm,font=\scriptsize,align=left,inner xsep=3pt},
+ arr/.style={-{Stealth[length=3.5pt]},accP!45,line width=.5pt}]
+\node[root] (r) at (6.4,0) {EV charging: MILP and RL};
+\foreach \x/\n/\t in {1.3/b1/{Problem},3.85/b2/{Methods},6.4/b3/{MILP\\vs RL},8.95/b4/{Income,\\demand},11.5/b5/{Infrastructure,\\experiments}}{
+  \node[branch] (\n) at (\x,-1.45) {\t};
+  \draw[arr] (r.south) -- ++(0,-.3) -| (\n.north);
+}
+\node[leaf] (a1) at (1.3,-2.55) {\textcolor{accA}{\bfseries 3}\;\; Motivation};
+\node[leaf] (a2) at (1.3,-3.3)  {\textcolor{accA}{\bfseries 4-5}\; Model};
+\node[leaf] (a3) at (1.3,-4.05) {\textcolor{accA}{\bfseries 6}\;\; Customers};
+\node[leaf] (a4) at (1.3,-4.8)  {\textcolor{accA}{\bfseries 7}\;\; Data};
+\node[leaf] (c1) at (3.85,-2.55) {\textcolor{accA}{\bfseries 8}\;\; MILP};
+\node[leaf] (c2) at (3.85,-3.3)  {\textcolor{accA}{\bfseries 9}\;\; RL setting};
+\node[leaf] (c3) at (3.85,-4.05) {\textcolor{accA}{\bfseries 10}\; Network};
+\node[leaf] (c4) at (3.85,-4.8)  {\textcolor{accA}{\bfseries 11-12}\, Training};
+\node[leaf] (d1) at (6.4,-2.55) {\textcolor{accA}{\bfseries 13}\; Setup};
+\node[leaf] (d2) at (6.4,-3.3)  {\textcolor{accA}{\bfseries 14}\; Solved};
+\node[leaf] (d3) at (6.4,-4.05) {\textcolor{accA}{\bfseries 15}\; Cost, speed};
+\node[leaf] (e1) at (8.95,-2.55) {\textcolor{accA}{\bfseries 16}\; Van users};
+\node[leaf] (e2) at (8.95,-3.3)  {\textcolor{accA}{\bfseries 17-18}\, Service};
+\node[leaf] (e3) at (8.95,-4.05) {\textcolor{accA}{\bfseries 19-20}\, Pressure};
+\node[leaf] (e4) at (8.95,-4.8)  {\textcolor{accA}{\bfseries 21}\; In exps.};
+\node[leaf] (f1) at (11.5,-2.55) {\textcolor{accA}{\bfseries 22-24}\, Infra use};
+\node[leaf] (f2) at (11.5,-3.3)  {\textcolor{accA}{\bfseries 25-26}\, Experiments};
+\node[leaf] (f3) at (11.5,-4.05) {\textcolor{accA}{\bfseries 27-28}\, E9, E10 (RL)};
+\node[leaf] (f4) at (11.5,-4.8)  {\textcolor{accA}{\bfseries 29}\; Summary};
+\foreach \a/\b in {b1/a1,a1/a2,a2/a3,a3/a4,b2/c1,c1/c2,c2/c3,c3/c4,b3/d1,d1/d2,d2/d3,b4/e1,e1/e2,e2/e3,e3/e4,b5/f1,f1/f2,f2/f3,f3/f4}{\draw[arr] (\a) -- (\b);}
+\end{tikzpicture}
+\end{frame}
+
+% ======================================================================= 3 motivation
+\begin{frame}{Motivation}
+\begin{itemize}
+  \item Parked EVs request charging during a period $[0,T]$.
+  \item Two ways to serve a request:
+  \begin{itemize}
+    \item \textbf{Station (FCS)}: the EV drives there, may queue, charges at 22\,kW.
+    \item \textbf{Van (MCS)}: comes to the parked EV, charges at 30\,kW; scarce, dearer.
+  \end{itemize}
+  \item Customers value time and money differently:
+  \begin{itemize}
+    \item \textbf{Personal} owners are free while a van charges.
+    \item \textbf{Commercial} cars (taxis) lose earnings every minute off the road.
+  \end{itemize}
+  \item \textbf{Questions}: who gets a station, who a van, in which order?\\ Can a learned policy match the optimum, fast?
+\end{itemize}
+\end{frame}
+
+% ======================================================================= 4 problem setting
+\begin{frame}{Problem model}
+\begin{columns}[T]
+\column{.55\textwidth}
+\begin{itemize}
+  \item \textbf{EV $i$}: request $r_i$, energy $E_i$, range $R_i$, segment $s_i$, income $\theta_i\in[0,1]$
+  \item \textbf{Stations}: 12 $\times$ 2 guns, 22\,kW, one EV per gun at a time
+  \item \textbf{Vans}: 5 from a depot; 30\,kW, 150\,kWh, $\le$ 6 EVs
+  \item \textbf{Decide}: gun or van per EV, gun order, van routes, start times
+\end{itemize}
+\column{.42\textwidth}
+\centering
+\begin{tikzpicture}[font=\scriptsize,
+  ev/.style={circle,draw=accP,fill=cEV,inner sep=1.2pt,minimum size=5mm},
+  st/.style={rectangle,rounded corners=1pt,draw=accA!80!black,fill=cFCS,minimum size=5mm},
+  dp/.style={regular polygon,regular polygon sides=5,draw=gradPurple!70!black,fill=cDepot,minimum size=8.5mm,inner sep=0pt},
+  drv/.style={-{Stealth[length=3pt]},accA!90!black,dashed,line width=.6pt},
+  vn/.style={-{Stealth[length=3pt]},gradOrange!85!black,line width=.8pt}]
+\node[dp] (d) at (0,0) {depot};
+\node[st] (f1) at (2.6,1.6) {FCS};
+\node[st] (f2) at (3.0,-1.2) {FCS};
+\node[ev] (e1) at (1.1,2.3) {EV};
+\node[ev] (e2) at (3.9,0.6) {EV};
+\node[ev] (e3) at (1.2,-1.6) {EV};
+\node[ev] (e4) at (4.2,-2.3) {EV};
+\draw[drv] (e1) -- node[below,sloped]{drives} (f1);
+\draw[drv] (e4) -- (f2);
+\draw[vn] (d) -- node[below,sloped]{van} (e3);
+\draw[vn] (e3) to[bend right=15] (e2);
+\draw[vn] (e2) to[bend left=25] node[above,sloped]{back by $T$} (d);
+\end{tikzpicture}
+\end{columns}
+\end{frame}
+
+% ======================================================================= 5 objective
+\begin{frame}{Objective and constraints}
+\textbf{Minimise} operator cost + cost perceived by customers:
+\[
+Z=\underbrace{Z_1}_{\text{EV driving}}+\underbrace{Z_2}_{\text{van km}}+\underbrace{Z_3}_{\text{van dispatch}}
+ +\underbrace{Z_4}_{\text{energy}}+\underbrace{Z_5}_{\text{tariff}\times\mu_i}+\underbrace{Z_6}_{\text{time}\times c^{a}_i}
+\]
+\textbf{Subject to}
+\begin{itemize}
+  \item each EV served once; a station only within range $R_i$
+  \item one EV per gun at a time; station queue $\le W_i$
+  \item vans: $\le$ 6 EVs, battery limit, back at the depot by $T$
+  \item every EV fully charged by $T$
+\end{itemize}
+Segment and income act only through $\mu_i$, $c^{a}_i$, $W_i$: model size unchanged.
+\end{frame}
+
+% ======================================================================= 6 customer model
+\begin{frame}{Customer model: segment and income}
+\begin{columns}[T]
+\column{.6\textwidth}
+\scriptsize\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{lrrrr}
+\toprule
+ & \multicolumn{2}{c}{personal} & \multicolumn{2}{c}{commercial}\\
+parameter & $\theta=0$ & $\theta=1$ & $\theta=0$ & $\theta=1$\\
+\midrule
+money sensitivity $\mu$ & 1.5 & 0.5 & 1.5 & 0.5\\
+driving $c^D$ (Rs/min) & 1.5 & 15 & 1.5 & 6\\
+queueing $c^Q$ (Rs/min) & 2.5 & 25 & 2.0 & 7.5\\
+station charging $c^C$ & 1.0 & 10 & 1.5 & 6\\
+van wait + charging $c^V$ & 0.5 & 5 & 1.5 & 6\\
+queue tolerance $W$ (min) & 60 & 15 & 40 & 15\\
+\bottomrule
+\end{tabular}
+
+\vspace{1ex}
+Tariffs: station 15\,Rs/kWh, van 25\,Rs/kWh.
+\column{.37\textwidth}
+\small
+\begin{itemize}
+  \item Linear in income $\theta$.
+  \item Commercial: one downtime rate $\omega(\theta)$ for all time.
+  \item 70\% of requests commercial.
+  \item $\theta$: personal Beta(2.5,\,1), commercial Beta(3,\,5).
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% ======================================================================= 7 data
+\begin{frame}{Data: EV-Solomon instances}
+\begin{itemize}
+  \item 56 Solomon routing files, classes C1, C2, R1, R2, RC1, RC2.
+  \item Customers $\to$ EVs; ready times $\to$ requests; demand $\to$ 10--40\,kWh.
+  \item Stations at k-means centres; 15\% of EVs reachable only by van.
+  \item Horizon $T$: short 230--1236\,min (type 1), long 960--3390\,min (type 2).
+  \item Instance = file + first $n$ EVs, $n=10,\dots,100$: \textbf{560 instances}, shared by all methods.
+\end{itemize}
+\end{frame}
+
+% ======================================================================= 8 MILP
+\begin{frame}{Exact model (MILP) and baseline}
+\begin{itemize}
+  \item \textbf{MILP}: full model, Gurobi 13, 300\,s per instance, 32 cores; greedy warm start.
+  \item Size at $n=100$: about 56\,000 binaries, 172\,000 constraints.
+  \item \textbf{Greedy rule}: stranded EVs first, then by request time; each takes its cheapest feasible charger.
+  \item \textbf{Checker}: every plan of every method is re-checked and its $Z$ recomputed.
+\end{itemize}
+\end{frame}
+
+% ======================================================================= 9 RL formulation
+\begin{frame}{RL formulation}
+\begin{columns}[T]
+\column{.5\textwidth}
+\begin{itemize}
+  \item \textbf{Episode}: build one plan for one instance.
+  \item \textbf{State}: EVs placed or dropped; gun free times; van position, free time, battery, seats.
+  \item \textbf{Action}: (EV $i$, charger $k$); $i$ joins $k$ at the earliest start.
+\end{itemize}
+\column{.5\textwidth}
+\begin{itemize}
+  \item \textbf{Mask}: range, queue $\le W_i$, done by $T$, van seat and battery.
+  \item \textbf{Step cost}: $\Delta Z_{ik}$.
+  \item \textbf{End}: all EVs placed or dropped.
+  \item \textbf{Plan cost}: $L = Z + 10\,\sigma\cdot\text{dropped}$
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% ======================================================================= 10 policy network
+\begin{frame}{Policy network}
+\centering
+\begin{tikzpicture}[font=\scriptsize,
+  bx/.style={draw=accP!70,fill=white,rounded corners=2pt,align=center,minimum height=.95cm,text width=2.15cm,line width=.6pt},
+  enc/.style={bx,fill=cNet},
+  ptr/.style={bx,fill=cPtr,draw=accA!90!black},
+  envb/.style={bx,fill=cVan,draw=gradOrange!80!black},
+  a/.style={-{Stealth[length=3.5pt]},accP!70,line width=.6pt}]
+\node[bx] (in) at (0,0) {\textbf{Static features}\\ EVs, stations, depot};
+\node[enc] (enc) at (3.45,0) {\textbf{Encoder}\\ 3 attention layers,\\ $d=128$, 8 heads};
+\node[bx] (dyn) at (3.45,-1.75) {\textbf{Dynamic features}\\ options, cheapest cost, regret};
+\node[ptr] (p1) at (6.9,0) {\textbf{Pointer 1}\\ score waiting EVs\\ $\to$ pick $i$};
+\node[ptr] (p2) at (10.35,0) {\textbf{Pointer 2}\\ score chargers of $i$\\ $\to$ pick $k$};
+\node[envb] (env) at (10.35,-1.75) {\textbf{Environment}\\ book $i$ on $k$, add $\Delta Z_{ik}$};
+\draw[a] (in) -- (enc);
+\draw[a] (enc) -- node[above]{$h$} (p1);
+\draw[a] (p1) -- node[above]{EV $i$} (p2);
+\draw[a] (dyn) -| (p1);
+\draw[a] (p2) -- node[right]{$(i,k)$} (env);
+\draw[a] (env) -- node[below]{new state} (dyn);
+\end{tikzpicture}
+
+\vspace{2ex}
+\raggedright
+\begin{itemize}
+  \item Infeasible choices masked; $\log\pi(i,k)=\log\pi(i)+\log\pi(k\mid i)$.
+  \item \Params{} parameters; works for any $n$, stations and vans.
+\end{itemize}
+\end{frame}
+
+% ======================================================================= 11 training
+\begin{frame}{RL training: REINFORCE with a shared baseline}
+\begin{columns}[T]
+\column{.56\textwidth}
+\begin{algorithm}[H]
+\caption{RL Training}
+\For{epoch $=1$ \KwTo 500}{
+  \For{batch $=1$ \KwTo 50}{
+    Generate 32 random instances (same $n$)\;
+    \eIf{first 500 batches (warm-up)}{
+      copy the greedy rule: loss $=-\frac1n\log\pi_\theta(\text{rule plan})$\;
+    }{
+      8 sampled episodes per instance, costs $L_j$\;
+      loss $=$ mean $A_j\log\pi_\theta(\text{plan}_j)$, $A_j=(L_j-\bar L)/\bar L$\;
+    }
+    Adam step on $\theta$ (gradient norm $\le 1$)\;
+  }
+  Validate against the greedy rule; keep the best $\theta$\;
+}
+\end{algorithm}
+\column{.4\textwidth}
+\small
+\begin{itemize}
+  \item Random initial weights.
+  \item $\bar L$: mean cost of the 8 plans of an instance; no critic, no replay buffer.
+  \item Early stop: 10 epochs without gain, after epoch 200.
+  \item Test: 8 map rotations $\times$ (1 greedy + 64 sampled) plans; best kept.
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% ======================================================================= 12 representative example
+% Toy instance: 1 station (2 guns, 22 kW), 1 van (30 kW), 3 EVs. Delta Z values are exact for these inputs
+% (formulation-4 coefficients); the network probabilities are illustrative.
+\begin{frame}{Representative example: one step}
+\centering
+\begin{tikzpicture}[font=\scriptsize,
+  ev/.style={circle,draw=accP,fill=cEV,inner sep=0.6pt,minimum size=4.6mm,font=\tiny\bfseries},
+  evd/.style={ev,fill=accP!45,text=white},
+  st/.style={rectangle,rounded corners=1pt,draw=accA!80!black,fill=cFCS,minimum height=4.6mm,inner sep=1.5pt,font=\tiny\bfseries},
+  dp/.style={regular polygon,regular polygon sides=5,draw=gradPurple!70!black,fill=cDepot,minimum size=6.5mm,inner sep=0pt,font=\tiny\bfseries},
+  van/.style={rectangle,rounded corners=1.5pt,draw=gradOrange!80!black,fill=cVan,minimum height=3.6mm,inner sep=1.5pt,font=\tiny\bfseries},
+  opt/.style={accA!90!black,densely dashed,line width=.5pt},
+  bad/.style={black!35,densely dotted,line width=.5pt},
+  inp/.style={draw=accP!50,fill=white,rounded corners=1pt,minimum height=4.4mm,inner sep=2pt,align=left,text width=2.3cm,font=\tiny},
+  nn/.style={draw=accP!70,fill=cNet,rounded corners=1pt,minimum width=6mm,minimum height=4.4mm,inner sep=0pt,font=\tiny\bfseries},
+  pick/.style={ellipse,draw=accA!90!black,fill=cPtr,inner sep=1pt,font=\tiny\bfseries,align=center},
+  envb/.style={draw=gradOrange!80!black,fill=cVan,rounded corners=2pt,align=left,text width=2.6cm,inner sep=3pt,font=\tiny},
+  a/.style={-{Stealth[length=3pt]},accP!70,line width=.5pt},
+  lab/.style={font=\tiny,text=black!70}]
+% ---------------- left: instance at the start of the episode
+\node[font=\scriptsize\bfseries,anchor=west] at (-0.2,0.45) {Step 1 (start)};
+\node[dp] (d) at (0.3,-1.9) {D};
+\node[st] (s) at (2.2,-0.75) {FCS g1 g2};
+\node[van] (v) at (0.3,-2.75) {van};
+\node[ev] (e1) at (0.5,-0.2) {1};
+\node[ev] (e2) at (2.9,-1.95) {2};
+\node[ev] (e3) at (1.6,-2.9) {3};
+\draw[opt] (e1) -- node[lab,above,sloped]{2 km} (s);
+\draw[opt] (e2) -- node[lab,right]{3 km} (s);
+\draw[bad] (e3) -- node[lab,left,pos=.45]{out of range} (s);
+\node[align=left,anchor=north west,font=\tiny,text width=3.1cm] at (-0.25,-3.35)
+ {\textbf{1} personal, $\theta=0.9$, 20\,kWh\\ \textbf{2} taxi, $\theta=0.3$, 30\,kWh, $W=32.5$\,min\\ \textbf{3} personal, 15\,kWh, stranded (van only)};
+% ---------------- middle top: pointer 1 (choose the EV)
+\node[font=\scriptsize\bfseries,anchor=west] at (3.55,0.45) {Pointer 1: which EV?};
+\foreach \k/\y/\t/\p in {1/0/{EV 1: cheapest 960}/0.62, 2/-0.6/{EV 2: cheapest 1082}/0.31, 3/-1.2/{EV 3: van only, 2211}/0.07}{
+  \node[inp] (i\k) at (4.85,\y) {\t};
+  \node[nn] (n\k) at (6.65,\y) {$\pi_\theta$};
+  \node[lab] (p\k) at (7.45,\y) {\p};
+  \draw[a] (i\k) -- (n\k); \draw[a] (n\k) -- (p\k);
+}
+\node[pick] (k1) at (8.6,-0.6) {sample\\ $\to$ EV 1};
+\foreach \k in {1,2,3}{\draw[a] (p\k) -- (k1);}
+% ---------------- middle bottom: pointer 2 (choose the charger of EV 1)
+\node[font=\scriptsize\bfseries,anchor=west] at (3.55,-1.85) {Pointer 2: which charger for EV 1?};
+\node[inp] (j1) at (4.85,-2.4) {gun 1: $\Delta Z=960$, wait 0};
+\node[inp,draw=black!25,text=black!45] (j2) at (4.85,-3.0) {gun 2: masked (twin)};
+\node[inp] (j3) at (4.85,-3.6) {van: $\Delta Z=2362$};
+\foreach \k/\y/\p in {1/-2.4/0.93, 3/-3.6/0.07}{
+  \node[nn] (m\k) at (6.65,\y) {$\pi_\theta$};
+  \node[lab] (q\k) at (7.45,\y) {\p};
+  \draw[a] (j\k) -- (m\k); \draw[a] (m\k) -- (q\k);
+}
+\node[lab] at (7.05,-3.0) {masked};
+\node[pick] (k2) at (8.6,-3.0) {sample\\ $\to$ gun 1};
+\draw[a] (q1) -- (k2); \draw[a] (q3) -- (k2);
+\draw[a] (k1) -- node[lab,right]{EV 1} (k2);
+% ---------------- right: environment update and the next state
+\node[envb] (env) at (11.05,-0.35) {\textbf{Environment}: book EV 1 on gun 1, 7.7--62.2\,min; $Z \mathrel{+}= 960$};
+\draw[a] (k2.east) -- ++(0.25,0) |- (env.west);
+\node[font=\scriptsize\bfseries,anchor=west] at (9.55,-1.3) {Step 2};
+\node[st] (s2) at (10.9,-2.0) {FCS g1 g2};
+\node[evd] (f1) at (9.95,-1.75) {1};
+\node[ev] (f2) at (12.05,-2.45) {2};
+\node[ev] (f3) at (10.3,-3.1) {3};
+\draw[accP,line width=.7pt] (f1) -- (s2);
+\draw[opt] (f2) -- (s2);
+\draw[a] (env.south) -- (11.05,-1.62);
+\node[align=left,anchor=north west,font=\tiny,text width=2.75cm] at (9.45,-3.45)
+ {EV 2: gun 1 masked (wait 51 $>$ 32.5\,min), gun 2 $\Delta Z=1082$\\ EV 3: van only, $\Delta Z=2211$\\ repeat until all EVs placed};
+\end{tikzpicture}
+
+\vspace{-.3ex}
+{\tiny $\Delta Z$ in Rs, exact for this toy instance; van cost includes 1500 dispatch; probabilities illustrative.}
+\end{frame}
+
+% ======================================================================= 13 setup
+\begin{frame}{Experimental setup}
+\begin{columns}[T]
+\column{.5\textwidth}
+\small
+\begin{tabular}{ll}
+\toprule
+item & value\\
+\midrule
+instances & 560\\
+MILP & Gurobi 13, 300\,s, 32 cores\\
+RL training & \TrainMin{} min, one GPU\\
+RL epochs & \TrainEpochs{} (best \BestEpoch)\\
+RL test & 520 plans per instance\\
+variants & 15 MILP + RL, 6 RL only\\
+\bottomrule
+\end{tabular}
+\column{.46\textwidth}
+\small
+\textbf{Experiments} (one input changed)
+\begin{itemize}
+  \item E5: value of charging time $\pm25\%$
+  \item E6: money sensitivity $\pm25\%$
+  \item E1: van tariff 15 or 35 Rs/kWh
+  \item E2: 3 or 7 vans; 4 or 8 seats
+  \item E8: van battery 200 kWh
+  \item E9 (RL only): 1 or 4 guns; 11 or 44 kW
+  \item E10 (RL only): energy per EV $\times$0.75, $\times$1.25
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% ======================================================================= 13 solved instances
+\begin{frame}{Results: solved instances}
+\begin{columns}[T]
+\column{.55\textwidth}
+\includegraphics[width=\textwidth]{figures/outcome.png}
+\column{.42\textwidth}
+\small
+\begin{itemize}
+  \item MILP: \NOpt{} optimal, \NTL{} time-limit plans, \NNoPlan{} no plan, \NInf{} infeasible.
+  \item Infeasibility comes from the data (short horizons R1, RC1).
+  \item RL: \NValidR{} valid plans, \RlOnly{} where the MILP has none.
+  \item RL never misses an instance the MILP solves.
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% ======================================================================= 14 cost and speed
+\begin{frame}{Results: cost and speed}
+\begin{columns}[T]
+\column{.55\textwidth}
+\includegraphics[width=\textwidth]{figures/gap.png}
+\column{.42\textwidth}
+\small
+\begin{tabular}{lrr}
+\toprule
+ & MILP & RL\\
+\midrule
+valid plans & \NValidM & \NValidR\\
+above MILP & -- & \GapMean\%\\
+\quad median & -- & \GapMed\%\\
+time & \TimeM\,s & \TimeR\,s\\
+\bottomrule
+\end{tabular}
+
+\vspace{1ex}
+\begin{itemize}
+  \item \NPaired{} paired instances; RL beats the MILP's time-limit plan in \RlBetter.
+  \item RL is about \Speed{}$\times$ faster.
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% ======================================================================= 16 who gets a van
+\begin{frame}{Who gets a van: segment and income}
+\begin{columns}[T]
+\column{.55\textwidth}
+\includegraphics[width=\textwidth]{figures/van_decile.png}
+\column{.42\textwidth}
+\small
+\begin{itemize}
+  \item Personal: \VanPersonalMilp\% (MILP), \VanPersonalRl\% (RL).
+  \item Optimal plans: \VanPersOptBelowFour\% below $\theta=0.4$, \VanPersOptTop\% in the top decile.
+  \item Theory: $\theta^*_P=\ThetaStarP$; the step is there.
+  \item Taxis: \VanCommercialMilp\%. A van costs \DeltaComOne{} Rs more even at $\theta=1$, unless the queue is $\ge$\QueueNeedCom{} min.
+  \item All \NComVan{} taxi van users: time-limit plans, wait \ComVanWait{} min.
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% ======================================================================= 17 service by segment x income
+\begin{frame}{Service by segment and income}
+\begin{columns}[T]
+\column{.58\textwidth}
+\includegraphics[width=\textwidth]{figures/seg_income.png}
+\column{.39\textwidth}
+\small
+\begin{itemize}
+  \item Poorer EVs queue longer and drive farther; taxis most.
+  \item Rich personal owners: almost no queue, shortest drive, often a van.
+  \item Perceived cost rises with income for personal owners (time valued), falls for taxis.
+  \item RL: same shape, longer taxi queues.
+\end{itemize}
+\vspace{.5ex}
+\scriptsize Station users; paired instances; MILP solid, RL dashed.
+\end{columns}
+\end{frame}
+
+% ======================================================================= 18 who queues, who pays
+\begin{frame}{Who queues and who pays}
+\begin{columns}[T]
+\column{.47\textwidth}
+\scriptsize
+\textbf{Station users vs queue minutes (\%)}\\[.5ex]
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrr}
+\toprule
+ & \multicolumn{2}{c}{MILP} & \multicolumn{2}{c}{RL}\\
+group & users & queue & users & queue\\
+\midrule
+\TabQueueShare
+\bottomrule
+\end{tabular}
+\column{.51\textwidth}
+\scriptsize
+\textbf{Per EV (Rs): paid, perceived (MILP, RL)}\\[.5ex]
+\setlength{\tabcolsep}{2.4pt}
+\begin{tabular}{lrrrrrr}
+\toprule
+ & \multicolumn{3}{c}{personal} & \multicolumn{3}{c}{commercial}\\
+band & paid & M & R & paid & M & R\\
+\midrule
+\TabEquity
+\bottomrule
+\end{tabular}
+
+\vspace{1ex}
+\small
+\begin{itemize}
+  \item Queueing: taxis \QShareComM\% (users \QUserComM\%); $\theta<0.4$: \QSharePoorM\% (users \QUserPoorM\%).
+  \item Time in perceived cost: personal \TimeSharePers\%, taxi \TimeShareCom\%.
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% ======================================================================= 19 demand pressure: definition
+\begin{frame}{Demand pressure: definition and effect}
+\small
+For EV $i$: \ window $w=$ mean station charging time of the instance's EVs (\PressWinMin--\PressWinMax{} min),
+\[
+\text{load}_i=\#\{\,j:\ r_i-w\le r_j\le r_i\,\},\qquad
+\text{pressure}_i=\frac{\text{load}_i}{24\text{ guns}+5\text{ vans}}.
+\]
+Data only (no plan). Terciles over all 560 instances: low $\le\PressCutLo$ ($\le\PressLoadLo$ requests), high $>\PressCutHi$ ($>\PressLoadHi$).
+
+\vspace{.5ex}
+\scriptsize
+\begin{tabular}{lrrrrrrrrr}
+\toprule
+ & & \multicolumn{4}{c}{free-choice EVs by van (\%)} & \multicolumn{4}{c}{station queue (min)}\\
+ & EVs & \multicolumn{2}{c}{personal} & \multicolumn{2}{c}{taxi} & \multicolumn{2}{c}{personal} & \multicolumn{2}{c}{taxi}\\
+pressure & (\%) & MILP & RL & MILP & RL & MILP & RL & MILP & RL\\
+\midrule
+\TabPress
+\bottomrule
+\end{tabular}
+\end{frame}
+
+% ======================================================================= 20 demand pressure: where congestion happens
+\begin{frame}{Demand pressure: where congestion happens}
+\begin{columns}[T]
+\column{.55\textwidth}
+\includegraphics[width=\textwidth]{figures/pressure.png}
+\column{.42\textwidth}
+\small
+\begin{itemize}
+  \item Queued: \QueuedLoM\% / \QueuedMedM\% / \QueuedHiM\% (low / med / high).
+  \item Taxis take vans only at high pressure (\VanComHiM\%).
+  \item Personal vans fall: \VanPersLoM\% $\to$ \VanPersHiM\%.
+  \item $\ge$ half the guns busy at request: \BusyHalfLoM\% low, \BusyHalfHiM\% high.
+  \item Model's peak label (load $>$ median) misleads: \OffpeakHigh\% ``off-peak'' EVs are high pressure.
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% ======================================================================= 21 pressure in the experiments
+\begin{frame}{Demand pressure in the experiments}
+\begin{columns}[T]
+\column{.6\textwidth}
+\scriptsize
+\textbf{Change vs baseline, paired instances}\\[.5ex]
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrr}
+\toprule
+ & \multicolumn{4}{c}{van share (points)} & queue\\
+ & \multicolumn{2}{c}{personal, MILP} & \multicolumn{2}{c}{taxi, high} & taxi, high\\
+variant & low & high & MILP & RL & (min)\\
+\midrule
+\TabExpPress
+\bottomrule
+\end{tabular}
+\column{.37\textwidth}
+\small
+\begin{itemize}
+  \item Cheap vans ($p^M$ 15) help personal owners off-peak (\PMLoPersLowM{} pts) more than at peak (\PMLoPersHighM).
+  \item Prediction ``higher $\omega$ pushes taxis to vans at peak'': not seen (\OmegaHiComHighM{} MILP, \OmegaHiComHighR{} RL).
+  \item 7 vans: fleet use \VansSevenFleet{} pts, taxis at peak \VansSevenComHigh.
+  \item E9, E10 (RL only): on the station-capacity slides.
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% ======================================================================= 22 infrastructure: guns
+\begin{frame}{Infrastructure: stations and guns}
+\begin{columns}[T]
+\column{.55\textwidth}
+\includegraphics[width=\textwidth]{figures/busy.png}
+
+\scriptsize Share of guns and vans charging over time (MILP).
+\column{.42\textwidth}
+\small
+\begin{itemize}
+  \item Gun busy over $[0,T]$: \GunUtilMilp\% (MILP), \GunUtilRl\% (RL); \GunUtilShort\% short, \GunUtilLong\% long horizons.
+  \item Per gun: 90th pct \GunPninetyM\%, max \GunMaxM\%; \GunsNeverM\% never used.
+  \item Idle guns per plan: \IdleGunsMilp{} (MILP), \IdleGunsRl{} (RL) of 24.
+  \item Peak concurrency: \PeakGunsM{} guns (\PeakGunsHundredM{} at $n=100$); all 24 in \AllGunsBusyPlans{} plans.
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% ======================================================================= 23 infrastructure: vans
+\begin{frame}{Infrastructure: vans}
+\begin{columns}[T]
+\column{.58\textwidth}
+\includegraphics[width=\textwidth]{figures/infra_n.png}
+\column{.39\textwidth}
+\small
+\begin{itemize}
+  \item Vans sent: \FleetMilp\% (MILP), \FleetRl\% (RL).
+  \item Seats: \SeatsMilp\% vs \SeatsRl\%; full vans \VansFullM\% vs \VansFullR\%.
+  \item Battery drawn: \BattMilp\% vs \BattRl\%.
+  \item Van energy: \VanDelivShare\% to EVs, \VanLossShare\% transfer loss, \VanDrvEShare\% driving.
+  \item RL: fewer, emptier vans (\NVansR{} vs \NVansM).
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% ======================================================================= 24 infrastructure by family
+\begin{frame}{Infrastructure by family}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrrrrrrrr}
+\toprule
+ & & \multicolumn{2}{c}{gun busy (\%)} & idle & peak & \multicolumn{2}{c}{vans sent (\%)} & \multicolumn{2}{c}{seats (\%)} & \multicolumn{2}{c}{van energy (\%)}\\
+family & $T$ & MILP & RL & guns & guns & MILP & RL & MILP & RL & MILP & RL\\
+\midrule
+\TabInfraFam
+\bottomrule
+\end{tabular}
+
+\vspace{1.5ex}
+\small
+\begin{itemize}
+  \item Short horizons (R1, RC1): guns busiest; vans run out of time, seats half used.
+  \item Long horizons (C2, R2): guns almost idle; vans run out of seats.
+  \item Peak guns and idle guns from MILP plans; all values mean per plan / van.
+\end{itemize}
+\end{frame}
+
+% ======================================================================= 25 experiments: cost
+\begin{frame}{Experiments: cost}
+\scriptsize
+\renewcommand{\arraystretch}{.82}
+\begin{tabular}{lrrrrrr}
+\toprule
+ & MILP valid & \multicolumn{3}{c}{MILP change (\%)} & \multicolumn{2}{c}{RL $\Delta Z$ (\%)}\\
+variant & (new / lost) & $Z$ & operator & customer & zero-shot & retrained\\
+\midrule
+\TabExpCost
+\bottomrule
+\end{tabular}
+
+\vspace{.6ex}
+\scriptsize Means over paired instances; RL tracks the MILP's $\Delta Z$ with or without retraining. E9, E10 are RL only (next slides).
+\end{frame}
+
+% ======================================================================= 26 experiments: who and what
+\begin{frame}{Experiments: who and what changes}
+\scriptsize
+\renewcommand{\arraystretch}{.82}
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{lrrrrrrrr}
+\toprule
+ & \multicolumn{3}{c}{van share (points)} & \multicolumn{5}{c}{MILP utilisation (points)}\\
+variant & personal & taxi & personal RL & gun busy & vans sent & seats & battery & van energy\\
+\midrule
+\TabExpWho
+\bottomrule
+\end{tabular}
+
+\vspace{.6ex}
+\scriptsize Tariff and personal $c^{C,1}$ move who gets vans; fleet, seats and battery change only van use.
+\end{frame}
+
+% ======================================================================= 27 E9, E10 (RL only): cost and utilisation
+\begin{frame}{Station capacity and charging demand (RL only)}
+\scriptsize
+\textbf{E9, E10: retrained RL vs RL baseline, paired instances} (no MILP run)\\[.4ex]
+\renewcommand{\arraystretch}{.9}
+\begin{tabular}{lrrrrrr}
+\toprule
+ & RL valid & \multicolumn{3}{c}{change (\%)} & \multicolumn{2}{c}{van share (points)}\\
+variant & (new / lost) & $Z$ & operator & customer & personal & taxi\\
+\midrule
+\TabRLOnlyCost
+\bottomrule
+\end{tabular}
+
+\vspace{1ex}
+\begin{tabular}{lrrrrrr}
+\toprule
+ & & gun busy & idle guns & \multicolumn{3}{c}{change (points)}\\
+variant & guns & \% (change) & (change) & vans sent & seats & van energy\\
+\midrule
+\TabRLOnlyUtil
+\bottomrule
+\end{tabular}
+\end{frame}
+
+% ======================================================================= 28 E9, E10 (RL only): what moves
+\begin{frame}{E9, E10: what moves (RL only)}
+\begin{columns}[T]
+\column{.52\textwidth}
+\includegraphics[width=\textwidth]{figures/rl_only.png}
+
+\scriptsize
+\begin{itemize}
+  \item 11\,kW: \RLLostPowerEleven{} lost, $Z$ \RLdZPowerEleven\%, personal vans \RLVanPPowerEleven{} pts.
+  \item 1 gun: \RLLostGunsOne{} lost, $Z$ \RLdZGunsOne\%, peak queue \RLQHighBaseGunsOne{} $\to$ \RLQHighGunsOne{} min.
+  \item 44\,kW: \RLNewPowerFortyFour{} gained, $Z$ \RLdZPowerFortyFour\%; energy $\pm25\%$: $Z$ \RLdZDemandLow\% / \RLdZDemandHigh\%.
+\end{itemize}
+\column{.46\textwidth}
+\scriptsize
+\textbf{Demand pressure: change vs RL baseline}\\[.4ex]
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{lrrrr}
+\toprule
+ & \multicolumn{3}{c}{van share (pts)} & $\Delta$\\
+variant & pers.\,lo & pers.\,hi & taxi hi & queue\\
+\midrule
+\TabRLOnlyPress
+\bottomrule
+\end{tabular}
+
+\vspace{.6ex}
+Queue: station users at high pressure (min).
+\end{columns}
+\end{frame}
+
+% ======================================================================= 29 summary
+\begin{frame}{Summary}
+\begin{itemize}
+  \item MILP: \NOpt{} of 560 optimal in 300\,s; RL: \NValidR{} valid plans, \GapMean\% above, \Speed{}$\times$ faster.
+  \item Income decides vans for personal owners ($\theta^*_P=\ThetaStarP$); taxis stay at stations.
+  \item Taxis are \QUserComM\% of station users but do \QShareComM\% of the queueing.
+  \item Queues are a high-pressure effect (\QueueAllHiM{} min vs \QueueAllLoM); at peak, vans go to poor taxis.
+  \item Guns busy \GunUtilMilp\% on average, vans charge only \ChargeMilp\% of the time; bursts, not capacity, bind.
+  \item RL only: station power matters most (11\,kW: $Z$ \RLdZPowerEleven\%, \RLLostPowerEleven{} instances lost).
+  \item Next: calibrate values of time, evening demand peak, 200-EV instances.
+\end{itemize}
+\end{frame}
+
+\end{document}

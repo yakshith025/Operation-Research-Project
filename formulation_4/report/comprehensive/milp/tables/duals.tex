@@ -1,0 +1,10 @@
+\begin{tabular}{p{3.6cm}rrrrrp{4.4cm}}\toprule
+constraint & rows & \shortstack{non-zero\\dual (\%)} & \shortstack{mean\\(Rs/min)} & \shortstack{median\\(Rs/min)} & \shortstack{max\\(Rs/min)} & meaning of the dual \\ \midrule
+FCS arrival $S_i\ge r_i+t_{if}$ & 18903 & 7.6 & 5.00 & 3.83 & 40.06 & not unique (degenerate); not interpreted \\
+van release $S_i\ge r_i$ & 4927 & 54.0 & 4.26 & 3.88 & 17.72 & not unique (degenerate); not interpreted \\
+gun order $S_j\ge S_i+\tau^{\mathrm{F}}_i$ & 10829 & 13.5 & 5.14 & 3.83 & 40.06 & value of one gun-minute: delay EV $i$ passes to those behind it \\
+van order $S_j\ge S_i+\tau^{\mathrm{M}}_i+t_{ij}$ & 3887 & 38.7 & 5.51 & 4.28 & 19.02 & value of one van-minute on that leg \\
+first stop $S_a\ge t_{0a}$ & 1040 & 72.6 & 8.31 & 7.73 & 22.97 & value of an earlier van departure \\
+queue limit $q^{\mathrm{F}}_i\le W_i$ & 18903 & 0.0 & 0.00 & 0.00 & 0.00 & value of one more minute of patience \\
+deadline $C_i\le T$, van return & 24870 & 0.0 & 0.00 & 0.00 & 0.00 & value of one more minute of horizon \\
+\bottomrule\end{tabular}

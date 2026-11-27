@@ -1,0 +1,21 @@
+\begin{table}[H]\centering
+\small
+\caption{The 15 variants. Each changes one input; the last column is what the exact optimum must do (a cost coefficient up or a capacity down cannot lower it).}\label{tab:variants}
+\begin{adjustbox}{max width=\textwidth}\begin{tabular}{lllrrl}\toprule
+exp. & variant & baseline & value & change (\%) & optimal $Z$ must \\ \midrule
+E5 & personal $c^{\mathrm C,1}=7.5$ & 10 & 7.5 & $-$25 & falls \\
+ & personal $c^{\mathrm C,1}=12.5$ & 10 & 12.5 & +25 & rises \\
+ & commercial $\omega^{1}=4.5$ & 6 & 4.5 & $-$25 & falls \\
+ & commercial $\omega^{1}=7.5$ & 6 & 7.5 & +25 & rises \\
+E6 & personal $\mu^{0}=1.125$ & 1.5 & 1.125 & $-$25 & falls \\
+ & personal $\mu^{0}=1.875$ & 1.5 & 1.875 & +25 & rises \\
+ & commercial $\mu^{0}=1.125$ & 1.5 & 1.125 & $-$25 & falls \\
+ & commercial $\mu^{0}=1.875$ & 1.5 & 1.875 & +25 & rises \\
+E1 & $p^{\mathrm M}=15$ & 25 & 15 & $-$40 & falls \\
+ & $p^{\mathrm M}=35$ & 25 & 35 & +40 & rises \\
+E2 & 3 vans & 5 & 3 & $-$40 & rises \\
+ & 7 vans & 5 & 7 & +40 & falls \\
+ & 4 seats per van & 6 & 4 & $-$33 & rises \\
+ & 8 seats per van & 6 & 8 & +33 & falls \\
+E8 & battery 200 kWh & 150 & 200 & +33 & falls \\
+\bottomrule\end{tabular}\end{adjustbox}\end{table}

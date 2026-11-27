@@ -1,0 +1,22 @@
+\begin{table}[H]\centering
+\small
+\caption{The 15 retrained RL models and the gap of both RL runs to the MILP of the same variant.}\label{tab:retrain}
+\begin{adjustbox}{max width=\textwidth}\begin{tabular}{lrrrrr}\toprule
+model trained on & minutes (GPU) & best epoch & \shortstack{validation cost\\RL / greedy} & \shortstack{gap to MILP\\zero-shot (\%)} & \shortstack{gap to MILP\\retrained (\%)} \\ \midrule
+personal $c^{\mathrm C,1}=7.5$ & 38 & 201 & 0.970 & 0.56 & 0.56 \\
+personal $c^{\mathrm C,1}=12.5$ & 39 & 200 & 0.969 & 1.22 & 1.14 \\
+commercial $\omega^{1}=4.5$ & 40 & 145 & 0.971 & 0.82 & 0.98 \\
+commercial $\omega^{1}=7.5$ & 39 & 148 & 0.967 & 0.83 & 0.86 \\
+personal $\mu^{0}=1.125$ & 39 & 188 & 0.969 & 0.92 & 0.95 \\
+personal $\mu^{0}=1.875$ & 40 & 180 & 0.969 & 0.80 & 0.84 \\
+commercial $\mu^{0}=1.125$ & 39 & 183 & 0.968 & 0.87 & 0.91 \\
+commercial $\mu^{0}=1.875$ & 38 & 200 & 0.971 & 0.80 & 0.79 \\
+$p^{\mathrm M}=15$ & 39 & 186 & 0.967 & 1.31 & 1.25 \\
+$p^{\mathrm M}=35$ & 40 & 148 & 0.972 & 0.58 & 0.63 \\
+3 vans & 38 & 186 & 0.958 & 0.91 & 0.96 \\
+7 vans & 38 & 181 & 0.965 & 0.84 & 0.81 \\
+4 seats per van & 40 & 188 & 0.971 & 0.69 & 0.65 \\
+8 seats per van & 38 & 162 & 0.970 & 0.86 & 0.98 \\
+battery 200 kWh & 39 & 197 & 0.969 & 0.84 & 0.77 \\
+baseline model & 39 & 180 & 0.969 &  &  \\
+\bottomrule\end{tabular}\end{adjustbox}\end{table}

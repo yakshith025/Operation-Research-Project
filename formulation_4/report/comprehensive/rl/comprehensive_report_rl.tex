@@ -1,0 +1,615 @@
+\input{../common/preamble.tex}
+\usepackage{adjustbox}
+\input{tables/numbers}
+
+\begin{document}
+
+\reporttitle{Comprehensive RL report: method, training, exploratory analysis and behaviour}
+
+\begin{keybox}
+{\color{headblue}\textbf{How to read this report}}\\
+The reinforcement-learning (RL) method of formulation 4: an attention network, trained with REINFORCE, that builds a plan one decision at a time. \textbf{Part I}: method and every assumption. \textbf{Part II}: training and an exploratory analysis of the \NInst{} RL runs. \textbf{Part III}: the results point by point, from quality and feasibility to shadow prices, infrastructure utilisation, equity and why RL behaves as it does. The MILP appears where it explains the RL; the full comparison is in the results report. Green \emph{In short} boxes close every subsection; Section~\ref{sec:glossary} explains every term.
+\end{keybox}
+
+\begin{keybox}
+{\color{headblue}\textbf{The main results in eleven lines}}
+\begin{enumerate}[leftmargin=1.4em,itemsep=1pt]
+  \item RL gives a valid plan for \NValid{} of \NInst{} instances, the MILP for \NValidM. RL has a plan for \RLonly{} instances where the MILP found none in 300\,s, and never misses one the MILP has (Section~\ref{sec:feasibility}).
+  \item All \NInvalid{} invalid RL plans are instances the MILP could not solve either. \InvalidInf{} are proven infeasible, and in \InvLone{} of them one car cannot be charged by $T$ even alone (Section~\ref{sec:feasibility}).
+  \item Where both have a plan, RL costs \GapMean\pct{} more than the MILP (median \GapMed\pct). Against proven optima the gap is \GapOpt\pct; RL matches the optimum in \RLequalOpt{} instances and beats the MILP's time-limit plan in \RLbetter{} (Section~\ref{sec:quality}).
+  \item RL beats the greedy rule it was warm-started from in \GreedyBeat{} of \GreedyN{} instances and is \GreedyGapAbs\pct{} cheaper on average (Section~\ref{sec:quality}).
+  \item RL needs \RLtime\,s per instance against \MILPtime\,s for the MILP, about \Speedup{} times faster. Its \TrainMinBest{} minutes of training pay off after about \BreakEven{} instances (Section~\ref{sec:compute}).
+  \item The extra cost is almost entirely customer time ($Z_6$: +\TermDSix{} points of $Z$). It is partly offset by lower tariff, dispatch and energy costs, because RL serves fewer customers by van (Section~\ref{sec:anatomy}).
+  \item Segment and income still decide who gets a van, as the theory says: in RL plans personal cars get vans (\VanRPers\pct) and commercial cars almost never do (\VanRComm\pct). The personal step comes later, at $\theta$ \StepR{} against \StepM{} in the MILP and $\theta^{*}=\ThetaStarP$ in theory (Section~\ref{sec:income}).
+  \item On the instances both solve, RL dispatches slightly fewer vans than the MILP (\VansR{} against \VansM) and fills them less: \VansFullR\pct{} of its vans are full against \VansFullM\pct, and \OnlyStrandedR\pct{} serve only stranded cars (Section~\ref{sec:util}).
+  \item The infrastructure is lightly used by both methods: a gun is busy \UtilGunR\pct{} of the planning period in RL plans (MILP \UtilGunM\pct) and \UtilIdleGunsR{} of 24 guns stay idle per instance. RL charges \UtilFcsShareR\pct{} of the energy at stations (MILP \UtilFcsShareM\pct), and its vans deliver \UtilVanKwhR{} kWh each against \UtilVanKwhM{} (Section~\ref{sec:util}).
+  \item Shadow prices show the consequence. Gun-minutes are scarce more often in RL plans (\GunBindR\pct{} of gun links binding against \GunBindM\pct), commercial queues are longer (\QueueRComm{} against \QueueMComm{} min), and one more kW at the stations is worth more (\PowerFR{} against \PowerFM{} Rs per instance; Section~\ref{sec:duals}).
+  \item The cost structure, the elasticities and the zero value of patience limits and the deadline are the same as for the MILP (Sections~\ref{sec:anatomy}, \ref{sec:duals}).
+\end{enumerate}
+\end{keybox}
+
+\newpage
+\tableofcontents
+\newpage
+
+%=====================================================================
+\section{Glossary}
+\label{sec:glossary}
+
+\begin{xltabular}{\textwidth}{@{}>{\raggedright\arraybackslash}p{4.0cm}X@{}}
+\toprule
+\textbf{Term} & \textbf{Meaning} \\
+\midrule
+\endhead
+\multicolumn{2}{@{}l}{\textit{The problem (shared with the MILP)}} \\
+EV, FCS, gun, van & Electric vehicle; fixed charging station with 2 guns of 22\,kW; mobile charging van (150\,kWh, 30\,kW, at most 6 EVs, starts and ends at the depot). \\
+Request time $r_i$, horizon $T$ & Minute EV $i$ asks for charging; length of the planning period. Every EV must be fully charged and every van back by $T$. \\
+Stranded / free-choice EV & Stranded: no station within range, so only a van can serve it. Free-choice: at least one station in range. \\
+Segment $s_i$ & Personal (private owner, driver free while a van charges the parked car) or commercial (taxi or fleet car: every minute out of service is lost income). Commercial with probability $\pi_{\mathrm C}=\PiC$. \\
+Income index $\theta_i$ & Owner's income in $[0,1]$. Personal $\theta\sim$ Beta(2.5,\,1), commercial $\theta\sim$ Beta(3,\,5). \\
+$\mu$, $c^{a}$, $W$ & Money sensitivity, value of time in activity $a$ (D driving, Q queueing, C charging at a station, V van wait and charging), queue tolerance; straight lines in $\theta$ with their own end points per segment. \\
+Downtime rate $\omega$ & For a commercial car $c^{\mathrm D}=c^{\mathrm C}=c^{\mathrm V}=\omega(\theta)$: one price for every minute out of service. \\
+Tariff $p^{\mathrm F}$, $p^{\mathrm M}$ & Price per kWh the customer pays at a station (\TariffF{} Rs) and for the van (\TariffM{} Rs). \\
+Objective $Z$ & Operator cost ($Z_2$--$Z_4$) plus perceived customer cost ($Z_1$, $Z_5$, $Z_6$). \\
+MILP & The exact model, solved by Gurobi with a 300\,s limit; the benchmark here. \\
+Optimal / time-limit plan & MILP plan proven optimal / found when the time ran out (not proven optimal). \\
+Infeasible & No plan can meet all constraints; proven by Gurobi. \\
+Greedy rule & The rule that builds a plan EV by EV, choosing each time the option with the smallest increase of $Z$ (the MILP's warm start). \\
+Valid / invalid plan & A plan that meets every constraint / one that breaks at least one, as judged by the independent checker. \\
+Gap & $100\,(Z_{\mathrm{RL}}-Z_{\mathrm{other}})/Z_{\mathrm{other}}$ over instances where both plans are valid; negative means RL is cheaper. \\
+\multicolumn{2}{@{}l}{\textit{Reinforcement learning}} \\
+Reinforcement learning (RL) & Learning a decision rule by trial and error from a reward signal, instead of solving each instance from scratch. \\
+Markov decision process (MDP) & The problem written as a sequence of decisions: a \emph{state} (what has been placed so far), an \emph{action} (the next decision) and a \emph{reward} (minus the increase of $Z$). \\
+State & Which EVs are placed; for each gun the minute it becomes free; for each van its position, the minute it is free, battery left and EVs served. \\
+Action & A pair (EV $i$, resource $k$): EV $i$ is appended to the queue of gun $k$ or to the route of van $k$. \\
+Episode, rollout & One complete construction of a plan, decision by decision. \\
+Policy $\pi$ & The decision rule: a probability for every possible action in every state. Here a neural network. \\
+Embedding & A vector of numbers that represents a node (EV, station, depot) inside the network. \\
+Attention, Transformer & A network layer in which every node looks at every other node and weighs them; a Transformer stacks such layers. \\
+Encoder / decoder & Encoder: turns the whole instance into embeddings once. Decoder: picks one action at a time from them. \\
+Pointer network & A decoder that chooses an item of its input (here an EV, then a gun or a van) by scoring each item. \\
+Mask & Removes infeasible actions before the choice, so only feasible (EV, resource) pairs can be picked. \\
+Greedy vs sampled rollout & Greedy: always take the most probable action. Sampled: draw actions at random from $\pi$. \\
+REINFORCE, policy gradient & Training rule: make the actions of cheap rollouts more likely and those of expensive rollouts less likely. \\
+Baseline, advantage & Baseline: a reference cost; advantage: how much cheaper a rollout was than the baseline. \\
+Shared (POMO) baseline & The baseline of an instance is the mean cost of all its rollouts in the batch. \\
+Imitation warm-up, teacher forcing & First phase of training, in which the network learns to copy the greedy rule's choices before REINFORCE. \\
+Batch, epoch & Batch: one training step on a group of random instances. Epoch: \(50\) batches followed by a validation. \\
+Learning rate & Step size of the parameter updates. \\
+Validation ratio & Cost of the network's greedy rollout divided by the cost of the greedy rule, on fixed validation instances; below 1 means better than the rule. \\
+Early stopping & Stop training when the validation ratio has not improved for a number of epochs. \\
+Training generator & Code that makes new random training instances with the dataset's rules; the 56 test files are never used in training. \\
+Map symmetries (augmentation) & Rotating or reflecting the map gives 8 versions of the same instance with different network inputs. \\
+Zero-shot & Using a trained network on inputs it was not trained for (other parameters, fleet or files) without retraining. \\
+Inference & Using the trained network to solve a new instance. \\
+Unplaced EV & EV for which no feasible action is left during a rollout; the plan is then invalid. \\
+\multicolumn{2}{@{}l}{\textit{Analysis (as in the MILP report)}} \\
+Shadow price, fixed-plan LP & Dual value of a constraint after fixing a plan's yes/no decisions and re-solving the timing LP. \\
+Binding constraint & Constraint that holds with equality; only binding constraints can have a non-zero shadow price. \\
+Envelope theorem, elasticity & $\partial Z/\partial c_k$ = the quantity $c_k$ multiplies; elasticity = share of $Z$ carried by $c_k$. \\
+Demand pressure & How busy the system is when EV $i$ asks: the number of requests of the instance released during one mean station charging time up to and including $r_i$, divided by the 29 chargers (24 guns and 5 vans). Data only; one definition and one set of terciles for all three reports (Section~\ref{sec:defs}). \\
+Peak / off-peak (formulation 4 label) & Coarser label of the formulation-4 code: peak if an EV's load exceeds the median load of its instance. Not used for the terciles here. \\
+Utilisation & Share of the planning period $[0,T]$ a gun or van is charging (= share of its energy capacity used, at constant power); seats, battery and time used by a van (Section~\ref{sec:util}). \\
+Wilson interval & 95\,\% confidence interval for a share; reliable for small or extreme shares. \\
+Logistic regression, AME & Model of the probability of a yes/no outcome; average marginal effect = average change of that probability per unit of a factor. \\
+AUC & Probability that the model ranks a random van user above a random station user (0.5 = no better than chance). \\
+Spearman correlation & Correlation of the ranks of two variables, from $-1$ to $+1$. \\
+Solomon family & C (clustered), R (random), RC (mixed); type 1 short horizon, type 2 long horizon. \\
+\bottomrule
+\end{xltabular}
+
+%=====================================================================
+\clearpage
+\part{Method and assumptions}
+
+\section{All assumptions behind the RL results}
+\label{sec:assumptions}
+
+\subsection{The problem in one paragraph}
+During a planning period $[0,T]$ parked EVs request charging. Each request is served by exactly one resource: the EV drives to a station and charges at one of its guns, or a van drives to the EV and charges it in place. A plan says who is served where, the order on every gun, the route of every van and every start time. It minimises the operator's cost plus the cost each customer perceives. Every customer weighs money and time according to a use segment (personal or commercial) and an income index $\theta_i$. This is formulation 4 (\code{formulation\_4.pdf}, equations (1)--(23)). The RL method solves exactly this problem; only the way of finding a plan differs from the MILP.
+
+\subsection{Assumptions shared with the MILP}
+The RL plans are scored by the same independent checker (\code{check\_plan\_f4.py}) as the MILP plans and use the same data (\NInst{} instances: 56 Solomon files, first $n=10,20,\dots,100$ EVs). All modelling assumptions of the MILP hold:
+\begin{itemize}
+  \item offline planning (all requests known at time 0);
+  \item every EV fully charged by $T$, and every van back at the depot by $T$;
+  \item stations within range only;
+  \item one EV per gun and per van at a time;
+  \item constant charging power;
+  \item van energy for driving and charging from one battery;
+  \item customer coefficients fixed by segment and income.
+\end{itemize}
+The customer parameters are in Table~\ref{tab:params}; the network, fleet and cost data are those of the MILP report.
+
+\begin{table}[H]\centering\small
+\caption{Customer parameters of the run (straight lines between $\theta=0$ and $\theta=1$, per segment). Commercial: $c^{\mathrm D}=c^{\mathrm C}=c^{\mathrm V}=\omega$.}\label{tab:params}
+\input{tables/r_params}
+\end{table}
+
+\subsection{Assumptions of the learning method}
+\begin{xltabular}{\textwidth}{@{}>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}p{4.4cm}X@{}}
+\toprule
+\textbf{Assumption} & \textbf{Why} & \textbf{What changes if relaxed} \\
+\midrule
+\endhead
+The plan is built one (EV, resource) pair at a time; each EV is appended to the end of a gun queue or van route. & Turns the problem into an MDP that a network can learn. & Inserting EVs anywhere in a sequence would allow better orders but makes actions and masks more complex. \\
+Start times are not learned: every session starts as early as possible. & With assignments and orders fixed, every time cost grows with a later start, so earliest start is optimal (checked exactly by the fixed-plan LPs, Section~\ref{sec:duals}). & Nothing would be gained. \\
+Masks enforce range, queue limit $W_i$, deadline $T$, van seats, battery and return by $T$ at every step. & Only feasible plans can be built while EVs remain placeable. & Without masks the network would have to learn feasibility from penalties. \\
+An EV with no feasible action left is dropped and later appended where it finishes earliest; the plan is then invalid. & Every instance gets a complete plan that the checker can judge. & A repair heuristic could fix some plans, but would no longer be the policy's own result. \\
+Reward = minus the increase of $Z$ caused by the action, with the same six terms as the checker. & The rewards add up exactly to $-Z$. & -- \\
+Training on new random instances made with the dataset's rules; the 56 test files are never seen in training. & Tests generalisation honestly. & Training on the test files would overstate quality. \\
+Segment, $\mu$ and the cost of queueing one charging time ($c^{\mathrm Q}\tau^{\mathrm F}$) are extra EV inputs. & The policy must see what makes customers differ in formulation 4. & Without them it could not treat personal and commercial cars differently. \\
+Warm-up by imitating the greedy rule, then REINFORCE with a shared baseline. & A sensible starting policy; low-variance gradient. & Pure RL from random weights starts with \ValUnplStart\pct{} unplaced EVs. \\
+Best of \Rollouts{} rollouts per instance (\Augment{} symmetries $\times$ (1 greedy + \Samples{} sampled)). & Cheap search at inference time. & Fewer rollouts: faster, slightly worse plans. \\
+\bottomrule
+\end{xltabular}
+
+\subsection{Network, training and inference}
+\textbf{Network.} The network has \NParams{} parameters. It does not receive the demand pressure of Section~\ref{sec:defs}; congestion reaches it only through the gun and van free times, the EV's rank among the open requests and the cost of its cheapest options. An attention encoder (Kool et al.\ 2019) embeds every EV, station and the depot. EV features include position, energy, request time, range, segment, $\mu$ and the cost of a queue. A two-step pointer decoder first scores the open EVs, then scores the resources for the chosen EV: every gun, and every van at its current position. Scores combine attention with small networks on dynamic features (options left, cheapest option, regret, earliest finish, free times, battery). Masked actions get probability 0; $\log\pi(\text{action})=\log\pi(i)+\log\pi(k\mid i)$.
+
+\textbf{Training.} Training starts with \ImitBatches{} warm-up batches (\ImitEpochs{} epochs) that teach the greedy rule's actions. Then comes REINFORCE: each batch has \BatchInst{} random instances of one size $n\in[10,100]$, each rolled out \TrainSamples{} times. The advantage is the rollout's cost relative to the mean of its instance, and each unplaced EV adds \DropPenalty{} instance cost scales. After every epoch the network's greedy rollout is compared with the greedy rule on fixed validation instances. The best epoch is kept; at least \MinEpochs{} epochs always run, and training stops after \Patience{} epochs without improvement.
+
+\textbf{Inference.} The best of \Rollouts{} rollouts per instance is kept (fewest unplaced EVs, then lowest $Z$) and scored by the checker. No repair is applied.
+
+\begin{table}[H]\centering\small
+\caption{Network, training, inference and hardware settings (\code{rl\_f4\_params.json}, \code{train\_meta.json}, \code{meta.json}).}\label{tab:settings}
+\input{tables/r_settings}
+\end{table}
+
+\subsection{Evaluation and analysis definitions}
+\label{sec:defs}
+\begin{itemize}
+  \item The MILP benchmark is the run \code{milp\_300s} (Gurobi 13, 300\,s, 4 threads per instance); the greedy rule is the run \code{greedy}. Both are on the same \NInst{} instances.
+  \item Shares of ``served by a van'' are over free-choice EVs only; stranded EVs take a van whatever their segment and income.
+  \item \textbf{Demand pressure} (the same definition, computed by the same code \code{common/infra.py}, in all three reports). For EV $i$ of an instance:
+  \begin{gather*}\text{window}=\frac1n\sum_{j}\frac{60E_j}{22\text{ kW}},\qquad \text{load}_i=\#\{j:\ r_i-\text{window}\le r_j\le r_i\}\ \ (i\text{ included}),\\ \text{pressure}_i=\frac{\text{load}_i}{24\text{ guns}+5\text{ vans}} .\end{gather*}
+  The window is the mean station charging time of the instance's EVs (\PressWindowMin--\PressWindowMax{} minutes). Pressure uses only the data, never a plan, so an EV has the same pressure for RL and MILP. Terciles are pooled over the \PressNFree{} free-choice EVs of all \NInst{} baseline instances: low $\le\PressLo<$ medium $\le\PressHi<$ high (\PressShareLow\pct, \PressShareMed\pct{} and \PressShareHigh\pct{} of them; the shares are not equal because many EVs share the same load).
+  It ignores travel time to the station, charging still in progress from earlier requests and the difference between a gun and a van (a van counts as one charger). The formulation-4 code also labels an EV ``peak'' when its load exceeds the median load of its instance; that label is coarser and instance-relative (\PeakLabelShare\pct{} of free-choice EVs are ``peak'', of which only \PeakLabelHigh\pct{} are in the high tercile) and is not used here.
+  \item \textbf{The policy does not see demand pressure.} The network receives no pressure input. What it does receive and is related: each EV's request time relative to $T$ and to the earliest open request, its rank among the open requests, the free time of every gun and van, the earliest finish over its feasible options, and the cost of its cheapest options (which grows with the queue it would face).
+  \item \textbf{Utilisation} is computed from each plan by \code{common/infra.py} (Section~\ref{sec:util}): gun time over $[0,T]$, van seats, battery, time and energy, and the system's installed capacity.
+  \item Shadow prices come from the fixed-plan LP of every valid plan, RL and MILP alike (Section~\ref{sec:duals}).
+\end{itemize}
+
+\inshort{RL solves formulation 4 exactly as stated: same constraints, same objective, same checker as the MILP. What is learned is the order of decisions and the choice of resource; timing is computed exactly, and masks keep every step feasible.}
+
+%=====================================================================
+\clearpage
+\part{Training and exploratory analysis}
+
+\section{Training}
+\label{sec:training}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/r_training.pdf}
+\caption{Left: validation cost of the network's greedy rollout relative to the greedy rule (black: all sizes; dashed red line: best epoch). Middle: unplaced EVs. Right: spread of the 8 rollout costs of an instance during training. Grey band: imitation warm-up.}
+\label{fig:training}
+\end{figure}
+
+\begin{itemize}
+  \item \textbf{Warm-up.} The untrained network costs \ValStart{} times the greedy rule on the validation instances and leaves \ValUnplStart\pct{} of EVs unplaced. After the \ImitEpochs{} imitation epochs it is close to the rule (ratio \ValImitEnd).
+  \item \textbf{REINFORCE.} The ratio falls below 1 and reaches its best, \ValBest, at epoch \BestEpoch: on the validation instances the network is \ValBestPct\pct{} cheaper than the rule it learned from. By size the ratio is \ValBestTwenty{} at $n=20$, \ValBestFifty{} at $n=50$ and \ValBestHundred{} at $n=100$; the larger the instance, the more there is to gain over a myopic rule.
+  \item \textbf{Feasibility.} At the best epoch the network leaves \ValUnplRl\pct{} of validation EVs unplaced, against \ValUnplGr\pct{} for the greedy rule.
+  \item \textbf{Stop.} Training stopped early at epoch \LastEpoch{}, after \Patience{} epochs without improvement, \TrainMinTotal{} minutes in all (best model after \TrainMinBest{} minutes). No batch failed (\FailedBatches). The spread of the 8 rollouts of an instance settles at about \SpreadEnd\pct: the policy has become nearly deterministic.
+\end{itemize}
+
+\inshort{Training is short (\TrainMinTotal{} minutes on one GPU) and stable. The network starts from the greedy rule, ends \ValBestPct\pct{} cheaper than it on validation instances, and gains most on large instances.}
+
+\clearpage
+\section{Exploratory analysis of the RL results}
+\label{sec:explore}
+
+\subsection{How the instances ended}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.62\textwidth]{figures/r_outcome.pdf}
+\caption{Outcome of the 56 instances of each size, with the MILP's verdict on the invalid ones.}
+\label{fig:outcome}
+\end{figure}
+
+\input{tables/r_outcome}
+\input{tables/r_crosstab}
+
+RL has a valid plan in \NValid{} instances, the MILP in \NValidM{} and the greedy rule in \NValidG. Every instance the MILP solved, RL solved too (\MILPonly{} exceptions), and RL also has plans for \RLonly{} instances where the MILP found none in 300\,s. The \NInvalid{} invalid RL plans are the \InvalidInf{} instances the MILP proved infeasible plus \InvalidNoPlan{} where the MILP found no plan either. Invalid plans start at $n=\InvSmallestN$ and are most frequent at $n=100$ (\InvHundred).
+
+\inshort{\NValid{} valid plans; RL fails only where the MILP fails too.}
+
+\subsection{Instance-level overview}
+\input{tables/r_inst_stats}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/r_inst_by_n.pdf}
+\caption{Objective per EV, RL time and vans used by instance size (boxes: middle 50\,\%).}
+\label{fig:instbyn}
+\end{figure}
+
+\begin{itemize}
+  \item The objective per EV is \ZevMean{} Rs on average (between \ZevMin{} and \ZevMax). About \OpShare\pct{} of it is operator cost.
+  \item About \VansMean{} vans leave per instance and serve \VanShareEV\pct{} of the EVs, mostly the stranded ones. Only \FreeVanInst\pct{} of free-choice EVs per instance get a van.
+  \item RL time grows with $n$ but stays below half a second (\RLtimeMax\,s at most).
+\end{itemize}
+
+\subsection{Families}
+\input{tables/r_family}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{figures/r_obj_family.pdf}
+\caption{Composition of the objective by family (valid RL plans).}
+\label{fig:objfamily}
+\end{figure}
+
+The short-horizon families R1 and RC1 have the fewest valid plans (\ValidRone{} of 120 and \ValidRCone{} of 80), as for the MILP. The composition of $Z$ is almost the same in every family: about 30\,\% operator cost and 70\,\% perceived customer cost, of which the perceived tariff is the largest part.
+
+\inshort{Families differ in how often a plan exists and in cost level, not in cost structure.}
+
+\subsection{EV-level distributions}
+\input{tables/r_ev_stats}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/r_ev_dists.pdf}
+\caption{Income of free-choice van users by segment, time until charged, queues, van waits, money paid and perceived cost (valid RL plans).}
+\label{fig:evdists}
+\end{figure}
+
+\begin{itemize}
+  \item Free-choice van users are mostly rich personal owners (top left). Commercial cars are \CommShareVanFree\pct{} of them, with a mean income of only \ThetaVanComm: they get a van because of queues, not income (Section~\ref{sec:pressure}).
+  \item Most EVs are fully charged \ToChargedLo--\ToChargedHi{} minutes after their request (10th to 90th percentile).
+  \item \QueueersFcs{} of the \FcsUsersFree{} free-choice station users queue at all; most of the queueing is done by commercial cars.
+  \item \VanWaitZero\pct{} of van users do not wait for the van at all; the rest form a long tail.
+\end{itemize}
+
+\subsection{Correlations}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.45\textwidth]{figures/r_corr.pdf}
+\caption{Spearman correlations between EV-level variables (free-choice EVs of valid RL plans).}
+\label{fig:corr}
+\end{figure}
+
+Income goes with a van ($\rho=\RhoThetaVan$), being commercial against it ($\rho=\RhoSegVan$), and income with shorter queues ($\rho=\RhoThetaQueue$). Demand pressure is the strongest correlate of queueing ($\rho=\RhoPressQueue$), and energy of money paid ($\rho=\RhoEPaid$).
+
+\inshort{Income and segment go with the van, pressure with queues, energy with money: the same pattern as the MILP, in weaker form for the van.}
+
+%=====================================================================
+\clearpage
+\part{Comprehensive analysis}
+
+\section{Analysis point by point}
+
+\subsection{Solution quality against the MILP and the greedy rule}
+\label{sec:quality}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/r_gap.pdf}
+\caption{Left: mean gap of RL to the MILP by size, overall and by MILP status. Middle: distribution of the gap. Right: mean gap of RL to the greedy rule.}
+\label{fig:gap}
+\end{figure}
+
+\input{tables/r_quality_n}
+\input{tables/r_quality_class}
+
+\begin{itemize}
+  \item \textbf{Against the MILP.} Over the \NPaired{} paired instances RL costs \GapMean\pct{} more on average (median \GapMed\pct, 90th percentile \GapP\pct, worst \GapMax\pct).
+  \item \textbf{Against proven optima.} The gap is \GapOpt\pct{} over the \NPairedOpt{} optimal MILP plans. RL equals the optimum within 0.01\,\% in \RLequalOpt{} of them and is never cheaper (\RLbelowOpt{} cases), as it must be.
+  \item \textbf{Against time-limit plans.} The gap is \GapTl\pct, and RL is cheaper than the MILP in \RLbetterTl{} of them.
+  \item \textbf{By size.} The gap grows with size, from \GapTen\pct{} at $n=10$ to \GapMaxNVal\pct{} at $n=\GapMaxN$. It is \GapHundred\pct{} at $n=100$, where the MILP itself often stops far from optimal.
+  \item \textbf{By family.} RL is closest in \GapBestFam{} (\GapBestFamVal\pct), a short-horizon family where the MILP struggles. It is furthest in \GapWorstFam{} (\GapWorstFamVal\pct), with long horizons and clustered customers, where good orders are many and the MILP has time to find them.
+  \item \textbf{Against the greedy rule.} RL beats the rule in \GreedyBeat{} of \GreedyN{} paired instances and is \GreedyGapAbs\pct{} cheaper on average. It is dearer in \GreedyWorse: the learned policy is a strict improvement on its teacher only on average.
+\end{itemize}
+
+\inshort{RL is within 1\,\% of the MILP on average and finds the optimum of many small instances. It costs most on large clustered instances with long horizons and least where the MILP struggles.}
+
+\subsection{Feasibility: where RL fails}
+\label{sec:feasibility}
+
+\input{tables/r_violations}
+\input{tables/r_invalid}
+
+\begin{itemize}
+  \item \textbf{RL never fails where a plan is known.} All \NInvalid{} invalid RL plans are on instances without a MILP plan: \InvalidInf{} proven infeasible and \InvalidNoPlan{} unsolved.
+  \item \textbf{Mostly the data.} In \InvLone{} of the \InvalidInf{} infeasible instances, a car the policy could not place cannot be fully charged by $T$ even alone, with a free gun at once or a van leaving for it at once. Almost all are in R1 (\InvFamR) and RC1 (\InvFamRC), where $T$ is only 230--240 minutes. In \InvOneEV{} plans only one car is unplaced; the most is \InvDroppedMax.
+  \item \textbf{Which rules break.} After appending the unplaced cars, a plan typically has a car finishing after $T$ (\InvAfterT{} plans) or a van back after $T$ (\InvVanBack{} plans). Queues longer than the patience $W_i$ appear in \InvQueue{} plans, mainly in the \InvalidNoPlan{} large, congested instances that the MILP could not solve either.
+  \item \textbf{Open cases.} For those \InvalidNoPlan{} instances none of the unplaced cars is impossible alone. It is not known whether a plan exists: neither method found one.
+  \item \textbf{Where RL helps.} RL finds plans for \RLonly{} instances without a MILP plan (\RLonlyFams; mean size $n=\RLonlyMeanN$), and for \RLonlyGr{} without a greedy plan. These are the large, congested instances where Gurobi's search ran out of time.
+\end{itemize}
+
+\inshort{RL's failures are infeasible data or open instances that no method has solved; where a plan is known, RL finds one too. Its value is greatest on the large congested instances.}
+
+\subsection{Computation and the value of learning}
+\label{sec:compute}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{figures/r_time.pdf}
+\caption{Mean time per instance by size (log scale).}
+\label{fig:time}
+\end{figure}
+
+\begin{itemize}
+  \item RL needs \RLtime\,s per instance on average (\RLtimeHundred\,s at $n=100$), the MILP \MILPtime\,s (\MILPtimeHundred\,s at $n=100$): about \Speedup{} times faster.
+  \item All \NInst{} instances take \RLtotalS\,s with RL against \MILPtotalH{} CPU-hours of MILP solving.
+  \item Training took \TrainMinBest{} minutes up to the best model. It pays for itself after about \BreakEven{} instances. In the experiments the same model is reused without retraining (results report).
+\end{itemize}
+
+\inshort{Inference costs a tenth of a second; after a short training the method is three orders of magnitude faster than the MILP.}
+
+\subsection{Anatomy of the objective: where RL loses}
+\label{sec:anatomy}
+
+\input{tables/r_terms}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.62\textwidth]{figures/r_terms.pdf}
+\caption{Difference of each term of $Z$, RL minus MILP, as a share of the MILP's $Z$ (paired instances).}
+\label{fig:terms}
+\end{figure}
+
+RL's extra cost is customer time ($Z_6$: +\TermDSix{} points of $Z$), above all the longer queues at stations. It is partly offset by lower perceived tariff ($Z_5$: \TermDFive), van dispatch ($Z_3$: \TermDThree) and operator energy ($Z_4$: \TermDFour). All three come from serving fewer customers by van: van energy and the van tariff are dearer than the station's. The structure is otherwise the same: operator cost \OpShareRL\pct, perceived tariff \TariffShareRL\pct{} and perceived time \TimeShareRL\pct{} of $Z$.
+
+\subsubsection{Elasticities (envelope theorem)}
+As in the MILP report, every term of $Z$ is a coefficient times a quantity of the plan, and $\partial Z/\partial c_k$ is that quantity for a fixed plan. The elasticity of $Z$ with respect to $c_k$ is then the share of $Z$ carried by $c_k$. The elasticities add up to \ElSumRL\pct{} rather than 100\,\%, because the money terms $Z_1$ and $Z_5$ (\MoneyShareRL\pct{} of $Z$) are products $\mu\times$price and are counted for both factors.
+
+\input{tables/r_elasticity}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{figures/r_elasticity.pdf}
+\caption{Elasticity of $Z$ for the twelve most influential coefficients, RL against MILP.}
+\label{fig:elasticity}
+\end{figure}
+
+\begin{itemize}
+  \item The most influential coefficients are the same for RL and MILP: the station tariff \ElTopOne{} (\ElTopOneV\pct), the money sensitivity of the poorest commercial drivers \ElTopTwo{} (\ElTopTwoV\pct), the grid price \ElTopThree{} (\ElTopThreeV\pct) and the value of station-charging time of rich personal owners \ElTopFour{} (\ElTopFourV\pct).
+  \item The largest difference is \ElDiffCoef{} (RL \ElDiffRL\pct, MILP \ElDiffM\pct): RL keeps more rich personal owners at stations, so their charging minutes weigh more.
+  \item The commercial segment carries most of the money terms because 70\,\% of the cars are commercial and their incomes are low.
+\end{itemize}
+
+\inshort{RL loses on customer time and gains a little on tariff, energy and dispatch: the signature of a plan with fewer vans. The cost structure and the elasticities are nearly identical to the MILP's.}
+
+\subsection{Decision agreement with the MILP}
+\label{sec:agreement}
+
+\input{tables/r_confusion}
+
+RL makes the same station-or-van choice as the MILP for \AgreeType\pct{} of free-choice EVs (\AgreePers\pct{} of personal ones), and of those both send to a station, \AgreeStation\pct{} go to the same station. The disagreements are one-sided: \MilpVanRlFcs{} EVs get a van from the MILP but a station from RL, against \RlVanMilpFcs{} the other way. The personal EVs the MILP sends by van are rich (mean $\theta=\MilpVanPersThetaMean$); RL keeps only \MilpVanPersKeptRl\pct{} of them on a van.
+
+\inshort{RL agrees with the MILP on most decisions; where it differs, it is almost always by sending a rich personal owner to a station instead of a van.}
+
+\subsection{Segment, income and the choice of resource}
+\label{sec:income}
+
+\textbf{Theory.} For a typical EV (20\,kWh, 2\,km to its station, no queue, 10-minute van wait, 4\,km van detour), formulation 4 gives the extra cost of a van $\Delta(\theta)$:
+\begin{itemize}
+  \item \textbf{Personal:} \DeltaZeroP{} Rs at $\theta=0$ and \DeltaOneP{} Rs at $\theta=1$, so the van wins above $\theta^{*}=\ThetaStarP$ (the threshold of formulation 3).
+  \item \textbf{Commercial:} \DeltaZeroC{} and \DeltaOneC{} Rs, positive at every income, so a taxi does not take a van off-peak.
+  \item \textbf{A van sent for this EV alone:} if the dispatch cost must be paid for it, even the richest personal owner has $\Delta(1)=\DeltaOnePDispatch$ Rs. Vans leave for stranded EVs, and free-choice customers fill the spare seats.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/r_van_income.pdf}
+\caption{Left: theory, extra cost of a van $\Delta(\theta)$ for the typical EV by segment (dashed: van not yet sent). Middle and right: share of free-choice EVs served by a van by income decile and segment, RL against MILP (95\,\% Wilson band).}
+\label{fig:vanincome}
+\end{figure}
+
+\input{tables/r_vanband}
+
+\begin{itemize}
+  \item \textbf{The segment pattern holds.} In RL plans \VanRPers\pct{} of free-choice personal cars get a van, against \VanRComm\pct{} of commercial cars (MILP: \VanMPers\pct{} and \VanMComm\pct).
+  \item \textbf{The income step holds, but comes later and lower.} RL's personal van share exceeds 5\,\% only at $\theta$ \StepR{} (MILP \StepM; theory $\theta^{*}=\ThetaStarP$) and reaches \VanTopRPers\pct{} in the richest band, against \VanTopMPers\pct{} for the MILP. Below $\theta=0.4$ RL gives personal owners no vans (\VanLowRPers\pct).
+  \item \textbf{Van users are richer than station users:} mean $\theta$ \ThetaVanR{} against \ThetaFcsR{} among personal cars.
+  \item \textbf{Commercial cars get vans only at high pressure} (Section~\ref{sec:pressure}), as the theory predicts.
+\end{itemize}
+
+\input{tables/r_logit}
+
+The logistic regression confirms the pattern. An increase of $\theta$ by 0.1 raises a personal car's probability of a van by \AmePers{} percentage points on average; for a commercial car the effect is nil (\AmeComm{} points). The AUC is \LogitAUC. Because only a few per cent get a van, the classification accuracy (\LogitAcc\pct) equals the share of station users (\LogitBaseRate\pct) and is not informative.
+
+\inshort{RL reproduces the theory's direction: vans for rich personal owners, stations for taxis. But its step is later and much lower than the MILP's; it under-uses the driver-free benefit of rich private owners.}
+
+\subsection{Shadow prices of RL plans}
+\label{sec:duals}
+
+The method is that of the MILP report: fix every yes/no decision of a plan and re-solve the timing LP in the start times and waits. Its duals are the shadow prices of the plan. For all \LPPlansR{} RL plans and \LPPlansM{} MILP plans the LP optimum equals the plan's own waiting cost to the last digit: RL's earliest-start timing is optimal for its decisions.
+
+\input{tables/r_duals}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/r_gun_duals.pdf}
+\caption{Left: gun-minute shadow prices where binding, RL and MILP. Middle: share of binding RL gun links by income of the EV on the gun and of the EV behind it. Right: share binding by segment of both.}
+\label{fig:gunduals}
+\end{figure}
+
+\input{tables/r_gun_pressure}
+
+\begin{itemize}
+  \item \textbf{Gun-minutes are scarce more often.} \GunBindR\pct{} of the \GunLinksR{} consecutive gun links in RL plans are binding (MILP \GunBindM\pct). Where binding, a gun-minute is worth \GunPriceR{} Rs on average (MILP \GunPriceM).
+  \item \textbf{Congestion is a peak phenomenon.} \GunBindHighR\pct{} of links are binding when the EV behind arrives at high pressure, against \GunBindLowR\pct{} at low pressure.
+  \item \textbf{Who waits behind whom.} The EV waiting behind a binding link is poor more often (\BindPoorBehind\pct{} of links binding when the follower is in the poorest band, \BindRichBehind\pct{} in the richest). A commercial car waiting behind a personal one is the most frequent binding pair (\BindPC\pct).
+  \item \textbf{Van-minutes} are binding on \VanBindR\pct{} of van legs (MILP \VanBindM\pct), worth \VanPriceR{} Rs/min when binding.
+  \item \textbf{Zero shadow prices.} Patience limits and the deadline have zero shadow price in every plan of both methods. They act only by excluding plans.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/r_power.pdf}
+\caption{Value of one more kW of charging power per instance (fixed decisions), by instance size.}
+\label{fig:power}
+\end{figure}
+
+One more kW at every station gun is worth \PowerFR{} Rs per instance in RL plans (median \PowerFMedR), against \PowerFM{} Rs in MILP plans. \PowerCongR\pct{} of it is congestion relief (MILP \PowerCongM\pct). One more kW of van power is worth \PowerMR{} Rs (MILP \PowerMM).
+
+\inshort{RL plans lean harder on the stations: gun-minutes are binding almost twice as often, faster guns are worth more, and the price of congestion is paid mostly by poorer and commercial customers waiting behind others.}
+
+\subsection{Queues, priority and driving}
+\label{sec:queues}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/r_queues.pdf}
+\caption{Left and middle: share of station users and of queue minutes by income band, per segment. Right: mean distance driven to the station.}
+\label{fig:queues}
+\end{figure}
+
+\input{tables/r_queues}
+
+\begin{itemize}
+  \item \textbf{More queueing than the MILP.} \QueueersR\pct{} of RL station users queue (MILP \QueueersM\pct). Mean queues are \QueueRComm{} min for commercial and \QueueRPers{} min for personal users, against \QueueMComm{} and \QueueMPers{} in the MILP.
+  \item \textbf{Commercial cars do the queueing:} \CommQShare\pct{} of all queue minutes for \CommUShare\pct{} of the station users.
+  \item \textbf{Within a segment, the poor queue:} the two lowest commercial bands are \PoorUShareComm\pct{} of commercial station users but do \PoorQShareComm\pct{} of commercial queueing.
+  \item \textbf{No patience limit is reached} (\PatienceHitR{} station users at $W_i$): queues follow from the cost weights alone.
+\end{itemize}
+
+\inshort{The cars that do not get a van queue: in RL plans more of them, mostly low-income commercial drivers, whose time is cheapest in the objective.}
+
+\subsection{Peak and off-peak: demand pressure}
+\label{sec:pressure}
+
+Demand pressure and its terciles are defined in Section~\ref{sec:defs}. They depend only on the data, so they are the same for RL and MILP and in every report. \PressHighShareRL\pct{} of the free-choice EVs of the valid RL plans are in the high tercile; the policy never sees this measure and reacts only to the queues it builds.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/r_pressure.pdf}
+\caption{RL: van share of personal free-choice EVs and mean station queue by income band, for low, medium and high demand pressure.}
+\label{fig:pressure}
+\end{figure}
+
+\input{tables/r_pressure}
+
+\begin{itemize}
+  \item \textbf{Queues are a peak phenomenon:} mean queue \QueueRPressLow, \QueueRPressMedium{} and \QueueRPressHigh{} minutes at low, medium and high pressure.
+  \item \textbf{At the peak, commercial cars start to get vans} (\VanCommPressHigh\pct{} at high pressure, \VanCommPressLow\pct{} at low). This is the theory's ``queues, not income, push taxis to vans''.
+  \item \textbf{Fewer vans for personal cars at the peak:} \VanPersPressHigh\pct{} at high against \VanPersPressLow\pct{} at low pressure. The seats are then taken.
+\end{itemize}
+
+\inshort{Peak demand creates the queues and is the only time commercial cars win van seats, as formulation 4 predicts.}
+
+\subsection{Planning horizon and layout}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{figures/r_horizon.pdf}
+\caption{Van share of personal free-choice EVs by income band, short against long horizon, RL (solid) and MILP (dashed).}
+\label{fig:horizon}
+\end{figure}
+
+\input{tables/r_families}
+
+RL's richest personal band gets a van \VanTopShort\pct{} of the time with a short horizon and \VanTopLong\pct{} with a long one. Short horizons have higher demand pressure (\PressShort{} against \PressLong).
+
+\inshort{The horizon matters through congestion and the vans' time budget; RL's van shares stay below the MILP's in every family.}
+
+\subsection{Infrastructure utilisation}
+\label{sec:util}
+
+All numbers in this section come from \code{common/infra.py} applied to the plans. Gun utilisation is the share of $[0,T]$ a gun is charging; at constant power this is also the share of its energy capacity used. For a van it covers seats, battery, time on the road and charging time. RL and MILP are compared on the \UtilPaired{} instances where both have a valid plan.
+
+\subsubsection{Stations and guns}
+\input{tables/r_util_system}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/r_util.pdf}
+\caption{Left: gun utilisation and van fleet use by instance size. Middle: share of guns (solid) and vans (dashed) charging over the planning period, mean over the paired instances. Right: distribution of station utilisation (paired instances).}
+\label{fig:util}
+\end{figure}
+
+\input{tables/r_util_family}
+
+\begin{itemize}
+  \item \textbf{Stations are lightly used.} An average instance asks for \UtilKwhInst{} kWh. A gun is busy \UtilGunR\pct{} of the planning period in RL plans (MILP \UtilGunM\pct), \UtilGunHundredR\pct{} at $n=100$ (MILP \UtilGunHundredM\pct). The installed capacity of 24 guns and 5 vans is used \UtilSysR\pct, the same for both methods, because every plan delivers all the energy asked.
+  \item \textbf{But unevenly.} \UtilIdleGunsR{} of the 24 guns per instance never charge a car in RL plans (MILP \UtilIdleGunsM), while the busiest gun is busy \UtilGunMaxR\pct{} of $T$. Use is highest in \UtilGunTopFam{} (\UtilGunTopFamV\pct) and lowest in \UtilGunLowFam{} (\UtilGunLowFamV\pct), whose horizon is 14 times longer.
+  \item \textbf{The peak is at the start.} The share of guns charging peaks at \UtilProfPeakR\pct{} near $t/T=\UtilProfPeakAt$ (MILP \UtilProfPeakM\pct): the burst of requests at time 0 (Section~\ref{sec:pressure}). At the busiest moment \UtilPeakGunsR{} guns charge at once on average (MILP \UtilPeakGunsM), and all \UtilPeakGunsMaxR{} at most.
+  \item \textbf{RL leans on the stations.} It charges \UtilFcsShareR\pct{} of the energy at stations (MILP \UtilFcsShareM\pct), so its guns are busier and fewer stay idle. Low average utilisation and binding gun-minutes go together: the guns are scarce only at the peak and near the clusters of requests (Section~\ref{sec:duals}).
+\end{itemize}
+
+\subsubsection{Vans}
+\input{tables/r_util_vans}
+\input{tables/r_vans}
+\input{tables/r_vans_family}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/r_vans.pdf}
+\caption{EVs per van, battery drawn and return time of every dispatched van, RL against MILP (paired instances).}
+\label{fig:vans}
+\end{figure}
+
+\begin{itemize}
+  \item \textbf{Fleet.} On the paired instances RL dispatches \VansR{} vans (MILP \VansM), \UtilFleetR\pct{} of the fleet on average (MILP \UtilFleetM\pct). RL does not send out more vans; it sends them out emptier.
+  \item \textbf{Seats and energy.} RL vans use \UtilSeatR\pct{} of their seats (MILP \UtilSeatM\pct) and deliver \UtilVanKwhR{} kWh each (MILP \UtilVanKwhM); only \VansFullR\pct{} are full against \VansFullM\pct. In total RL vans deliver \UtilVanKwhTotR{} kWh against \UtilVanKwhTotM. \StrandedSeatsR\pct{} of RL van seats hold stranded EVs (MILP \StrandedSeatsM\pct), and \OnlyStrandedR\pct{} of RL vans serve only stranded EVs (MILP \OnlyStrandedM\pct).
+  \item \textbf{Battery.} RL vans draw \UtilBattR\pct{} of their 150 kWh (MILP \UtilBattM\pct). Of the energy drawn, \UtilLossShareR\pct{} is lost in the transfer to the car and \UtilDriveShareR\pct{} is spent driving (MILP \UtilDriveShareM\pct); the rest is delivered.
+  \item \textbf{Time.} A van is on the road \UtilRoadR\pct{} of $T$ (MILP \UtilRoadM\pct) but charges only \UtilChargeR\pct{} of $T$ (MILP \UtilChargeM\pct). This is its use of power capacity. \UtilIdleR\pct{} of its time on the road is idle (MILP \UtilIdleM\pct): it waits at a car for the request time, or between stops.
+  \item \textbf{What limits a van.} For RL vans the tightest resource is time for \TightTimeR\pct, seats for \TightSeatsR\pct{} and the battery for \TightBattR\pct. In R1 and RC1 every van runs out of time, whatever the method.
+\end{itemize}
+
+\inshort{Both methods leave most of the installed capacity unused: guns are scarce only at the peak, and many guns stay idle. RL uses the stations a little more and the vans a little less. It dispatches about as many vans as the MILP, but fills them mainly with stranded cars, so they carry fewer customers and less energy, and spend more of their time on the road idle.}
+
+\subsection{Money paid and perceived cost: equity}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/r_equity.pdf}
+\caption{Money paid and perceived cost per EV by income band and segment (RL).}
+\label{fig:equity}
+\end{figure}
+
+\input{tables/r_equity}
+
+\begin{itemize}
+  \item A personal owner perceives \PercEvPers{} Rs per charge in RL plans (MILP \PercEvMPers). A commercial driver perceives \PercEvComm{} Rs (MILP \PercEvMComm). The extra cost of RL falls on both segments.
+  \item \textbf{Perceived cost per rupee paid:} \PerRsPoorPers{} for the poorest and \PerRsRichPers{} for the richest personal band; \PerRsPoorComm{} and \PerRsRichComm{} for commercial drivers. The poor feel money strongly, the rich feel time strongly.
+  \item \textbf{Price per kWh:} both segments pay about \PaidKwhPers{} Rs per kWh on average, since few get a van and pay the van tariff.
+\end{itemize}
+
+\inshort{Each group bears the cost it minds least in rupee terms. Under RL a little more of everyone's cost is waiting time.}
+
+\subsection{Sensitivity to the segment mix}
+\input{tables/r_mix}
+
+If the van probability of each segment stayed as observed, a market with 30\,\% commercial cars would give an expected van share of \MixRLThree\pct{} under RL (MILP \MixMThree\pct), and one with 90\,\% \MixRLNine\pct{} (MILP \MixMNine\pct). The plans would adapt, so this is a first-order estimate. The gap between the methods widens when there are more personal owners, because that is where RL departs from the MILP.
+
+\inshort{The segment mix moves the van share strongly, and RL's under-use of vans for private owners matters more in a market with more of them.}
+
+\subsection{Why RL behaves this way}
+\begin{enumerate}
+  \item \textbf{The dispatch cost comes first.} When the policy decides car by car, the first car put on a van carries the whole dispatch cost of Rs~1\,500. The next five cars on the same van come almost free. The MILP sees the whole route at once. For a policy that decides one car at a time, opening a van for a free-choice customer looks expensive, so it opens vans for stranded cars and keeps free-choice customers at stations.
+  \item \textbf{Filling a van needs a coordinated series of choices} (route order, timing of the stranded stops). Random sampling during training rarely finds these, so the spare seats stay empty (\OnlyStrandedR\pct{} of vans serve only stranded cars).
+  \item \textbf{Its teacher prefers stations.} The warm-up copies the greedy rule, which gives every car its cheapest option at that moment, usually a station.
+  \item \textbf{The cost is flat around the best plan.} For a rich private owner the van's advantages (no drive, faster charging, driver free) and its disadvantages (van premium, dearer van energy, dispatch cost) nearly balance. So moving such a customer to a station costs little, and training receives a weak signal to do otherwise.
+\end{enumerate}
+
+\inshort{RL finds a plan almost as cheap as the MILP's with a different structure: fewer vans for free-choice customers and longer queues. This shows that many quite different plans are nearly equally good.}
+
+\subsection{Robustness and caveats}
+\begin{itemize}
+  \item \textbf{One trained model, one seed.} Results come from one training run (best epoch \BestEpoch). Another seed would give somewhat different van shares.
+  \item \textbf{Benchmark not always optimal.} The MILP plans of large instances are time-limit plans; gaps to them understate RL's distance from the optimum on those instances and explain the cases where RL is cheaper.
+  \item \textbf{Placeholder parameters.} Directions come from the formulation, sizes from the parameter values (Table~\ref{tab:params}).
+  \item \textbf{Shadow prices hold for the given decisions.} Discrete changes (one more van, seat or gun) need re-solving.
+  \item \textbf{Demand pressure is a proxy:} it ignores travel time, charging still in progress and counts a van as one charger; the policy does not use it.
+  \item \textbf{Invalid plans.} The \InvalidNoPlan{} open instances remain unresolved; neither method proves whether a plan exists.
+\end{itemize}
+
+%=====================================================================
+\section{Summary of findings}
+\begin{enumerate}
+  \item RL gives a valid plan in \NValid{} of \NInst{} instances, more than the MILP (\NValidM), and fails only where the MILP fails too; most failures are infeasible data.
+  \item Its plans cost \GapMean\pct{} more than the MILP's on average and \GapOpt\pct{} more than proven optima, in \RLtime\,s per instance instead of \MILPtime\,s.
+  \item It improves on the greedy rule it learned from by \GreedyGapAbs\pct{} on average.
+  \item The extra cost is customer waiting time. RL uses vans mainly for stranded cars and keeps rich private owners at stations: \VanRPers\pct{} of personal free-choice cars get a van, against \VanMPers\pct{} in the MILP.
+  \item The behaviour predicted by formulation 4 survives in weaker form: vans for rich personal owners, almost none for taxis except at peak demand, and queues borne by low-income commercial drivers.
+  \item Shadow prices show more congestion at the guns (\GunBindR\pct{} of links binding against \GunBindM\pct) and a higher value of faster guns; patience limits and the deadline have zero marginal value, as for the MILP.
+  \item Infrastructure is lightly used by both methods (guns busy \UtilGunR\pct{} of $T$ in RL plans, MILP \UtilGunM\pct); RL charges more energy at stations and fills its vans less (\UtilSeatR\pct{} of seats against \UtilSeatM\pct).
+  \item Opening and filling vans is the policy's weak point; a decoder that plans whole van routes, or a reward that credits a van's later passengers, is the natural improvement.
+\end{enumerate}
+
+{\footnotesize Generated from \code{2026-11-22\_formulation\_4/baseline\_RL} (results and model) and \code{baseline\_MILP/results} by \code{compute\_duals\_rl\_f4.py} and \code{make\_rl\_report.py} in this folder.}
+
+\end{document}

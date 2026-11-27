@@ -1,3 +1,0 @@
-segment,EVs,free_choice,share_van_free_choice_%,mean_theta,mean_queue_FCS_min,mean_van_wait_min,mean_drive_min,mean_downtime_min,mean_pay_Rs,mean_perceived_money_Rs,mean_time_cost_Rs,mean_customer_cost_Rs
-personal,7579,6564,5.8,0.686,0.72,17.62,8.34,61.03,330.67,268.4,428.67,697.07
-commercial,17801,15010,0.4,0.363,3.16,18.03,11.09,66.32,335.73,382.34,207.57,589.91
