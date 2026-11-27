@@ -43,3 +43,11 @@ for their zero-shot runs, so train this model before running the RL experiment f
 
 A 3-epoch training and solving of 4 instances also ran end to end (outside this folder). `model/` and `results/` are
 empty until the server run.
+
+## Code report
+
+`report/RL_code_explained.pdf` (30 pages, 26 Nov 2026): every file and function of this folder explained with the
+mathematics (state, action, masks, transition, reward = -increase of Z and why it sums to Z, network, REINFORCE,
+solving), a constraint-by-constraint comparison with the MILP, and one real episode traced step by step
+(EV-C101, 8 cars: sum of step costs = checker Z = 7251.93; best of 520 tries 7208.84 vs MILP optimum 7207.21).
+Code excerpts are read from the source files. Rebuild: `python trace_episode.py` then `latexmk -pdf RL_code_explained.tex`.

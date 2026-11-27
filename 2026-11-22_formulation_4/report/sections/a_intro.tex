@@ -1,0 +1,58 @@
+%=====================================================================
+\section{The problem}
+\label{sec:intro}
+
+An operator must charge a set of electric vehicles (EVs) during one planning period. Each EV sends a
+\emph{request} at a known time and needs a known amount of energy. The operator has two kinds of resource:
+\begin{itemize}
+  \item \textbf{Fixed charging stations (FCS)} with a few \emph{guns} each; an EV drives to a station, may
+  \emph{queue} for a free gun, then charges at the gun's power;
+  \item \textbf{Mobile charging stations (MCS)} --- a fleet of \emph{vans} that drive out from a depot, visit
+  EVs where they are parked, and charge them on the spot at a higher power. A van serves several EVs on a route
+  and is limited by its seats (how many EVs it can serve), its battery and the length of the period.
+\end{itemize}
+The operator decides, for every EV, whether it charges at a station or is served by a van, and it routes and
+schedules the vans, so as to \textbf{serve every request before the deadline} at the \textbf{least total cost}.
+
+\subsection{Two kinds of customer (what formulation 4 adds)}
+
+Formulation~4 keeps the variables and all constraints (1)--(23) of formulation~3 and adds one fact about every
+EV: its \textbf{use segment} $s_i\in\{\mathrm P,\mathrm C\}$ --- \emph{personal} (a private car) or
+\emph{commercial} (a taxi, ride-hailing or fleet car) --- together with an \textbf{income index}
+$\theta_i\in[0,1]$. These two attributes change how a customer values money and time:
+\begin{itemize}
+  \item a \textbf{personal} driver's time depends on \emph{where} the driver is: driving, queueing and charging
+  \emph{at a station} cost the driver's time, but when a \emph{van} charges the parked car the driver is free,
+  so those minutes are cheaper;
+  \item a \textbf{commercial} car earns nothing while out of service: every minute of driving, queueing,
+  charging or waiting for a van costs the same lost earnings (the \emph{downtime} rate). A van gives a taxi no
+  ``driver-free'' benefit; it only saves downtime.
+\end{itemize}
+This single distinction is what makes the results interesting: the \emph{same} plan is good or bad for a
+customer depending on whether the car is a private car or a taxi, and on how rich the household is.
+
+\subsection{What ``cost'' means here}
+
+The operator minimises its own running cost \emph{plus} the cost its customers \emph{perceive}. A customer's
+perceived cost is the money they pay times how strongly they feel a rupee, plus the value of the time they lose.
+Tariff income is a transfer (the customer pays, the operator receives), so it is not counted as an operator
+gain; it enters only through what the customer feels. Section~\ref{sec:model} writes this as the six-part
+objective $Z=Z_1+\dots+Z_6$.
+
+\subsection{How this report reads}
+
+Every result below --- the baseline and each of the seven experiments --- is presented in the same four steps,
+so the reasoning is always visible:
+\begin{enumerate}
+  \item \textbf{Theory.} What the model \emph{must} do, derived from the objective~\eqref{eq:obj} or a
+  constraint, stated as a short proposition with a proof.
+  \item \textbf{Result.} What actually happened, as a figure and a table of the measured numbers.
+  \item \textbf{Practical cause.} Why the plan comes out that way, in plain operational terms.
+  \item \textbf{Support.} Why the number can be trusted: a direction the optimiser cannot violate, the
+  agreement of the MILP and the RL policy (two independent methods), and internal consistency.
+\end{enumerate}
+
+\inshort{Assign every EV to a station or a van and route the vans, at least total cost, serving all requests
+before the deadline. Formulation~4 adds a segment (personal / commercial) and an income to every customer,
+which changes how each values money and time. This report explains every result by theory, evidence, practical
+cause and independent support.}

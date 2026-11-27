@@ -1,0 +1,4 @@
+dataset,method,n,instances,valid,optimal,mean_Z,mean_gap_%,median_gap_%
+Solomon,MILP,all,560,474,277,43998.865,2.364,0.0
+Solomon,RL,all,560,500,0,46507.879,,
+Solomon,greedy,all,560,461,0,46057.454,,

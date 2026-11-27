@@ -1,4 +1,0 @@
-EV-R106_n20: building model ...
-Set parameter OutputFlag to value 1
-Set parameter LogToConsole to value 0
-EV-R106_n20: optimal, Z = 18,589.78 Rs, gap 0.0 %, 1.42 s, greedy 18,745.44, vans for free-choice EVs: 1/15, valid: yes

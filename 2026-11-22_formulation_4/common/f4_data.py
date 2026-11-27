@@ -151,13 +151,19 @@ class Dataset:
         if any((r.get("segment") or "") == "" or (r.get("theta") or "") == "" for r in ev):
             raise ValueError(f"{name}: EV rows without segment / theta; run data/make_f4_dataset.py")
         guns = [int(float(r["guns"])) for r in st]
-        if "guns_per_station" in self.cfg_over:                    # experiment: guns of every station
+        if "guns_per_station" in self.cfg_over:                    # experiment E9: guns per station (station capacity)
             guns = [int(self.cfg_over["guns_per_station"])] * len(st)
+        station_power = float(st[0]["power_kW"])
+        if "station_power_kW" in self.cfg_over:                    # experiment E9: FCS charging power (station capacity)
+            station_power = float(self.cfg_over["station_power_kW"])
+        E = np.array([float(r["energy_kWh"]) for r in ev])
+        if "energy_scale" in self.cfg_over:                        # experiment E10: charging demand per EV (energy x factor)
+            E = np.round(E * float(self.cfg_over["energy_scale"]), 4)
         return {"depot": np.array([float(dep[0]["x"]), float(dep[0]["y"])]),
                 "fcs": np.array([[float(r["x"]), float(r["y"])] for r in st]),
-                "guns": guns, "station_power": float(st[0]["power_kW"]),
+                "guns": guns, "station_power": station_power,
                 "ev_xy": np.array([[float(r["x"]), float(r["y"])] for r in ev]),
-                "E": np.array([float(r["energy_kWh"]) for r in ev]),
+                "E": E,
                 "r": np.array([float(r["request_min"]) for r in ev]),
                 "R": np.array([float(r["range_km"]) for r in ev]),
                 "theta": np.array([float(r["theta"]) for r in ev]),

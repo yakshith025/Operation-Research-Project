@@ -1,0 +1,158 @@
+%=====================================================================
+\section{The optimisation model}
+\label{sec:model}
+
+The problem is a mixed-integer linear program (MILP). Figure~\ref{fig:schematic} shows the picture; this section
+writes the objective and the constraints that the experiments act on, and derives the one piece of theory that
+every later result rests on: when the model prefers a van to a station.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\small,>={Stealth[length=2.2mm]},
+  box/.style={draw,rounded corners,align=center,minimum height=1.0cm,minimum width=1.8cm},
+  ev/.style={circle,draw,fill=white,minimum size=0.74cm,inner sep=1pt}]
+  \node[box,fill=accent!12] (depot) at (0,0) {Depot\\[-1pt]{\footnotesize vans $M$}};
+  \node[ev] (e1) at (3.6,1.15) {$i_1$};
+  \node[ev] (e2) at (3.6,0) {$i_2$};
+  \node[ev] (e3) at (3.6,-1.15) {$i_3$};
+  \node[box,fill=accent3!14] (fcs) at (7.2,0) {FCS\\[-1pt]{\footnotesize guns $G$}};
+  \draw[->,accent2,very thick] (depot) to[out=32,in=180] (e1);
+  \draw[->,accent2,very thick] (e1) to[out=0,in=110] (e2);
+  \draw[->,accent2,very thick,dashed] (e2) to[out=-120,in=-20] (depot);
+  \draw[->,accent,very thick] (e2) -- (fcs);
+  \draw[->,accent,very thick] (e3) to[out=0,in=212] (fcs);
+  \node[font=\footnotesize,text=accent2,anchor=west] at (-0.3,1.95) {van route (serve on the spot)};
+  \node[font=\footnotesize,text=accent,anchor=west] at (4.45,-1.55) {drive $+$ queue $+$ charge};
+\end{tikzpicture}
+\caption{Each EV $i$ is served by \emph{one} resource: it drives to a fixed station and queues for a gun
+(blue), or a van visits it on a route from the depot and charges it in place (orange). The model chooses the
+assignment, routes the vans and schedules all charging in continuous time.}
+\label{fig:schematic}
+\end{figure}
+
+\subsection{Decision variables}
+For every EV $i$: a binary $y_{ig}$ (charge at gun $g$) and $z_{im}$ (served by van $m$); the route variables
+$x_{ijm}$ (van $m$ goes $i\!\to\!j$) and $u_m$ (van $m$ is used); and continuous times $S_i$ (start of charging),
+$q^{\mathrm F}_i$ (queue at the station) and $q^{\mathrm M}_i$ (wait for the van). Write
+$y_i=\sum_g y_{ig}$, $z_i=\sum_m z_{im}$ (so $y_i+z_i=1$), and the completion time
+$C_i=S_i+\tau^{\mathrm F}_iy_i+\tau^{\mathrm M}_iz_i$. Charging \emph{durations} are fixed by the physics
+\begin{equation}
+\tau^{\mathrm F}_i=\frac{60\,E_i}{P^{\mathrm F}},\qquad \tau^{\mathrm M}_i=\frac{60\,E_i}{P^{\mathrm M}}
+\quad\text{(minutes)},\qquad P^{\mathrm M}>P^{\mathrm F},
+\label{eq:tau}
+\end{equation}
+with $E_i$ the energy demand (kWh) and $P^{\mathrm F},P^{\mathrm M}$ the FCS and van powers (kW).
+
+\subsection{The objective}
+\begin{equation}
+\begin{aligned}
+\min\ Z \;=\;& \underbrace{\sum_{i}\mu_i\,c^{\mathrm{EV}}\!\sum_{f}d_{if}Y_{if}}_{Z_1:\ \text{EV driving (felt)}}
++\underbrace{c^{\mathrm M}\!\sum_{m}\sum_{(i,j)}d_{ij}x_{ijm}}_{Z_2:\ \text{van driving}}
++\underbrace{\sum_{m}c^{\mathrm F}_mu_m}_{Z_3:\ \text{van dispatch}}
++\underbrace{\pi^{\mathrm F}\!\sum_{i}E_iy_i+\pi^{\mathrm M}\!\sum_{i}\tfrac{E_i}{\eta}z_i}_{Z_4:\ \text{operator energy}}\\[2pt]
+&+\underbrace{\sum_{i}\mu_i\,E_i\big(p^{\mathrm F}y_i+p^{\mathrm M}z_i\big)}_{Z_5:\ \text{tariff (felt)}}
++\underbrace{\sum_{i}\Big(c^{\mathrm D}_i\!\sum_{f}t_{if}Y_{if}+c^{\mathrm Q}_i q^{\mathrm F}_i+c^{\mathrm C}_i\tau^{\mathrm F}_iy_i+c^{\mathrm V}_i\big(q^{\mathrm M}_i+\tau^{\mathrm M}_iz_i\big)\Big)}_{Z_6:\ \text{time (felt)}}
+\end{aligned}
+\label{eq:obj}
+\end{equation}
+The operator's running cost is $Z_2+Z_3+Z_4$ (van driving, van dispatch, electricity); the customer's
+\emph{perceived} cost is $Z_1+Z_5+Z_6$ (felt money for driving and tariff, and the value of lost time).
+$\mu_i$ is money sensitivity and $c^{a}_i$ the value of a minute in activity $a\in\{\mathrm D,\mathrm Q,\mathrm C,\mathrm V\}$
+(drive, queue, charge at FCS, van). Figure~\ref{fig:ztree} groups the six terms.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\footnotesize, every node/.style={rounded corners,draw,align=center,inner sep=3pt},
+  level 1/.style={sibling distance=5.1cm,level distance=1.25cm},
+  level 2/.style={sibling distance=1.75cm,level distance=1.5cm},
+  edge from parent/.style={draw,-{Stealth[length=1.6mm]}}]
+\node[fill=headblue!14]{$Z$ --- total cost}
+  child {node[fill=accent!14]{operator cost\\ $Z_2+Z_3+Z_4$}
+    child {node{$Z_2$ van\\ driving}}
+    child {node{$Z_3$ van\\ dispatch}}
+    child {node{$Z_4$\\ energy}}}
+  child {node[fill=accent2!14]{customer felt cost\\ $Z_1+Z_5+Z_6$}
+    child {node{$Z_1$ EV\\ driving}}
+    child {node{$Z_5$\\ tariff}}
+    child {node{$Z_6$\\ time}}};
+\end{tikzpicture}
+\caption{The objective splits into what the operator pays and what the customers feel. Most of $Z$ sits on the
+customer side (tariff $Z_5$ and time $Z_6$); the experiments act on the coefficients that weight these terms.}
+\label{fig:ztree}
+\end{figure}
+
+\subsection{The customer model}
+Each EV carries a segment $s_i\in\{\mathrm P,\mathrm C\}$ (personal / commercial) and an income $\theta_i\in[0,1]$,
+both \emph{data}. Every coefficient is a straight line in income, with its own end points per segment:
+\begin{equation}
+\mu^{s}(\theta)=\mu^{s,0}+(\mu^{s,1}-\mu^{s,0})\theta,\qquad
+c^{a,s}(\theta)=c^{a,s,0}+(c^{a,s,1}-c^{a,s,0})\theta,\qquad
+W^{s}(\theta)=W^{s,0}+(W^{s,1}-W^{s,0})\theta.
+\label{eq:lines}
+\end{equation}
+Richer customers feel money less ($\mu$ down with $\theta$) and time more ($c^a$ up). The two segments differ in
+\emph{how} time is valued:
+\begin{itemize}
+  \item \textbf{Personal}: driving, queueing and station-charging cost the driver's time, but van minutes are
+  cheaper because the driver is free: $c^{\mathrm V,\mathrm P}\le c^{\mathrm C,\mathrm P}$, and queueing is the
+  worst, $c^{\mathrm Q,\mathrm P}>c^{\mathrm D,\mathrm P}$.
+  \item \textbf{Commercial}: one downtime rate prices \emph{all} out-of-service time,
+  $\omega(\theta)=c^{\mathrm D,\mathrm C}=c^{\mathrm C,\mathrm C}=c^{\mathrm V,\mathrm C}$, with a queue a little
+  worse, $c^{\mathrm Q,\mathrm C}=\omega+\delta$. A van gives a taxi \emph{no} driver-free discount.
+\end{itemize}
+Because $(s_i,\theta_i)$ are fixed before solving, $\mu_i,c^a_i,W_i$ are numbers and the model stays a linear
+MILP.
+
+\subsection{The constraints the experiments act on}
+Each EV is served exactly once, $y_i+z_i=1$. The two capacity sides and the deadline are what later variants
+tighten or relax:
+\begin{align}
+q^{\mathrm F}_i &\le W_i\,y_i, & &\text{(queue tolerance: an FCS user waits at most $W_i$)} \label{eq:qtol}\\
+C_i &\le T, & &\text{(hard deadline: every car is charged by $T$)} \label{eq:deadline}\\
+\textstyle\sum_{i}\tau^{\mathrm F}_i\,y_{ig} &\le T-\min_{i:g\in G_i}(r_i+t_{if(g)}), & &\text{(gun load: a gun's charging fits its window)} \label{eq:gunload}\\
+\textstyle\sum_{i} z_{im} &\le Q_m\,u_m, & &\text{(van seats: at most $Q_m$ EVs per van)} \label{eq:vancap}\\
+\textstyle\sum_{i}\tfrac{E_i}{\eta}z_{im}+\beta\!\sum_{(i,j)}d_{ij}x_{ijm} &\le B_m\,u_m, & &\text{(van battery: energy served $+$ driving $\le B_m$)} \label{eq:vanbatt}
+\end{align}
+plus station sequencing (no two EVs on a gun at once), van routing (each van leaves and returns once), and the
+number of guns per station $|G_f|$ and vans $|M|$. The experiments change exactly one of these numbers at a time:
+$p^{\mathrm M}$ in $Z_5$ (E1); $|M|$ and $Q_m$ in \eqref{eq:vancap} (E2); $c^{\mathrm C,\mathrm P}$ and $\omega$ in
+$Z_6$ (E5); $\mu$ in $Z_1,Z_5$ (E6); $B_m$ in \eqref{eq:vanbatt} (E8); $|G_f|$ and $P^{\mathrm F}$ in
+\eqref{eq:gunload}, \eqref{eq:tau} (E9); $E_i$ everywhere it appears (E10).
+
+\subsection{The core theory: when a van beats a station}
+\label{sec:theory}
+Fix the rest of the plan and compare, for EV $i$, charging at a station (queue $q^{\mathrm F}_i$) against a van
+(wait $q^{\mathrm M}_i$). Let $\Pi_i=(p^{\mathrm M}-p^{\mathrm F})E_i-c^{\mathrm{EV}}d_{if}$ be the extra money the
+van costs the \emph{customer} and $\kappa_i=(\pi^{\mathrm M}/\eta-\pi^{\mathrm F})E_i+c^{\mathrm M}(\text{extra van km})$
+the extra cost to the \emph{operator} (neither depends on the customer's taste). The change in $Z$ from moving $i$
+to a van is $\Delta_i$; the van is preferred when $\Delta_i<0$:
+\begin{align}
+\Delta^{\mathrm P}_i(\theta)&=\mu^{\mathrm P}(\theta)\,\Pi_i+\kappa_i
+-\Big[c^{\mathrm D,\mathrm P}t_{if}+c^{\mathrm Q,\mathrm P}q^{\mathrm F}_i+c^{\mathrm C,\mathrm P}\tau^{\mathrm F}_i
+-c^{\mathrm V,\mathrm P}\big(q^{\mathrm M}_i+\tau^{\mathrm M}_i\big)\Big] &&\text{(personal)},\label{eq:delP}\\
+\Delta^{\mathrm C}_i(\theta)&=\mu^{\mathrm C}(\theta)\,\Pi_i+\kappa_i-\omega(\theta)\,D_i-\delta(\theta)\,q^{\mathrm F}_i,
+\quad D_i=t_{if}+q^{\mathrm F}_i+\tau^{\mathrm F}_i-\big(q^{\mathrm M}_i+\tau^{\mathrm M}_i\big) &&\text{(commercial)}.\label{eq:delC}
+\end{align}
+$D_i$ is the downtime the van saves. Three facts follow and recur throughout the results:
+
+\begin{keybox}
+\textbf{(T1) The driver-free benefit belongs to personal cars.} In the same situation with equal money
+sensitivity, $\Delta^{\mathrm C}_i-\Delta^{\mathrm P}_i=(\mu^{\mathrm C}-\mu^{\mathrm P})\Pi_i
++(\omega-c^{\mathrm V,\mathrm P})(q^{\mathrm M}_i+\tau^{\mathrm M}_i)\ge0$: a taxi values the van \emph{less}, by
+exactly the driver-free discount $\omega-c^{\mathrm V,\mathrm P}$ it does not get.\\[2pt]
+\textbf{(T2) Queues, not income, push taxis to vans.} $\partial\Delta^{\mathrm C}_i/\partial q^{\mathrm F}_i
+=-(\omega+\delta)<0$: each station-queue minute raises the van's value to a taxi at the full downtime rate.\\[2pt]
+\textbf{(T3) One income threshold per segment.} Each $\Delta_i$ is linear in $\theta$ (by \eqref{eq:lines}), so a
+given schedule has a single $\theta^{*}_{i,s}$ above (or below) which the van is chosen; for personal cars the
+van becomes more attractive as income rises.
+\end{keybox}
+
+These say \emph{who} gets the scarce vans: off-peak, high-income personal cars (the driver-free benefit grows
+with income); in the peak, commercial cars facing long queues. Low-income customers of both segments absorb the
+queues. Every experiment below moves one coefficient in \eqref{eq:obj}--\eqref{eq:delC} and the direction of the
+result reads straight off these expressions.
+
+\inshort{$Z$ has six parts, split into operator cost and felt customer cost. Every coefficient is a line in
+income, different per segment, so money and time are valued differently by private cars and taxis. The van-versus-station
+margin $\Delta_i$ (eqs.~\ref{eq:delP}--\ref{eq:delC}) gives three rules --- driver-free benefit for personal cars,
+queues drive taxis to vans, one income threshold per segment --- that explain every experiment.}

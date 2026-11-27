@@ -1,0 +1,44 @@
+%=====================================================================
+\section{How an experiment reaches the RL}
+
+An experiment variant is a list of \code{--set key=value} overrides; no data file is copied.
+\begin{enumerate}
+  \item \code{f4\_params.load\_params(path, sets)} applies customer overrides to the parameter dictionary, for example
+\begin{center}\code{personal.money\_sensitivity\_mu.theta0=1.125}\quad or\quad \code{tariff\_Rs\_per\_kWh.p\_M=35};\end{center} overrides starting with \code{config.} (vans, seats, battery) are returned separately.
+  \item \code{f4\_data.Dataset} applies the config overrides to every file's config row as it reads the CSV.
+  \item \code{make\_instance} then computes every car's $\mu_i$, $c^a_i$, $W_i$ with the changed lines and the changed tariffs and fleet; the simulator reads them into \code{Batch}, so masks and cost increases are exact for the variant.
+  \item \textbf{Zero-shot run}: the baseline model solves the variant directly. Its inputs already contain the changed numbers (through \code{gun\_cost0}, \code{van\_cost0}, $\mu_i$, $c^Q_i\tau^\Fcs_i$, the pair costs and the fleet size).
+  \item \textbf{Retrained run}: \code{train\_rl\_f4.py --set ...} trains a new model whose practice instances (\code{Generator}) and validation use the same overrides; that model then solves the variant.
+\end{enumerate}
+
+\section{The other RL versions in the project}
+\label{sec:versions}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X@{}}
+\toprule
+version & difference from the code explained here \\
+\midrule
+RL1 (formulation 3) & one customer type: no segment; 16 static car features instead of 19 (no commercial flag, $\mu$, $c^Q\tau^\Fcs$); greedy teacher ties broken by income instead of $c^Q$; data from \code{dataset\_ev\_solomon/csv} with \code{income/}. Environment, network, training and solving are otherwise identical. \\
+RL2 (formulation 3) & RL1 plus: 64 practice instances per batch, $n$ drawn with probability proportional to $n$, 200 validation instances, and \emph{Efficient Active Search} at solving time (instance embeddings tuned per test instance). \\
+formulation 4 (this report) & RL1's method with the per-segment coefficients and the three new car features; every experiment variant also gets a retrained model. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Summary}
+
+\begin{enumerate}
+  \item \textbf{Environment} (\code{rl\_f4\_env.py}): the state is the partial plan: for each gun when it is free, and for each van where it is, when it is free, battery left and seats used. An \textbf{action} is a pair (car, gun or van); the car is added at the end of that resource's sequence and starts as early as possible.
+  \item \textbf{Masks} turn the MILP constraints into rules on actions: range, queue limit $W_i$, deadline $T$, seats $Q$, battery with the way home, van back by $T$, plus two lossless symmetry rules (identical idle guns, unused vans). Overlap on a gun, the route structure and van timing hold by construction.
+  \item \textbf{Reward}: minus the exact increase of the MILP objective. The increases add up to $Z$ (the van km telescope to the route length; the dispatch cost is paid once). Training adds a penalty of $10\sigma$ per car left without a charger.
+  \item \textbf{Network} (\code{rl\_f4\_model.py}): a Transformer encoder over cars, stations and depot; a decoder that first scores the open cars, then every gun and van for the chosen car, using learned vectors plus the exact current costs and waits.
+  \item \textbf{Training} (\code{train\_rl\_f4.py}): imitation of the greedy rule, then REINFORCE with the average of 8 tries of the same instance as baseline; the network with the best validation score is kept.
+  \item \textbf{Solving} (\code{solve\_rl\_f4.py}): 520 tries per instance; the plan with the fewest unplaced cars and then the lowest $Z$ is kept and scored by the same checker as the MILP.
+  \item \textbf{Checked on a real episode}: the step costs add up to the checker's $Z$ exactly, and the best of 520 tries is within 0.02\,\% of the MILP optimum on that instance.
+\end{enumerate}
+
+\section*{Rebuilding this report}
+\addcontentsline{toc}{section}{Rebuilding this report}
+From \code{baseline\_RL/report}: \code{python trace\_episode.py --instance EV-C101 --n 8} (writes \code{tables/trace\_*.tex} and \code{trace.json}; needs the trained \code{../model/model\_best.pt} and torch), then \code{latexmk -pdf RL\_code\_explained.tex}. The code excerpts are read directly from the source files, so they always show the current code with its real line numbers.

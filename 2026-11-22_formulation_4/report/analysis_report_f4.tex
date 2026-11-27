@@ -1,0 +1,118 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs,array,tabularx,longtable}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{adjustbox}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds}
+\usepackage[font=small,labelfont={bf,color=headblue},skip=4pt]{caption}
+\usepackage[colorlinks=true,linkcolor=headblue,citecolor=headblue,urlcolor=blue!50!black]{hyperref}
+
+\definecolor{headblue}{RGB}{38,70,120}
+\definecolor{accent}{RGB}{42,120,214}
+\definecolor{accent2}{RGB}{235,104,52}
+\definecolor{accent3}{RGB}{27,175,122}
+\titleformat{\part}[display]{\centering\Huge\bfseries\color{headblue}}{Part \thepart}{10pt}{}
+\titleformat{\section}{\Large\bfseries\color{headblue}}{\thesection}{0.8em}{}[{\color{black}\titlerule}]
+\titleformat{\subsection}{\large\bfseries\color{headblue}}{\thesubsection}{0.8em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{headblue}}{\thesubsubsection}{0.8em}{}
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+\titlespacing*{\subsection}{0pt}{9pt}{3pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlist{itemsep=1pt,topsep=2pt}
+\renewcommand{\arraystretch}{1.12}
+\setlength{\emergencystretch}{3em}
+
+% ---- boxes ---------------------------------------------------------------
+\newtcolorbox{keybox}{colback=blue!3,colframe=headblue!60,boxrule=0.5pt,arc=2mm,left=2mm,right=2mm,top=1mm,bottom=1mm}
+\newtcolorbox{insum}{colback=green!3,colframe=green!40!black,boxrule=0.4pt,arc=1.5mm,left=2mm,right=2mm,top=0.5mm,bottom=0.5mm,fontupper=\small}
+\newcommand{\inshort}[1]{\begin{insum}\textbf{In short.} #1\end{insum}}
+\newtcolorbox{whybox}{colback=orange!3,colframe=orange!65!black,boxrule=0.4pt,arc=1.5mm,left=2mm,right=2mm,top=0.5mm,bottom=0.5mm,fontupper=\small}
+\newcommand{\practical}[1]{\begin{whybox}\textbf{Why it happens (practical).} #1\end{whybox}}
+\newtcolorbox{supportbox}{colback=headblue!4,colframe=headblue!45,boxrule=0.4pt,arc=1.5mm,left=2mm,right=2mm,top=0.5mm,bottom=0.5mm,fontupper=\small}
+\newcommand{\support}[1]{\begin{supportbox}\textbf{How the result is supported.} #1\end{supportbox}}
+\newcommand{\code}[1]{\texttt{#1}}
+\let\origunderscore\_
+\renewcommand{\_}{\origunderscore\allowbreak}
+
+% ---- proposition / proof -------------------------------------------------
+\theoremstyle{definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\renewcommand{\qedsymbol}{$\blacksquare$}
+
+\input{numbers}
+
+\hypersetup{pdftitle={Formulation 4: a results analysis report}, pdfauthor={Yakshith Maddineni}}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{1.6cm}
+{\LARGE\bfseries\color{headblue} EV Charging Network Optimisation\par}
+\vspace{8pt}
+{\Large\bfseries Formulation 4 --- a results analysis report\par}
+\vspace{6pt}
+{\large Theory, practice and evidence for every experiment\par}
+\vspace{10pt}
+{\large MILP (Gurobi) and reinforcement learning, two customer segments\par}
+\vspace{22pt}
+{\large CP 320 --- Operations Research for Mobility Management\par}
+{\normalsize Course project\par}
+\vspace{20pt}
+{\large Yakshith Maddineni \quad (SR 26080)\par}
+{\normalsize M.Tech Smart Mobility \& Logistics Systems, IISc\par}
+\vspace{6pt}
+{\normalsize \today\par}
+\vfill
+\begin{keybox}
+\textbf{What this report is.} A self-contained analysis of the results of formulation~4 of the EV charging
+network problem. For the baseline and for \emph{every} experiment it gives four things, in this order:
+(i)~the \textbf{mathematical/theoretical} prediction derived from the model itself; (ii)~the \textbf{empirical
+result} as figures and tables; (iii)~the \textbf{practical} reason the result comes out that way; and
+(iv)~\textbf{how the result is supported} --- by a direction check that the optimiser must obey, by the
+agreement of the two independent methods, and by internal consistency.
+
+\textbf{The two methods.} The problem is solved exactly by a Gurobi MILP and approximately by a reinforcement-learning
+policy; every plan from either method is scored by the same independent checker of constraints (2)--(23) and
+objective~\eqref{eq:obj}, so their costs are directly comparable.
+
+\textbf{Scope.} Baseline $+$ seven experiments $=$ E1 (van tariff), E2 (mobile-charger fleet and seats),
+E5 (value of charging time), E6 (money sensitivity), E8 (van battery), E9 (station capacity: guns and power),
+E10 (charging demand). E1--E8 were solved by both methods; E9--E10 by the RL policy, retrained per setting.
+\end{keybox}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\part{The problem and the optimisation model}
+\input{sections/a_intro}
+\input{sections/a_model}
+
+\part{The two solution methods}
+\input{sections/a_methods}
+
+\part{Data and baseline results}
+\input{sections/a_baseline}
+
+\part{The experiments: theory, result, cause, support}
+\input{sections/a_experiments}
+\input{sections/s7_station_capacity}
+\input{sections/s8_charging_demand}
+
+\part{Synthesis, validation and conclusions}
+\input{sections/a_synthesis}
+
+\end{document}

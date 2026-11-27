@@ -98,6 +98,30 @@
         {"id": "E8_battery_200", "label": "B = 200 kWh", "factor": "battery", "value": 200, "set": {"config.van_battery_kWh": 200}}
       ],
       "baseline_values": {"battery": 150}
+    },
+    {
+      "id": "E9", "number": 9, "priority": 1, "folder": "E9_station_capacity",
+      "name": "Station capacity (charging points and power)",
+      "question": "How do changes in station capacity -- the number of charging points per station and the power per point -- affect the optimal solution (cost, queues, van use)?",
+      "_about": "Rubric factor 'station capacities'. Two levers, one change per variant: the number of guns per fixed charging station (config.guns_per_station, baseline 2) and the charging power per gun in kW (config.station_power_kW, baseline 22). Applied in memory with --set (no data copy). Fewer or weaker guns make the fixed stations a tighter bottleneck (longer queues, slower charging), which should push more EVs onto vans and raise Z; more or stronger guns do the reverse. Power enters tau^F = 60 E / P^F, so it shortens every FCS session without adding parallel capacity.",
+      "variants": [
+        {"id": "E9_guns_1", "label": "1 gun per station (half)", "factor": "guns_per_station", "value": 1, "set": {"config.guns_per_station": 1}},
+        {"id": "E9_guns_4", "label": "4 guns per station (double)", "factor": "guns_per_station", "value": 4, "set": {"config.guns_per_station": 4}},
+        {"id": "E9_power_11", "label": "11 kW per gun (half)", "factor": "station_power_kW", "value": 11, "set": {"config.station_power_kW": 11}},
+        {"id": "E9_power_44", "label": "44 kW per gun (double)", "factor": "station_power_kW", "value": 44, "set": {"config.station_power_kW": 44}}
+      ],
+      "baseline_values": {"guns_per_station": 2, "station_power_kW": 22}
+    },
+    {
+      "id": "E10", "number": 10, "priority": 1, "folder": "E10_charging_demand",
+      "name": "Charging demand (energy per EV)",
+      "question": "How does a change in charging demand -- the energy each EV needs -- affect the optimal solution? (The demand LEVEL, i.e. the number of EVs, is the n = 10..file-size sweep itself and is reported separately.)",
+      "_about": "Rubric factor 'charging demand'. The energy need E_i of every EV is multiplied by config.energy_scale (baseline 1.0). This scales both charging times (tau^F = 60 E / P^F at a station, tau^M by a van) and the energy drawn, so more energy per EV lengthens every session, tightens both the stations and the vans, and should raise cost and queues; less does the reverse. +-25 %. The RL generator applies the same scale when a variant model is retrained (rl_f4_generator.energy_scale).",
+      "variants": [
+        {"id": "E10_demand_0.75", "label": "energy per EV x0.75 (-25 %)", "factor": "energy_scale", "value": 0.75, "set": {"config.energy_scale": 0.75}},
+        {"id": "E10_demand_1.25", "label": "energy per EV x1.25 (+25 %)", "factor": "energy_scale", "value": 1.25, "set": {"config.energy_scale": 1.25}}
+      ],
+      "baseline_values": {"energy_scale": 1.0}
     }
   ]
 }

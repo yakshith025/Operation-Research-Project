@@ -28,7 +28,9 @@ SEGMENTS = ("personal", "commercial")          # index 0, 1
 ACTIVITIES = "DQVC"
 CONFIG_KEYS = {"n_vans", "van_max_evs", "van_battery_kWh", "van_power_kW", "van_use_kWh_per_km",
                "van_efficiency", "c_EV_Rs_per_km", "c_M_Rs_per_km", "c_F_Rs_per_van", "pi_F_Rs_per_kWh",
-               "pi_M_Rs_per_kWh", "T_min"}
+               "pi_M_Rs_per_kWh", "T_min",
+               # station capacity (E9) and charging demand (E10): read in f4_data.Dataset.raw()
+               "guns_per_station", "station_power_kW", "energy_scale"}
 
 
 def strip_about(d):

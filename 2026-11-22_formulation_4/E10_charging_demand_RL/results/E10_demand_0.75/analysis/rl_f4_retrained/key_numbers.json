@@ -1,0 +1,15 @@
+{
+ "run_id": "rl_f4_retrained",
+ "runs": 560,
+ "valid_plans": 539,
+ "status_counts": {
+  "plan": 539,
+  "invalid_plan": 21
+ },
+ "EVs_in_valid_plans": 29150,
+ "mean_Z_Rs": 37883.43,
+ "share_van_personal_%": 6.6,
+ "mean_customer_cost_personal_Rs": 553.84,
+ "share_van_commercial_%": 0.2,
+ "mean_customer_cost_commercial_Rs": 457.0
+}

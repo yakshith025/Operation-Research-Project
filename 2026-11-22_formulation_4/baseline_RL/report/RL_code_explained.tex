@@ -1,0 +1,97 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs,array,tabularx,longtable}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{adjustbox}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit}
+\usepackage[font=small,labelfont={bf,color=headblue},skip=4pt]{caption}
+\usepackage[colorlinks=true,linkcolor=headblue,urlcolor=blue!50!black]{hyperref}
+
+\definecolor{headblue}{RGB}{38,70,120}
+\definecolor{codebg}{RGB}{248,248,246}
+\titleformat{\section}{\Large\bfseries\color{headblue}}{\thesection}{0.8em}{}[{\color{black}\titlerule}]
+\titleformat{\subsection}{\large\bfseries\color{headblue}}{\thesubsection}{0.8em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{headblue}}{\thesubsubsection}{0.8em}{}
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+\titlespacing*{\subsection}{0pt}{9pt}{3pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlist{itemsep=1pt,topsep=2pt}
+\renewcommand{\arraystretch}{1.12}
+\setlength{\emergencystretch}{3em}
+
+\newtcolorbox{keybox}{colback=blue!3,colframe=headblue!60,boxrule=0.5pt,arc=2mm,left=2mm,right=2mm,top=1mm,bottom=1mm}
+\newtcolorbox{insum}{colback=green!3,colframe=green!40!black,boxrule=0.4pt,arc=1.5mm,left=2mm,right=2mm,top=0.5mm,bottom=0.5mm,fontupper=\small}
+\newcommand{\inshort}[1]{\begin{insum}\textbf{In short.} #1\end{insum}}
+\newtcolorbox{example}{colback=orange!3,colframe=orange!60!black,boxrule=0.4pt,arc=1.5mm,left=2mm,right=2mm,top=0.5mm,bottom=0.5mm,fontupper=\small}
+\newcommand{\code}[1]{\texttt{#1}}
+\let\origunderscore\_
+\renewcommand{\_}{\origunderscore\allowbreak}
+\newcommand{\Fcs}{\mathrm{F}}
+\newcommand{\Mcs}{\mathrm{M}}
+
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}
+
+\lstset{language=Python, basicstyle=\ttfamily\scriptsize, numbers=left, numberstyle=\tiny\color{gray},
+  numbersep=6pt, frame=single, rulecolor=\color{black!25}, backgroundcolor=\color{codebg},
+  breaklines=true, breakatwhitespace=false, columns=fullflexible, keepspaces=true, showstringspaces=false,
+  keywordstyle=\color{headblue}\bfseries, commentstyle=\color{black!55}\itshape,
+  stringstyle=\color{orange!60!black}, xleftmargin=14pt, framexleftmargin=2pt, aboveskip=6pt, belowskip=4pt}
+\newcommand{\src}[3]{\lstinputlisting[firstline=#2,lastline=#3,caption={\texttt{\detokenize{#1}}, lines #2--#3}]{#1}}
+\renewcommand{\lstlistingname}{Code}
+
+\hypersetup{pdftitle={How the RL code works (formulation 4)}, pdfauthor={Yakshith Maddineni}}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+{\LARGE\bfseries\color{headblue} How the Reinforcement-Learning Code Works\par}
+\vspace{6pt}
+{\Large Environment, actions, reward, network, training and solving,\\ explained line by line and compared with the MILP\par}
+\vspace{14pt}
+{\large Formulation 4 (personal and commercial EVs, income index)\par}
+\vspace{4pt}
+{\large CP 320 Operations Research for Mobility Management, course project\par}
+\vspace{22pt}
+{\large Yakshith Maddineni (SR 26080)\par}
+{\normalsize M.Tech Smart Mobility \& Logistics Systems, IISc\par}
+\vspace{6pt}
+{\normalsize 26 November 2026\par}
+\vfill
+\begin{keybox}
+\textbf{What this report is.} A reading guide to the reinforcement-learning (RL) code of formulation 4, in \code{2026-11-22\_formulation\_4/baseline\_RL/code/} (the code behind the RL results of the server job). It explains every file and every important function: what goes in, what comes out, the mathematics behind it, and the exact Python lines that do it. The environment (state, action, masks, transition), the reward function and its exact link with the MILP objective, and every constraint of the MILP and how the RL handles it are explained in detail. The report ends with one complete episode of the trained policy on a real instance, every step with real numbers, checked against the independent plan checker and against the MILP's optimal plan.
+
+\textbf{How it relates to the other RL folders.} RL1 (formulation 3) and RL2 use the same code structure; Section~\ref{sec:versions} lists the differences. The design choices and the papers behind the method are explained in \code{RL2\_reinforcement\_learning\_method\_2/reports/RL\_implementation\_report.pdf}; the results of the formulation-4 runs are in \code{report/comprehensive\_report\_f4.pdf}.
+\end{keybox}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\input{sections/c1_overview}
+\input{sections/c2_milp}
+\input{sections/c3_data}
+\input{sections/c4_env}
+\input{sections/c5_reward}
+\input{sections/c6_compare}
+\input{sections/c7_network}
+\input{sections/c8_training}
+\input{sections/c9_solve}
+\input{sections/c10_trace}
+\input{sections/c11_end}
+
+\end{document}

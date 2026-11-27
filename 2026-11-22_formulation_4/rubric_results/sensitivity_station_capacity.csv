@@ -1,0 +1,5 @@
+experiment,factor,variant,label,dataset,run,paired,dZ_%,d_operator_%,d_customer_%,van_share_base_%,van_share_var_%,queue_base_min,queue_var_min,newly_valid,lost_valid
+E9,guns_per_station,E9_guns_1,1 gun per station (half),Solomon,RL retrained,432,4.762,5.397,4.555,2.434,5.799,0.858,2.828,0,68
+E9,guns_per_station,E9_guns_4,4 guns per station (double),Solomon,RL retrained,500,-2.215,-0.903,-2.723,2.864,2.144,1.88,0.371,9,0
+E9,station_power_kW,E9_power_11,11 kW per gun (half),Solomon,RL retrained,398,20.126,25.613,18.425,2.524,18.73,0.898,0.673,0,102
+E9,station_power_kW,E9_power_44,44 kW per gun (double),Solomon,RL retrained,500,-12.296,-1.543,-16.973,2.864,0.002,1.88,1.67,32,0

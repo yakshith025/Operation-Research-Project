@@ -53,6 +53,9 @@ class Generator:
         self.P = P
         self.g = gen_params
         self.rng = np.random.default_rng(seed)
+        # experiment E10 (charging demand): the generator synthesises each EV's energy, so the dataset's
+        # energy_scale override has to be applied here too (guns / power / fleet come from the template below).
+        self.energy_scale = float(getattr(dataset, "cfg_over", {}).get("energy_scale", 1.0))
         self.templates = {}
         for name in dataset.files():
             size = dataset.n_evs(name)
@@ -121,6 +124,8 @@ class Generator:
         cfg["T"] = float(round(tpl["cfg"]["T"] * rng.uniform(1 - self.g["T_jitter"], 1 + self.g["T_jitter"])))
         demand = rng.integers(1, 51, size=N)
         E = np.round(E_MIN + (E_MAX - E_MIN) * (demand - 1) / 49.0, 2)
+        if self.energy_scale != 1.0:                       # experiment E10: charging demand per EV
+            E = np.round(E * self.energy_scale, 2)
         k = cfg["detour"] * cfg["km_per_unit"]
         d_near = k * np.linalg.norm(xy[:, None] - fcs[None], axis=2).min(1)
         R = rng.uniform(RANGE_MIN, RANGE_MAX, N)

@@ -1,4 +1,0 @@
-numpy>=1.26
-torch>=2.1
-# the project code (../../code: results_io, check_plan_f3, make_income, solve_milp_f3) must be next to this folder;
-# gurobipy is NOT needed for RL2 (solve_milp_f3 imports it only if present)

@@ -102,6 +102,30 @@ How to read the lines:
 \inshort{Except for the segment share and income distributions, these numbers are reasoned guesses. The experiments test how much the results depend on the most important of them.}
 
 %=====================================================================
+\section{The fixed costs and the fleet constants}
+\label{sec:constants}
+
+The numbers below are the \textbf{same for every instance} (read from \code{data/solomon\_config.csv}, identical in all 56 files; the 200-car files only scale the fleet). They are not taken from Solomon: the project assumes them, so it is worth asking how close each is to Indian reality. The last column points to a source; items marked ``---'' are reasoned engineering values with no single published figure.
+
+\begin{table}[H]
+\centering
+\caption{Cost constants held fixed across all instances, with a reality check.}
+\input{tables/constants_cost}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Fleet, charging and geometry constants held fixed across all instances, with a reality check.}
+\input{tables/constants_fleet}
+\end{table}
+
+\textbf{How real are they?} Most hold up well. The van side is the strongest: real doorstep-charging services in India (HopCharge, and Tata.ev's 2026 Delhi--NCR launch) use 25--30\,kW vans and price them at roughly twice the public rate, which is exactly $P^M=30$\,kW and $p^M/p^F=25/15$. The station and grid prices, the charging efficiency, the van consumption and the city geometry are all in realistic ranges. Two to treat with care: $c^{EV}=4$\,Rs/km is high for an electric car (real energy cost is about 1--1.5\,Rs/km), so it reads as an all-in or perceived cost rather than pure energy; and the fixed stations charge at 22\,kW, the AC level, not the 50\,kW DC ``fast'' standard. Two legacy columns in the data file, \code{c\_W} (3.33\,Rs/min) and \code{kappa} (2), are left over from earlier formulations and are \textbf{not used} by formulation 4.
+
+\textbf{Sources.} [1]~\href{https://www.meraev.com/blog/cost-of-running-electric-car-in-india-per-km-2026}{MeraEV, cost of running an electric car in India per km (2026)}; [2]~\href{https://evreporter.com/electric-4w-goods-carriers-a-fleet-operators-point-of-view/}{EVreporter, electric 4W goods carriers: a fleet operator's view}; [3]~\href{https://www.ceew.in/cef/masterclass/explains/what-is-the-cost-of-charging-electric-vehicles}{CEEW, the cost of charging EVs} and the \href{https://www.autocarpro.in/news/ministry-of-power-revises-guidelines-for-ev-fast-charging-122714}{Ministry of Power fast-charging guidelines (Sept 2024)}; [4]~\href{https://pulseenergy.io/blog/ev-charging-rates}{Pulse Energy, EV charging rates in India 2025}; [5]~\href{https://www.autocarpro.in/interview/hopcharge-aims-to-triple-its-mobile-ev-charging-fleet-116466}{Autocar Professional on HopCharge} and \href{https://www.91wheels.com/news/tata-brings-ev-charging-to-your-doorstep-in-delhi-ncr}{Tata.ev doorstep charging}; [6]~\href{https://e-amrit.niti.gov.in/standards-and-specifications}{NITI Aayog e-AMRIT, charging standards}.
+
+\inshort{The costs, fleet and charging numbers are the same in every instance and mostly match Indian data; the mobile-charging van is especially close to real services. The two to watch are $c^{EV}$ (high for an EV) and the 22\,kW ``fast'' station.}
+
+%=====================================================================
 \section{The experiments and the data each one uses}
 \label{sec:experiments}
 

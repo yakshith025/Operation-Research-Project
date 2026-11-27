@@ -1,0 +1,240 @@
+%=====================================================================
+\section{The experiments: how to read them}
+\label{sec:expintro}
+
+Each experiment changes \emph{one} number in the model (Table~\ref{tab:design}) by a comparable amount, re-solves
+all 560 instances, and measures the change against the baseline on the instances feasible in both. E1--E8 are run
+by both methods; E9--E10 (Sections~\ref{sec:e9}--\ref{sec:e10}) by the retrained RL policy. Every variant is
+presented as \emph{theory} (a proposition read off the model), \emph{result} (the measured table), \emph{practical
+cause}, and \emph{support}.
+
+\begin{table}[H]
+\centering\small
+\caption{The seven experiments and the part of the model each one moves.}
+\label{tab:design}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{@{}llll@{}}
+\toprule
+exp. & factor changed & where it enters & variants (baseline) \\
+\midrule
+E1 & van tariff $p^{\mathrm M}$ & $Z_5$ and the premium $\Pi_i$ \eqref{eq:delP} & 15, 35 Rs/kWh (25) \\
+E2 & mobile chargers: vans, seats & fleet $|M|$, seats $Q_m$ in \eqref{eq:vancap} & 3/7 vans, 4/8 seats (5, 6) \\
+E5 & value of charging time & $c^{\mathrm C,\mathrm P}$, $\omega$ in $Z_6$ & $\pm25$\,\% \\
+E6 & money sensitivity $\mu^{0}$ & $\mu_i$ in $Z_1,Z_5$ (per segment) & $\pm25$\,\% \\
+E8 & van battery $B_m$ & battery \eqref{eq:vanbatt} & 200 kWh (150) \\
+E9 & station capacity & guns $|G_f|$, power $P^{\mathrm F}$ in \eqref{eq:gunload},\eqref{eq:tau} & 1/4 guns, 11/44 kW (2, 22) \\
+E10 & charging demand & energy $E_i$ (everywhere) & $\times0.75,\times1.25$ (1) \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/exp_tornado.pdf}
+\caption{Overview: mean change of $Z$ for every E1--E8 variant (bars: MILP; markers: RL zero-shot and retrained),
+sorted by size. The two methods land on top of each other.}
+\label{fig:tornado}
+\end{figure}
+
+%---------------------------------------------------------------------
+\subsection{E5 --- the value of charging time}
+\label{sec:e5}
+E5 raises and lowers, by $\pm25$\,\%, the richest private owner's value of a station minute
+($c^{\mathrm C,\mathrm P}$) and the top commercial downtime rate ($\omega^{1}$).
+
+\begin{proposition}[station-time value lifts cost \emph{and} van use for personal cars; downtime rate lifts only cost]
+\label{prop:e5}
+(a) $\partial Z/\partial c^{\mathrm C,\mathrm P}=\sum_{i\in\mathrm P}\tau^{\mathrm F}_iy_i\cdot\partial c^{\mathrm C,\mathrm P}/\partial(\cdot)\ge0$,
+and $\partial\Delta^{\mathrm P}_i/\partial c^{\mathrm C,\mathrm P}=-\tau^{\mathrm F}_i<0$, so a higher personal
+value of station time raises $Z$ and makes the van relatively better for personal cars.
+(b) Scaling $\omega$ (with $c^{\mathrm D,\mathrm C}=c^{\mathrm C,\mathrm C}=c^{\mathrm V,\mathrm C}=\omega$) multiplies
+every commercial time cost, and in $\Delta^{\mathrm C}_i=\mu^{\mathrm C}\Pi_i+\kappa_i-\omega D_i-\delta q^{\mathrm F}_i$
+scales only the $\omega D_i$ term, so it changes the cost \emph{level} but barely the commercial assignment.
+\end{proposition}
+\begin{proof}
+(a) $c^{\mathrm C,\mathrm P}$ multiplies $\tau^{\mathrm F}_iy_i$ in $Z_6$ for personal FCS users, a non-negative
+quantity, giving the stated sign; it enters $\Delta^{\mathrm P}_i$ \eqref{eq:delP} only through $-c^{\mathrm C,\mathrm P}\tau^{\mathrm F}_i$,
+so $\partial\Delta^{\mathrm P}_i/\partial c^{\mathrm C,\mathrm P}=-\tau^{\mathrm F}_i<0$: $\Delta^{\mathrm P}_i$
+falls, crossing zero for more cars, so more personal cars take vans. (b) For commercial cars $Z_{6,i}=\omega(C_i-r_i)+\delta q^{\mathrm F}_i$
+is linear in $\omega$, so $\partial Z/\partial\omega>0$; in $\Delta^{\mathrm C}_i$ the station and van options are
+both priced at $\omega$, so the $\theta$-threshold $\theta^{*}_{i,\mathrm C}$ moves only through the ratio, not the
+level --- the choice is first-order invariant.
+\end{proof}
+
+\textbf{Result.}
+\begin{table}[H]\centering
+\caption{E5. Rows: MILP, RL zero-shot, RL retrained. $\Delta$ in \% against the baseline (paired instances).}
+\input{tables/exp_E5}
+\end{table}
+Personal $c^{\mathrm C,\mathrm P}$ moves $Z$ by about $-2.2$ / $+2.1$\,\% \emph{and} swings the personal van share
+(19.9\,\% $\to$ 14.1\,\% when station time is valued less, $\to$ 29.4\,\% when valued more). Commercial $\omega^{1}$
+moves $Z$ by about $\pm2.7$\,\% but leaves the van shares unchanged (personal $\approx$19.6\,\%, commercial 0.7\,\%).
+
+\practical{When rich private owners hate station time more, the operator buys them out of the queue with vans ---
+so the personal van share rises and the operator's cost goes up with it. A taxi's drive, charge and van minutes
+all cost the \emph{same} downtime rate, so raising $\omega$ makes the station \emph{and} the van dearer in lockstep:
+the taxi's bill grows but its best option does not change.}
+
+\support{Both methods (MILP and the two RL rows) agree on sign and size. The split outcome --- $c^{\mathrm C,\mathrm P}$
+changes the \emph{assignment}, $\omega$ only the \emph{level} --- is exactly Proposition~\ref{prop:e5}, and the van-share
+move for $c^{\mathrm C,\mathrm P}$ is visible band-by-band in Figure~\ref{fig:expincome}.}
+
+%---------------------------------------------------------------------
+\subsection{E6 --- money sensitivity}
+\label{sec:e6}
+E6 changes, by $\pm25$\,\%, the poorest customer's money sensitivity $\mu^{0}$, per segment.
+
+\begin{proposition}[the commercial money sensitivity is the strongest cost lever]
+\label{prop:e6}
+$\mu_i$ multiplies the felt driving $Z_1$ and the felt tariff $Z_5$, so $\partial Z/\partial\mu^{s,0}
+=\sum_{i\in s}\big(c^{\mathrm{EV}}\!\sum_f d_{if}Y_{if}+E_i(p^{\mathrm F}y_i+p^{\mathrm M}z_i)\big)\cdot\partial\mu_i/\partial\mu^{s,0}\ge0$.
+This is largest for $s=\mathrm C$ because commercial cars are the majority and, being low-income, have $\mu_i$ near
+$\mu^{\mathrm C,0}$; and it is small for $s=\mathrm P$ because rich personal cars have $\mu_i$ near the \emph{fixed}
+$\mu^{\mathrm P,1}$. The assignment is nearly invariant: $\mu$ scales the station and van tariff together, moving
+only the premium term $\mu\Pi_i$ in $\Delta_i$.
+\end{proposition}
+\begin{proof}
+$Z_5=\sum_i\mu_iE_i(p^{\mathrm F}y_i+p^{\mathrm M}z_i)$ and $Z_1$ are linear in each $\mu_i$; by \eqref{eq:lines}
+$\partial\mu_i/\partial\mu^{s,0}=(1-\theta_i)\mathbf 1[s_i=s]\ge0$, which is near $1$ for low-income cars and near
+$0$ for high-income ones, giving the stated magnitudes. In $\Delta_i$, $\mu$ appears only in $\mu_i\Pi_i$; since
+both the FCS and van tariffs scale with $\mu_i$, only the \emph{difference} $\Pi_i=(p^{\mathrm M}-p^{\mathrm F})E_i-c^{\mathrm{EV}}d_{if}$
+is re-weighted, a small part of $\Delta_i$, so the chosen resource rarely flips.
+\end{proof}
+
+\textbf{Result.}
+\begin{table}[H]\centering
+\caption{E6. Commercial $\mu^{0}$ is the single largest lever; personal $\mu^{0}$ is minor.}
+\input{tables/exp_E6}
+\end{table}
+Commercial $\mu^{0}$ moves $Z$ by $\mp6.4$\,\%, almost all on the customers' side ($\mp9.4$\,\%); personal $\mu^{0}$
+moves it only $\pm1.3$\,\%. Van shares stay at about 19--20\,\% (personal) and 0.6--0.7\,\% (commercial) throughout.
+
+\practical{Seven in ten customers are commercial and most are poor, so their money sensitivity multiplies the
+biggest slice of the bill --- the tariff ($Z_5$, \fshareZFive\,\% of $Z$). Nudging how a poor taxi driver feels a
+rupee therefore swings the whole cost. But it makes the station and the van dearer in the same proportion, so
+nobody switches resource.}
+
+\support{The $\pm6.4$\,\% is reproduced by MILP and both RL rows. Its size is predicted by the cost anatomy
+(Section~\ref{sec:basemilp}: the tariff is \fshareZFive\,\% of $Z$ and most of it is commercial), and its
+near-zero effect on the assignment is Proposition~\ref{prop:e6}.}
+
+%---------------------------------------------------------------------
+\subsection{E1 --- the van tariff}
+\label{sec:e1}
+E1 sets the van tariff $p^{\mathrm M}$ to 15 (no premium over the FCS) and 35 Rs/kWh (baseline 25).
+
+\begin{proposition}[the van tariff is the lever on \emph{who} gets a van]
+\label{prop:e1}
+A higher $p^{\mathrm M}$ cannot lower the optimal cost, and shrinks the set of EVs assigned to vans:
+$\partial Z^{*}/\partial p^{\mathrm M}\ge0$ and $\partial\Delta_i/\partial p^{\mathrm M}=\mu_iE_i>0$, so the
+van-choice region $\{\Delta_i<0\}$ contracts as $p^{\mathrm M}$ rises.
+\end{proposition}
+\begin{proof}
+$p^{\mathrm M}$ enters $Z$ only through $Z_5=\sum_i\mu_iE_ip^{\mathrm M}z_i$ with coefficient $\mu_iE_iz_i\ge0$, so
+raising it weakly raises the cost of \emph{every} feasible plan and hence the optimum (an envelope/monotonicity
+argument: the feasible set is unchanged and the objective rises pointwise). In the margin \eqref{eq:delP}--\eqref{eq:delC},
+$p^{\mathrm M}$ appears through $\Pi_i=(p^{\mathrm M}-p^{\mathrm F})E_i-c^{\mathrm{EV}}d_{if}$, so
+$\partial\Delta_i/\partial p^{\mathrm M}=\mu_iE_i>0$: each $\Delta_i$ rises, so fewer EVs satisfy $\Delta_i<0$.
+\end{proof}
+
+\textbf{Result.}
+\begin{table}[H]\centering
+\caption{E1. Van tariff $p^{\mathrm M}=15$ (no premium) and 35 Rs/kWh.}
+\input{tables/exp_E1}
+\end{table}
+\begin{figure}[H]\centering
+\includegraphics[width=0.95\textwidth]{figures/exp_income.pdf}
+\caption{Personal van share by income band: E1 (van tariff) and E5 (personal value of charging time).}
+\label{fig:expincome}
+\end{figure}
+No premium ($p^{\mathrm M}=15$): $Z$ falls about 4.2\,\% --- customers save 7.8\,\%, the operator pays 3.7\,\% more
+(more vans dispatched and dearer van energy) --- and the personal van share rises 19.8\,\% $\to$ 31.4\,\%, spreading
+down the income scale (Figure~\ref{fig:expincome}). A doubled premium ($35$): $Z$ rises 3.9\,\% and the personal
+van share falls to 13.5\,\%.
+
+\practical{The premium is the price of the ``driver-free'' convenience. Cheaper vans let the operator extend that
+convenience further down the income scale --- but by rule \textbf{(T1)} the buyers are mostly rich private owners,
+so making vans cheaper mostly subsidises them while the operator's own bill goes up.}
+
+\support{Proposition~\ref{prop:e1} forces $\partial Z^{*}/\partial p^{\mathrm M}\ge0$; the direction check
+(Section~\ref{sec:validation}) confirms it on the proven optima with zero violations, and the band-by-band shift
+of Figure~\ref{fig:expincome} matches the threshold rule \textbf{(T3)}. MILP and RL agree on the cost move and the
+direction of the van-share move.}
+
+%---------------------------------------------------------------------
+\subsection{E2 --- mobile chargers (fleet size and seats)}
+\label{sec:e2}
+E2 is the first of the three ``analysis'' factors: the \textbf{number of mobile chargers}. It sets the fleet to 3
+or 7 vans (baseline 5) and the seats per van to 4 or 8 (baseline 6).
+
+\begin{proposition}[fleet size buys feasibility, not cost; seats buy cost]
+\label{prop:e2}
+Enlarging $|M|$ or $Q_m$ only \emph{relaxes} the capacity constraint \eqref{eq:vancap}, so the optimal cost is
+non-increasing in both and the feasible set grows. If the fleet is not binding at the optimum, the optimum is
+unchanged (only feasibility can change); cutting $Q_m$ tightens \eqref{eq:vancap} and forces more vans to be
+dispatched, raising $Z_3$ (and $Z_2$).
+\end{proposition}
+\begin{proof}
+$|M|$ and $Q_m$ appear only on the right-hand side of \eqref{eq:vancap} (and $|M|$ in the routing constraints),
+which bound the assignment; increasing them enlarges the feasible region, so $\min Z$ is non-increasing (a larger
+feasible set cannot have a higher minimum). By complementary slackness, if \eqref{eq:vancap} is slack at the
+optimum a small change of its right-hand side leaves the optimal solution --- and $Z$ --- unchanged; the only
+possible change is that a previously infeasible instance becomes feasible. Cutting $Q_m$ removes feasible plans;
+serving the same EVs then needs more dispatched vans $u_m$, each adding $c^{\mathrm F}_m$ to $Z_3$.
+\end{proof}
+
+\textbf{Result.}
+\begin{table}[H]\centering
+\caption{E2. 3/7 vans and 4/8 seats. ``new''/``lost'': instances gained/lost against the baseline.}
+\input{tables/exp_E2}
+\end{table}
+\begin{figure}[H]\centering
+\includegraphics[width=0.95\textwidth]{figures/exp_valid.pdf}
+\caption{Instances with a valid plan per variant (MILP vs RL retrained); dashed lines are the baseline.}
+\label{fig:expvalid}
+\end{figure}
+On instances optimal in both runs the cost change from the fleet size is \textbf{0.000\,\%} (Table~\ref{tab:direction}):
+the plans use only about 2.2 vans, so the fifth is rarely needed for cost. But 3 vans lose 33 instances and 7 vans
+gain 13 --- almost all large R1/RC1 instances (Figure~\ref{fig:expvalid}). Cutting seats to 4 raises $Z$ about
+1.1\,\% (1.3\,\% at the optima) and drops the personal van share 19.8\,\% $\to$ 11.6\,\%.
+
+\practical{Extra vans sit idle on easy instances --- the baseline fleet already covers the demand --- so they do
+not lower the bill; they earn their keep only on the hard, short-period instances where many stranded or late cars
+need van trips at once. Fewer seats, by contrast, bite everywhere: the operator must send out more vans to carry
+the same cars, and each dispatch is a fixed cost.}
+
+\support{Proposition~\ref{prop:e2} predicts exactly the observed split (0.000\,\% at the optima, but
+feasibility moving), and the direction check records zero cost violations. The feasibility gains/losses concentrate
+in R1/RC1 as the short-period theory requires, and MILP and RL agree.}
+
+%---------------------------------------------------------------------
+\subsection{E8 --- the van battery}
+\label{sec:e8}
+E8 raises the van battery to 200 kWh (baseline 150).
+
+\begin{proposition}[a slack battery has no effect]
+\label{prop:e8}
+Raising $B_m$ relaxes \eqref{eq:vanbatt}, so $\min Z$ is non-increasing; if the battery is slack at the optimum
+(seats or time bind first), the optimum --- and $Z$ --- is unchanged.
+\end{proposition}
+\begin{proof}
+$B_m$ is the right-hand side of \eqref{eq:vanbatt}; increasing it enlarges the feasible set, so $\min Z$ is
+non-increasing. By complementary slackness, a slack constraint's multiplier is zero, so a marginal change of
+$B_m$ does not move the optimum.
+\end{proof}
+
+\textbf{Result.}
+\begin{table}[H]\centering
+\caption{E8. Van battery 200 kWh instead of 150.}
+\input{tables/exp_E8}
+\end{table}
+$Z$ changes by $-0.01$\,\% on average ($-0.04$\,\% at the optima): the battery almost never binds --- seats and
+time run out first. By the rule fixed before the run (an effect below 1\,\% is negligible), \textbf{van recharging
+need not be modelled}.
+
+\practical{In a one-period plan a van makes a handful of stops; its seats and the deadline cap the route long
+before its battery would. So a bigger tank changes nothing the operator can use.}
+
+\support{Proposition~\ref{prop:e8} predicts the near-zero effect from complementary slackness; the direction check
+confirms a weak decrease with no violation, and both methods report essentially 0\,\%.}

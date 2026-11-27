@@ -1,0 +1,219 @@
+% =====================================================================
+%  CP 320 Operations Research for Mobility Management -- Course Project
+%  EV Charging Network Optimization
+%  Yakshith Maddineni (SR 26080) and Kartikeya Gaur
+%
+%  Beamer (LaTeX) presentation.
+%  Compile with:   pdflatex presentation.tex   (run twice)
+%             or:  latexmk -pdf presentation.tex
+%
+%  Logos: put iisc_logo.(png|jpg|pdf) and system_logo.(png|jpg|pdf)
+%         in the logos/ folder. Until then, dashed placeholders show.
+% =====================================================================
+\documentclass[aspectratio=169,11pt]{beamer}
+
+% ---------- Theme base (plain, no font dependencies -> pdflatex safe) ----------
+\usetheme{default}
+\setbeamertemplate{navigation symbols}{}      % remove navigation clutter
+
+% ---------- Encoding / fonts ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+
+% ---------- Math, tables, graphics ----------
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,array,tabularx}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+
+% ---------- Project colours (match the written reports) ----------
+\definecolor{headblue}{RGB}{38,70,120}        % primary
+\definecolor{accent}{RGB}{199,120,20}         % warm accent (FCS drive)
+\definecolor{accent2}{RGB}{30,120,90}         % teal-green (van route)
+\definecolor{accent3}{RGB}{120,70,150}        % purple (resources)
+\definecolor{lightblue}{RGB}{225,232,243}
+
+% tiny reference / footnote line, placed at the foot of a frame
+\newcommand{\refline}[1]{{\scriptsize\color{black!55}\raggedright #1\par}}
+% one objective term: \zterm{Z_1}{formula}{gloss}
+\newcommand{\zt}[2]{{\color{headblue}\bfseries #1}\ \ #2}
+
+\setbeamercolor{structure}{fg=headblue}
+\setbeamercolor{title}{fg=headblue}
+\setbeamercolor{frametitle}{fg=headblue}
+\setbeamercolor{itemize item}{fg=headblue}
+\setbeamercolor{itemize subitem}{fg=accent}
+\setbeamercolor{block title}{fg=white,bg=headblue}
+\setbeamercolor{block body}{bg=lightblue!40}
+\setbeamercolor{footsym}{fg=white,bg=headblue}
+\setbeamercolor{alerted text}{fg=accent}
+
+\setbeamertemplate{itemize item}{\small\raise0.3ex\hbox{\textbullet}}
+\setbeamertemplate{itemize subitem}{\footnotesize\raise0.2ex\hbox{--}}
+
+% ---------- Frame title: bold headblue with an underline rule ----------
+\setbeamerfont{frametitle}{series=\bfseries,size=\large}
+\setbeamertemplate{frametitle}{%
+  \vspace{0.7em}%
+  \hspace{0.3em}\usebeamercolor[fg]{frametitle}\insertframetitle\par%
+  \vspace{-0.25em}\hspace{0.3em}{\color{headblue}\rule{0.965\paperwidth}{1.2pt}}%
+}
+
+% ---------- Footline: author  |  short title  |  frame number ----------
+\setbeamertemplate{footline}{%
+  \leavevmode%
+  \begin{beamercolorbox}[wd=\paperwidth,ht=2.6ex,dp=1.1ex]{footsym}%
+    \hbox to\paperwidth{%
+      \hspace{1em}\scriptsize Yakshith \& Kartikeya%
+      \hfill\scriptsize EV Charging Network Optimization\hfill%
+      \scriptsize\insertframenumber\,/\,\inserttotalframenumber\hspace{1em}%
+    }%
+  \end{beamercolorbox}%
+  \vskip0pt%
+}
+
+% =====================================================================
+%  Logo helpers
+% =====================================================================
+\newcommand{\logoheight}{1.25cm}
+
+% Dashed placeholder shown until a real logo file is dropped in logos/
+\newcommand{\placeholderlogo}[1]{%
+  \begin{tikzpicture}
+    \node[draw=headblue,dashed,rounded corners=2pt,
+          minimum height=\logoheight,minimum width=2.6cm,
+          align=center,text=headblue,font=\scriptsize,inner sep=2pt]
+      {#1 logo\\[-1pt]\textit{\tiny drop file in logos/}};
+  \end{tikzpicture}%
+}
+
+% \showlogo{basename}{placeholder text}  -- looks in logos/ for pdf/png/jpg
+\newcommand{\showlogo}[2]{%
+  \IfFileExists{logos/#1.pdf}{\includegraphics[height=\logoheight]{logos/#1}}{%
+   \IfFileExists{logos/#1.png}{\includegraphics[height=\logoheight]{logos/#1}}{%
+    \IfFileExists{logos/#1.jpg}{\includegraphics[height=\logoheight]{logos/#1}}{%
+     \placeholderlogo{#2}}}}%
+}
+
+% ---------- PDF metadata ----------
+\hypersetup{pdftitle={EV Charging Network Optimization},
+            pdfauthor={Yakshith Maddineni, Kartikeya Gaur}}
+
+% =====================================================================
+\begin{document}
+
+% ---------------------------------------------------------------------
+%  TITLE SLIDE
+% ---------------------------------------------------------------------
+\begin{frame}[plain]
+  \centering
+
+  % --- Logo (centred) ---
+  \vspace{0.2em}
+  {\showlogo{iisc_logo}{IISc}\par}
+
+  \vspace{0.6em}
+
+  % --- Course ---
+  {\color{accent}\bfseries\large CP 320 \textbullet\ Operations Research for Mobility Management\par}
+  \vspace{0.1em}
+  {\footnotesize Course Project\par}
+
+  \vspace{0.7em}
+
+  % --- Project title ---
+  {\color{headblue}\bfseries\huge EV Charging Network Optimization\par}
+  \vspace{0.35em}
+  {\color{black!75}\normalsize Assigning EV requests to fixed \& mobile chargers and\\[1pt]
+   routing mobile charging vans \,--\, MILP and Reinforcement Learning\par}
+
+  \vspace{0.6em}
+  {\color{headblue}\rule{0.55\textwidth}{1pt}\par}
+  \vspace{0.6em}
+
+  % --- Authors ---
+  {\large\bfseries Yakshith Maddineni\,\normalsize\ (SR No.\ 26080) \quad\textbullet\quad \large\bfseries Kartikeya Gaur\par}
+  \vspace{0.15em}
+  {\small M.Tech Smart Mobility \& Logistics Systems \,\textbullet\, Indian Institute of Science, Bengaluru\par}
+
+  \vspace{0.45em}
+  {\footnotesize Course Instructor:\ Prof.\ Prasant Misra, Dept.\ of Cyber Physical Systems\par}
+
+  \vspace{0.7em}
+  {\footnotesize\color{black!60} November 2026\par}
+\end{frame}
+
+% =====================================================================
+%  ======  EVERYTHING BELOW IS A STARTER SCAFFOLD -- edit freely  ======
+%  Add a \section{...} before a group of frames and it appears in the
+%  Outline frame automatically. Duplicate a frame to add content.
+% =====================================================================
+
+% ---------------------------------------------------------------------
+%  OUTLINE
+% ---------------------------------------------------------------------
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+\section{Problem}
+
+% ---------------------------------------------------------------------
+%  EXAMPLE CONTENT FRAME  (replace with your own)
+% ---------------------------------------------------------------------
+\begin{frame}{The problem in one slide}
+  \begin{columns}[T]
+    \begin{column}{0.56\textwidth}
+      \textbf{Given}
+      \begin{itemize}
+        \item A set of EV charging requests across a city, each with a
+              location, an energy need and a time.
+        \item \alert{Fixed} charging stations (limited guns) and a fleet of
+              \alert{mobile} charging vans that can be routed.
+      \end{itemize}
+      \vspace{0.4em}
+      \textbf{Decide}
+      \begin{itemize}
+        \item Which charger serves each request (fixed gun vs.\ mobile van).
+        \item The route and schedule of every mobile van.
+      \end{itemize}
+      \vspace{0.4em}
+      \textbf{Objective}
+      \begin{itemize}
+        \item Serve all requests at minimum total cost
+              (operator cost + customers' perceived cost).
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \centering
+      % --- Figure placeholder: replace with \includegraphics{...} ---
+      \begin{tikzpicture}
+        \node[draw=headblue,dashed,rounded corners,minimum width=0.95\textwidth,
+              minimum height=3.6cm,align=center,text=black!55,font=\small]
+          {\textit{figure / diagram here}\\[4pt]
+           \tiny e.g.\ an instance map from the report's figures/};
+      \end{tikzpicture}
+      \vspace{0.3em}
+      {\scriptsize A single optimisation model decides assignment \emph{and} routing together.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\section{Model}
+
+\begin{frame}{Add your model / results slides here}
+  \begin{block}{How to extend this deck}
+    \begin{itemize}
+      \item Start a new topic with \texttt{\textbackslash section\{Name\}} --- it shows up in the Outline.
+      \item Add a slide with \texttt{\textbackslash begin\{frame\}\{Title\}} \ldots\ \texttt{\textbackslash end\{frame\}}.
+      \item Pull figures straight from the reports, e.g.\\
+            \texttt{\textbackslash includegraphics[width=\textbackslash textwidth]\{figures/...\}}.
+    \end{itemize}
+  \end{block}
+  \centering\vspace{0.5em}
+  {\color{black!60}\small Replace these scaffold slides with your content.}
+\end{frame}
+
+\end{document}

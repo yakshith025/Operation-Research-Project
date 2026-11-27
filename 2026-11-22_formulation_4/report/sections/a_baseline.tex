@@ -1,0 +1,143 @@
+%=====================================================================
+\section{The data}
+\label{sec:data}
+
+The instances are the \textbf{EV-Solomon} set: the 56 Solomon routing files, read as EV-charging instances, at
+sizes $n=10,20,\dots,100$ --- $56\times10=560$ instances. Timing is exactly Solomon's (the request is the
+``ready time'', the deadline $T$ the depot due date, one grid unit one minute); within a Solomon class the
+instances differ only in which cars request when. Each station has 2 guns of 22\,kW, and there are 5 vans.
+
+Onto every EV two attributes are placed, the same number keeping the same pair across a class. The share of
+\emph{commercial} cars and the two income distributions are calibrated from Indian data (about \fcomShareData\,\%
+commercial among public-charging requests; income drawn from a Beta per segment --- personal skewed rich,
+commercial skewed poor). Figure~\ref{fig:data} shows the result.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth]{figures/data_theta.pdf}\\[4pt]
+\includegraphics[width=\textwidth]{figures/data_lines.pdf}
+\caption{Top: income $\theta$ of the EVs, personal (rich-skewed) and commercial (poor-skewed), with the
+calibrated Beta densities. Bottom: how the coefficients move with income --- money felt falls, the value of
+station and van time rises, the accepted queue falls; the two segments have different slopes and levels.}
+\label{fig:data}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{The six Solomon classes as EV-charging instances (one file per class shown; shared within a class).}
+\input{tables/data_classes}
+\end{table}
+
+\inshort{560 Solomon-timed instances, 10--100 cars. Every car is tagged personal or commercial and given an
+income, calibrated so that most public-charging demand is commercial and lower-income --- which is what makes the
+segment the decisive variable.}
+
+%=====================================================================
+\section{Baseline --- the exact method (MILP)}
+\label{sec:basemilp}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.86\textwidth]{figures/milp_status_by_n.pdf}
+\caption{How the 560 baseline instances ended, by size (56 per size).}
+\label{fig:milpstatus}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{MILP baseline by Solomon class. Median gap over the time-limited instances with a plan.}
+\input{tables/milp_by_class}
+\end{table}
+
+\textbf{Result.} \fmilpOptimal{} instances are solved to proven optimality, and \fmilpValid{} have a valid plan
+in all; the mean solve time is \fmilpSolveMean\,s. Small instances ($\le20$ cars) are optimal in seconds; from
+about 50 cars most hit the 300-second limit. The failures are all in the short-period classes R1 and RC1 at
+60--100 cars, where many cars requesting late simply cannot all be charged by $T$ --- the \fmilpInfeasible{}
+infeasible instances are \emph{proven} infeasible and are exactly the same set as in formulation~3, so
+infeasibility comes from the \emph{data} (time, range, fleet), not from the customer model.
+
+\subsection{What the cost is made of}
+\begin{table}[H]
+\centering
+\caption{The six parts of $Z$ over the valid MILP plans (mean per instance and share).}
+\input{tables/milp_anatomy}
+\end{table}
+The felt tariff $Z_5$ is the largest part (\fshareZFive\,\%) --- every car pays for its energy and most customers
+are poor commercial drivers who feel each rupee strongly --- then felt time $Z_6$ (\fshareZSix\,\%) and the
+operator's electricity $Z_4$ (\fshareZFour\,\%). Van driving and dispatch are small (\fshareZTwo\,\% and
+\fshareZThree\,\%). This split is used later: it is \emph{why} the money-sensitivity and demand levers are the
+largest (they scale $Z_5$), and why the van-fleet lever is small (it touches only $Z_2,Z_3$).
+
+\subsection{Who gets a van --- the theory in the data}
+\begin{table}[H]
+\centering
+\caption{The two segments in the baseline plans (MILP and RL). Free-choice cars have a station in range.}
+\input{tables/segments}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/van_share_income.pdf}
+\caption{Share of free-choice cars served by a van, by segment and income band.}
+\label{fig:vanincome}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{By income band (MILP). ``Money felt'' is money paid times $\mu$.}
+\input{tables/income_bands}
+\end{table}
+
+The plans are a direct picture of the theory of Section~\ref{sec:theory}:
+\begin{itemize}
+  \item \textbf{Vans go to personal cars} (\fvanPersMilp\,\% of free-choice personal cars, \fvanComMilp\,\% of
+  commercial) --- rule \textbf{(T1)}, the driver-free benefit is for private owners.
+  \item \textbf{Among personal cars, van use climbs steeply with income} (0\,\% below $\theta=0.4$, about 41\,\%
+  above 0.8); a logistic fit puts the personal threshold at $\theta^{*}\approx\fthetaStarPers$ --- rule
+  \textbf{(T3)}.
+  \item \textbf{The rare taxi with a van is a \emph{poor} driver with a long queue}, not a rich one --- rule
+  \textbf{(T2)}: queues, not income, move taxis to vans. Commercial cars queue \fqueueComMilp{} min on average
+  against \fqueuePersMilp{} for personal, so low-income customers absorb the congestion.
+\end{itemize}
+
+\support{The \fmilpInfeasible{} infeasible instances match formulation~3's exactly, so feasibility is a property
+of the data; and the who-gets-vans pattern is the sign pattern of $\Delta_i$ in \eqref{eq:delP}--\eqref{eq:delC},
+not a tuned outcome. The quantitative directions are checked against proven optima in Section~\ref{sec:validation}.}
+
+\inshort{The MILP solves small instances exactly and large ones to within a few per cent; most of the cost is the
+felt tariff and felt time; and the plans realise the theory --- vans for rich private owners, stations and queues
+for taxis and the poor.}
+
+%=====================================================================
+\section{Baseline --- the learning method (RL)}
+\label{sec:baserl}
+
+\begin{table}[H]
+\centering
+\caption{RL against the MILP on the baseline, by class. Gap over instances valid in both.}
+\input{tables/rl_by_class}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth]{figures/rl_gap_by_n.pdf}
+\caption{Mean cost gap of the RL plan to the MILP, by instance size.}
+\label{fig:rlgap}
+\end{figure}
+
+\textbf{Result.} The policy finds a valid plan in \frlValid{} instances (MILP \fmilpValid) --- including
+\frlOnlyFromNoPlan{} where the MILP's 300-second search found none --- at a mean cost \frlGapMean\,\% above the
+MILP (median \frlGapMedian\,\%), in \frlSolveMean\,s per instance against \fmilpSolveMean\,s. Its one weakness is
+that it \emph{under-uses vans}: it gives vans to only \fvanPersRl\,\% of free-choice personal cars against the
+MILP's \fvanPersMilp\,\%. So the RL cost and the \emph{direction} of its experiment effects are reliable, but its
+van shares should not be read as the best policy --- for ``who gets a van'' the MILP is the reference.
+
+\support{RL and the MILP are scored by the same checker (Section~\ref{sec:methods}), so the \frlGapMean\,\% is a
+true quality gap, not a reporting artefact. That RL finds plans in \frlOnlyFromNoPlan{} instances the MILP could
+not place within the time limit shows the two methods fail in different places, so agreement between them is
+strong evidence. Section~\ref{sec:milpvsrl} shows the two methods give the \emph{same} experiment conclusions to
+within about \fagreeRtMean{} percentage points.}
+
+\inshort{RL is a fast, robust stand-in: valid plans in \frlValid{} instances, about \frlGapMean\,\% dearer,
+roughly a thousand times quicker, and it reproduces the MILP's experiment effects --- but it opens too few vans,
+so the exact van policy is read from the MILP.}

@@ -28,6 +28,9 @@ F4 = os.path.abspath(os.path.join(HERE, ".."))
 FIG, TAB = os.path.join(HERE, "figures"), os.path.join(HERE, "tables")
 CLASSES = ["C1", "C2", "R1", "R2", "RC1", "RC2"]
 SIZES = list(range(10, 101, 10))
+# E1,E2,E5,E6,E8 ran MILP + RL (zero-shot + retrained). E9,E10 are RL-only, retrained-only and are
+# handled by station_capacity()/charging_demand() so the shared experiment machinery stays unchanged.
+FULL_EXPERIMENTS = ("E1", "E2", "E5", "E6", "E8")
 
 # validated reference palette (light): blue, orange, aqua, yellow
 BLUE, ORANGE, AQUA, YELLOW = "#2a78d6", "#eb6834", "#1baf7a", "#eda100"
@@ -238,6 +241,7 @@ def label_tex(s):
 
 def experiments_table():
     E = json.load(open(os.path.join(F4, "common", "experiments.json"), encoding="utf-8"))["experiments"]
+    E = [e for e in E if e["id"] in FULL_EXPERIMENTS]
     rows = []
     for e in E:
         base = label_tex(", ".join(f"{k} = {v:g}" for k, v in e["baseline_values"].items()))
@@ -655,6 +659,170 @@ def direction_check():
     num("directionBad", bad_total)
 
 
+# ===================== E9 station capacity and E10 charging demand (RL only, retrained models) ============
+def _retrained_comp(folder):
+    """{variant: comparison row} for the retrained RL run of an RL-only experiment (robust if only one run)."""
+    all_rows = read(os.path.join(F4, folder, "results", "comparison", "comparison.csv"))
+    rt = [r for r in all_rows if r.get("run_id") == "rl_f4_retrained"]
+    return {r["variant"]: r for r in (rt if rt else all_rows)}
+
+
+def _baseline_rl_Z():
+    """{(instance, n): Z} for the valid baseline-RL plans (the reference the experiments are measured against)."""
+    rs = runs_of(os.path.join(F4, "baseline_RL", "results", "runs.csv"), "rl_f4")
+    return {key(r): fnum(r["Z_total"]) for r in rs if r["valid"] == "yes"}
+
+
+def _dZ_by_n(folder, variant, baseZ):
+    """mean paired Delta Z (%) against the baseline RL plan, per instance size n."""
+    out = {n: [] for n in SIZES}
+    for r in read(os.path.join(F4, folder, "results", variant, "runs.csv")):
+        b = baseZ.get(key(r))
+        if r["valid"] == "yes" and b:
+            out[int(r["n"])].append(100 * (fnum(r["Z_total"]) - b) / b)
+    return [st.mean(out[n]) if out[n] else float("nan") for n in SIZES]
+
+
+def _mean_energy():
+    return st.mean(fnum(r["energy_kWh"]) for r in read(os.path.join(F4, "data", "solomon_data.csv"))
+                   if r["type"] == "ev")
+
+
+def station_capacity():
+    """E9: guns per station and power per gun (RL, retrained)."""
+    comp = _retrained_comp("E9_station_capacity_RL")
+    order = ["E9_guns_1", "E9_guns_4", "E9_power_11", "E9_power_44"]
+    shortlab = {"E9_guns_1": "1 gun\n(half)", "E9_guns_4": "4 guns\n(double)",
+                "E9_power_11": "11 kW\n(half)", "E9_power_44": "44 kW\n(double)"}
+    rows = []
+    for v in order:
+        r = comp[v]
+        rows.append([tex(v), label_tex(r["label"]), f(fnum(r["mean_dZ_%"]), 2, True),
+                     f(fnum(r["mean_d_operator_cost_%"]), 2, True), f(fnum(r["mean_d_customer_cost_%"]), 2, True),
+                     f"{f(fnum(r['baseline_mean_queue_commercial_min']), 2)} $\\to$ {f(fnum(r['mean_queue_commercial_min']), 2)}",
+                     f"{f(fnum(r['baseline_share_van_personal_%']), 1)} $\\to$ {f(fnum(r['share_van_personal_%']), 1)}",
+                     r["newly_valid"], r["no_longer_valid"], r["paired"]])
+    write_table("exp_E9",
+                ["variant", "what changes", "$\\Delta Z$ \\%", "$\\Delta$ oper. \\%", "$\\Delta$ cust. \\%",
+                 "comm. queue (min)", "van \\% pers.", "gained", "lost", "paired"],
+                rows, "@{}llrrrllrrr@{}", size="\\scriptsize")
+    km = {"E9_guns_1": "eNineGunsHalf", "E9_guns_4": "eNineGunsDbl",
+          "E9_power_11": "eNinePowHalf", "E9_power_44": "eNinePowDbl"}
+    for v, kk in km.items():
+        num(kk + "Dz", fnum(comp[v]["mean_dZ_%"]), "{:+.1f}")
+        num(kk + "Lost", comp[v]["no_longer_valid"])
+        num(kk + "Gain", comp[v]["newly_valid"])
+    meanE = _mean_energy()
+    num("meanEnergy", meanE, "{:.0f}")
+    for P, kk in ((11, "eNineTauHalf"), (22, "eNineTauBase"), (44, "eNineTauDbl")):
+        num(kk, 60 * meanE / P, "{:.0f}")
+    num("eNinePowDblDzAbs", abs(fnum(comp["E9_power_44"]["mean_dZ_%"])), "{:.1f}")
+    num("eNineGunsDblDzAbs", abs(fnum(comp["E9_guns_4"]["mean_dZ_%"])), "{:.1f}")
+    num("eNinePowHalfVan", fnum(comp["E9_power_11"]["share_van_personal_%"]), "{:.0f}")
+    num("eNineGunsHalfQ", fnum(comp["E9_guns_1"]["mean_queue_commercial_min"]), "{:.1f}")
+    num("eNineGunsHalfQBase", fnum(comp["E9_guns_1"]["baseline_mean_queue_commercial_min"]), "{:.1f}")
+
+    # figure 1: effect on cost (bars) + feasibility change
+    fig, axs = plt.subplots(1, 2, figsize=(7.0, 2.9), gridspec_kw={"width_ratios": [1.5, 1]})
+    x = np.arange(len(order))
+    ax = axs[0]
+    for j, (col_, c, lab) in enumerate((("mean_dZ_%", BLUE, "total $Z$"),
+                                        ("mean_d_operator_cost_%", AQUA, "operator"),
+                                        ("mean_d_customer_cost_%", ORANGE, "customer"))):
+        ax.bar(x + (j - 1) * 0.27, [fnum(comp[v][col_]) for v in order], width=0.25, color=c,
+               edgecolor=SURF, label=lab)
+    ax.axhline(0, color=INK2, lw=0.8)
+    ax.set_xticks(x); ax.set_xticklabels([shortlab[v] for v in order], fontsize=7)
+    ax.set_ylabel("change vs baseline (%)")
+    ax.legend(fontsize=7, ncol=3, loc="upper center", bbox_to_anchor=(0.5, 1.2))
+    ax.grid(axis="x", visible=False)
+    ax = axs[1]
+    ax.bar(x - 0.19, [int(comp[v]["newly_valid"]) for v in order], width=0.36, color=AQUA, edgecolor=SURF, label="gained")
+    ax.bar(x + 0.19, [int(comp[v]["no_longer_valid"]) for v in order], width=0.36, color=ORANGE, edgecolor=SURF, label="lost")
+    ax.set_xticks(x); ax.set_xticklabels([shortlab[v] for v in order], fontsize=7)
+    ax.set_ylabel("instances")
+    ax.legend(fontsize=7, loc="upper center")
+    ax.grid(axis="x", visible=False)
+    fig.tight_layout(w_pad=1.3)
+    fig.savefig(os.path.join(FIG, "exp_e9.pdf"))
+    plt.close(fig)
+
+    # figure 2: mechanism -- charging time vs power, and dZ vs the charging-time stretch
+    fig, axs = plt.subplots(1, 2, figsize=(7.0, 2.7))
+    ax = axs[0]
+    Pg = np.linspace(9, 46, 200)
+    ax.plot(Pg, 60 * meanE / Pg, color=BLUE, lw=1.8)
+    for Pv, c in ((11, ORANGE), (22, INK2), (44, AQUA)):
+        ax.scatter([Pv], [60 * meanE / Pv], color=c, s=30, zorder=3, edgecolor=SURF)
+        ax.annotate(f"{Pv} kW: {60*meanE/Pv:.0f} min", (Pv, 60*meanE/Pv), xytext=(5, 5),
+                    textcoords="offset points", fontsize=6.5, color=INK2)
+    ax.set_xlabel("power per gun $P^F$ (kW)")
+    ax.set_ylabel("mean charging time (min)")
+    ax.set_title(r"$\tau^F = 60\,\bar E/P^F \;\propto\; 1/P^F$", fontsize=8)
+    ax = axs[1]
+    stretch = [22 / 11, 1.0, 22 / 44]
+    dzp = [fnum(comp["E9_power_11"]["mean_dZ_%"]), 0.0, fnum(comp["E9_power_44"]["mean_dZ_%"])]
+    o = np.argsort(stretch)
+    ax.plot(np.array(stretch)[o], np.array(dzp)[o], color=BLUE, lw=1.4, marker="o",
+            markerfacecolor=ORANGE, markeredgecolor=SURF, markersize=6)
+    for xv, yv, t in zip(stretch, dzp, ["11 kW", "22 kW (base)", "44 kW"]):
+        ax.annotate(t, (xv, yv), xytext=(4, 7 if t == "44 kW" else -10), textcoords="offset points",
+                    fontsize=6.5, color=INK2)
+    ax.axhline(0, color=INK2, lw=0.8); ax.axvline(1, color=MUTED, lw=0.7, ls=":")
+    ax.set_xlabel("charging-time stretch $22/P^F$")
+    ax.set_ylabel("change of $Z$ (%)")
+    ax.set_title("cost rises with charging time", fontsize=8)
+    fig.tight_layout(w_pad=1.3)
+    fig.savefig(os.path.join(FIG, "exp_e9_power.pdf"))
+    plt.close(fig)
+
+
+def charging_demand():
+    """E10: energy demand per EV scaled by s (RL, retrained)."""
+    comp = _retrained_comp("E10_charging_demand_RL")
+    lo, hi = "E10_demand_0.75", "E10_demand_1.25"
+    s = [0.75, 1.0, 1.25]
+    dz = [fnum(comp[lo]["mean_dZ_%"]), 0.0, fnum(comp[hi]["mean_dZ_%"])]
+    dop = [fnum(comp[lo]["mean_d_operator_cost_%"]), 0.0, fnum(comp[hi]["mean_d_operator_cost_%"])]
+    dcu = [fnum(comp[lo]["mean_d_customer_cost_%"]), 0.0, fnum(comp[hi]["mean_d_customer_cost_%"])]
+    slope = (dz[2] - dz[0]) / (s[2] - s[0])
+    num("eTenDownDz", dz[0], "{:+.1f}"); num("eTenUpDz", dz[2], "{:+.1f}")
+    num("eTenSlope", slope, "{:.0f}"); num("eTenElastic", slope / 100, "{:.2f}")
+    num("eTenUpLost", comp[hi]["no_longer_valid"]); num("eTenDownGain", comp[lo]["newly_valid"])
+    num("eTenDownDzAbs", abs(dz[0]), "{:.1f}"); num("eTenNonElastic", 100 - slope, "{:.0f}")
+    rows = []
+    for v in (lo, hi):
+        r = comp[v]
+        rows.append([tex(v), label_tex(r["label"]), f(fnum(r["mean_dZ_%"]), 2, True),
+                     f(fnum(r["mean_d_operator_cost_%"]), 2, True), f(fnum(r["mean_d_customer_cost_%"]), 2, True),
+                     r["newly_valid"], r["no_longer_valid"], r["paired"]])
+    write_table("exp_E10",
+                ["variant", "what changes", "$\\Delta Z$ \\%", "$\\Delta$ oper. \\%", "$\\Delta$ cust. \\%",
+                 "gained", "lost", "paired"], rows, "@{}llrrrrrr@{}", size="\\footnotesize")
+
+    fig, axs = plt.subplots(1, 2, figsize=(7.0, 2.9), gridspec_kw={"width_ratios": [1.45, 1]})
+    ax = axs[0]
+    ax.plot(s, [slope * (ss - 1) for ss in s], color=MUTED, lw=1.0, ls="--", label=f"affine fit ({slope:.0f}\\%/unit)")
+    ax.plot(s, dz, color=BLUE, lw=1.6, marker="o", markerfacecolor=ORANGE, markeredgecolor=SURF, markersize=7, label="total $Z$")
+    ax.plot(s, dop, color=AQUA, lw=1.2, marker="s", markersize=4, label="operator")
+    ax.plot(s, dcu, color=ORANGE, lw=1.2, marker="^", markersize=4, label="customer")
+    ax.axhline(0, color=INK2, lw=0.8); ax.axvline(1, color=MUTED, lw=0.7, ls=":")
+    ax.set_xlabel("energy scale $s$ (per-EV demand $\\times\\, s$)")
+    ax.set_ylabel("change of $Z$ (%)")
+    ax.set_title("cost is nearly linear in demand", fontsize=8)
+    ax.legend(fontsize=6.5, loc="upper left"); ax.set_xticks(s)
+    ax = axs[1]
+    x = np.arange(2)
+    ax.bar(x - 0.19, [int(comp[v]["newly_valid"]) for v in (lo, hi)], width=0.36, color=AQUA, edgecolor=SURF, label="gained")
+    ax.bar(x + 0.19, [int(comp[v]["no_longer_valid"]) for v in (lo, hi)], width=0.36, color=ORANGE, edgecolor=SURF, label="lost")
+    ax.set_xticks(x); ax.set_xticklabels(["$s=0.75$", "$s=1.25$"], fontsize=7.5)
+    ax.set_ylabel("instances"); ax.legend(fontsize=7, loc="upper center")
+    ax.grid(axis="x", visible=False)
+    fig.tight_layout(w_pad=1.3)
+    fig.savefig(os.path.join(FIG, "exp_e10.pdf"))
+    plt.close(fig)
+
+
 def write_numbers():
     with open(os.path.join(HERE, "numbers.json"), "w", encoding="utf-8") as fh:
         json.dump(NUM, fh, indent=1)
@@ -677,5 +845,7 @@ if __name__ == "__main__":
     experiment_tables(X)
     by_income_figure(X)
     direction_check()
+    station_capacity()
+    charging_demand()
     write_numbers()
     print(json.dumps(NUM, indent=1))

@@ -1,0 +1,2 @@
+dataset,milp_valid,rl_valid,paired_valid,rl_only_valid,milp_only_valid,mean_rl_minus_milp_Z_%,median_rl_minus_milp_Z_%,mean_milp_solve_s,mean_rl_solve_s,rl_speedup_x
+Solomon,474,500,474,26,0,0.852,0.761,139.693,0.119,1173.9

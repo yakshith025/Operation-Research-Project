@@ -1,0 +1,94 @@
+%=====================================================================
+\section{The big picture}
+
+\subsection{What the RL does, in four sentences}
+
+The MILP looks at all decisions at once and lets Gurobi search for the best combination. The RL instead \textbf{builds a plan one decision at a time}: at every step it picks one car that is not yet placed and one charger for it (a gun of a station, or a van), and the car is added at the end of that charger's queue or route. A \textbf{simulator} (the \emph{environment}) works out the start time, checks every rule, and computes exactly how much the total cost $Z$ grows because of this decision. A \textbf{neural network} (the \emph{policy}) gives a probability to every allowed decision; it learns, from many random practice instances, to give high probability to decisions that lead to cheap complete plans.
+
+\subsection{The files}
+
+\begin{table}[H]
+\centering\small
+\caption{The code of the formulation-4 RL. Paths are relative to \code{2026-11-22\_formulation\_4/}.}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{5.2cm}r>{\raggedright\arraybackslash}X@{}}
+\toprule
+file & lines & what it does \\
+\midrule
+\code{data/solomon\_data.csv}, \code{solomon\_config.csv} & -- & the dataset: positions, energies, requests, ranges, segment, $\theta$; one config row per file \\
+\code{common/f4\_params.json}, \code{f4\_params.py} & 177 & customer parameters; per-car $\mu_i$, $c^a_i$, $W_i$ from segment and $\theta$ (Section~\ref{sec:data}) \\
+\code{common/f4\_data.py} & 178 & reads the dataset; builds the \emph{instance dictionary} \code{J} (distances, times, coefficients) \\
+\code{baseline\_RL/code/rl\_f4\_env.py} & 439 & \textbf{the environment}: tensors of a batch of instances, state, allowed actions, transition, cost increase, network inputs, greedy rule, conversion to a plan (Sections~\ref{sec:env}--\ref{sec:compare}) \\
+\code{baseline\_RL/code/rl\_f4\_model.py} & 164 & \textbf{the policy network} and the \code{rollout} loop that plays episodes (Section~\ref{sec:network}) \\
+\code{baseline\_RL/code/rl\_f4\_generator.py} & 145 & random practice instances made with the dataset's rules (Section~\ref{sec:generator}) \\
+\code{baseline\_RL/code/train\_rl\_f4.py} & 420 & training: imitation warm-up, REINFORCE, validation, stopping, saving (Section~\ref{sec:training}) \\
+\code{baseline\_RL/code/solve\_rl\_f4.py} & 302 & solving the 560 test instances with the trained model (Section~\ref{sec:solve}) \\
+\code{baseline\_RL/code/test\_rl\_f4.py} & 208 & self-checks \\
+\code{baseline\_RL/code/rl\_f4\_params.json} & 71 & all RL settings (network size, learning rates, batch sizes, stopping) \\
+\code{common/check\_plan\_f4.py} & 142 & independent checker: every rule of the MILP and $Z$ recomputed from scratch \\
+\code{common/results\_io\_f4.py} & 523 & scores a plan with the checker and writes \code{runs.csv} / \code{plan.csv} (same for MILP and RL) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{How the pieces work together}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\footnotesize,
+  box/.style={draw=headblue!70,fill=blue!4,rounded corners=2pt,align=center,minimum height=9mm,inner sep=3pt,text width=3.0cm},
+  data/.style={draw=black!40,fill=black!3,rounded corners=2pt,align=center,minimum height=8mm,inner sep=3pt,text width=3.0cm},
+  arr/.style={-{Stealth[length=2.2mm]},thick,draw=black!60}]
+\node[data] (csv) at (0,0) {\code{data/*.csv}\\ \code{f4\_params.json}};
+\node[box] (inst) at (4.2,0) {\code{f4\_data.make\_instance}\\ instance dict \code{J}};
+\node[box] (batch) at (8.4,0) {\code{Batch}\\ tensors of many \code{J}};
+\node[box] (env) at (8.4,-2.2) {\code{Env}\\ state, \code{options()}, \code{step()}};
+\node[box] (pol) at (4.2,-2.2) {\code{Policy}\\ encoder + 2-step decoder};
+\node[box] (roll) at (0,-2.2) {\code{rollout()}\\ plays whole episodes};
+\node[box,fill=orange!6,draw=orange!70] (train) at (0,-4.6) {\code{train\_rl\_f4}\\ loss, Adam step, \code{model\_best.pt}};
+\node[box,fill=orange!6,draw=orange!70] (solve) at (4.2,-4.6) {\code{solve\_rl\_f4}\\ 520 plans, best kept};
+\node[box] (plan) at (8.4,-4.6) {\code{plan\_of} $\to$ plan\\ \code{check\_plan\_f4}, \code{runs.csv}};
+\node[data] (gen) at (-0.2,1.9) {\code{rl\_f4\_generator}\\ random practice instances};
+\draw[arr] (csv) -- (inst);
+\draw[arr] (inst) -- (batch);
+\draw[arr] (batch) -- (env);
+\draw[arr] (env) -- node[above,font=\scriptsize]{features, masks} (pol);
+\draw[arr] (pol) -- node[above,font=\scriptsize]{probabilities} (roll);
+\draw[arr] (roll.south east) to[bend left=20] node[pos=0.55,below,font=\scriptsize]{actions $(i,k)$} (env.south west);
+\draw[arr] (roll) -- (train);
+\draw[arr] (roll) -- (solve);
+\draw[arr] (solve) -- (plan);
+\draw[arr] (gen) -| (inst);
+\end{tikzpicture}
+\caption{Data flow. Training uses random practice instances from the generator; solving uses the 560 test instances from \code{data/}. Both go through the same \code{Batch}, \code{Env}, \code{Policy} and \code{rollout}.}
+\label{fig:flow}
+\end{figure}
+
+\subsection{Notation used everywhere}
+
+{\small
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}p{6.4cm}>{\raggedright\arraybackslash}p{5.6cm}@{}}
+\toprule
+\textbf{symbol} & \textbf{meaning} & \textbf{in the code} \\
+\midrule
+\endhead
+$I=\{1,\dots,n\}$, $i$ & cars (EVs) of the instance & index \code{i} $=0,\dots,n-1$; EV number $i+1$ \\
+$F$, $f$ & fixed charging stations (12) & \code{F}, \code{n\_fcs} \\
+$G$, $g$, $f(g)$ & guns (24), the station of gun $g$ & \code{G}; \code{gun\_station[g]} \\
+$M$, $m$ & vans (5) & \code{M}; resource index $k=G+m$ \\
+$K=G\cup M$, $k$ & all resources: $k<G$ gun, $k\ge G$ van & \code{K = G + M} \\
+node $0$, node $i$ & depot, car $i$ (routing nodes) & row/column 0 and $i+1$ of \code{dN}, \code{tN} \\
+$r_i$, $E_i$, $R_i$ & request minute, energy (kWh), range (km) & \code{r\_min}, \code{E\_kWh}, \code{R\_km} \\
+$\tau^\Fcs_i$, $\tau^\Mcs_i$ & charging minutes at a gun / by a van & \code{tauF\_min}, \code{tauM\_min} \\
+$d_{if}$, $t_{if}$ & km and minutes from car $i$ to station $f$ & \code{dEF}, \code{tEF} \\
+$d_{uv}$, $t_{uv}$ & km and minutes between routing nodes & \code{dN}, \code{tN} \\
+$s_i$, $\theta_i$ & segment (0 personal, 1 commercial), income & \code{segment}, \code{theta} \\
+$\mu_i$, $c^D_i,c^Q_i,c^C_i,c^V_i$, $W_i$ & money sensitivity, values of time, queue tolerance & \code{mu}, \code{cD}, \code{cQ}, \code{cC}, \code{cV}, \code{W} \\
+$p^\Fcs$, $p^\Mcs$ & tariffs per kWh (station, van) & \code{p\_F}, \code{p\_M} \\
+$c^{EV}$, $c^\Mcs$, $c^\Fcs$ & EV km cost, van km cost, van dispatch cost & \code{c\_EV}, \code{c\_M}, \code{c\_F} \\
+$\pi^\Fcs$, $\pi^\Mcs$, $\eta$ & operator energy prices, van charging efficiency & \code{pi\_F}, \code{pi\_M}, \code{eta} \\
+$B$, $Q$, $\beta$, $T$ & van battery, seats, van kWh per km, period length & \code{Bk}, \code{Q}, \code{beta}, \code{T} \\
+$S_i$, $C_i$ & start and completion minute of car $i$ & \code{S}, \code{C} \\
+\bottomrule
+\end{longtable}}
+
+\inshort{The RL is four pieces: the data turns into tensors, the environment keeps the partial plan and says which decisions are allowed and what each costs, the network chooses, and the training and solving scripts play many episodes with it.}
